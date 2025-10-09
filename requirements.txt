@@ -11,7 +11,6 @@ Flask-SQLAlchemy==3.1.1
 greenlet==3.2.4
 gunicorn==23.0.0
 gpxpy
-shapely==2.0.6
 itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3
@@ -19,6 +18,7 @@ packaging==25.0
 psycopg2-binary==2.9.10
 PyJWT==2.10.1
 python-dotenv==1.1.1
+shapely==2.0.6
 SQLAlchemy==2.0.43
 typing_extensions==4.15.0
 tzdata==2025.2
