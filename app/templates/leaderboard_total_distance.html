@@ -1,0 +1,44 @@
+{% extends "index.html" %}
+
+{% block title %}Classifica - Distanza Totale{% endblock %}
+
+{% block content %}
+    <!-- MODIFICATO: Aggiunto 'main.' -->
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0 text-center">Classifica Generale: Distanza Totale</h2>
+        </div>
+        <div class="card-body">
+            {% if leaderboard_data %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mt-4">
+                        <thead class="table-success">
+                            <tr>
+                                <th scope="col">Pos.</th>
+                                <th scope="col">Atleta</th>
+                                <th scope="col">Distanza Totale (km)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in leaderboard_data %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <!-- 'static' non cambia -->
+                                        <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
+                                        <!-- MODIFICATO: Aggiunto 'main.' -->
+                                        <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="user-link text-primary">{{ entry.username }}</a>
+                                    </td>
+                                    <td>{{ "%.2f"|format(entry.total_distance) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center text-muted mt-4">Nessun dato disponibile per questa classifica. Inizia a registrare attività!</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends "index.html" %}
+
+{% block title %}Notifiche{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            🔔 Le Tue Notifiche
+            {% if unread_count > 0 %}
+            <span class="badge bg-danger ms-2">{{ unread_count }}</span>
+            {% endif %}
+        </h1>
+        
+        {% if notifications %}
+        <div>
+            <form action="{{ url_for('main.clear_all_notifications') }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm" 
+                        onclick="return confirm('Marcare tutte le notifiche come lette?')">
+                    🗑️ Segna Tutte Lette
+                </button>
+            </form>
+            <a href="{{ url_for('main.my_bets') }}" class="btn btn-outline-primary btn-sm ms-2">
+                💰 Le Mie Scommesse
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+        <!-- STATS RAPIDE -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white text-center">
+                    <div class="card-body py-2">
+                        <h5 class="mb-0">{{ notifications|length }}</h5>
+                        <small>TOTALI</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white text-center">
+                    <div class="card-body py-2">
+                        <h5 class="mb-0">{{ notifications|selectattr('read', 'false')|list|length }}</h5>
+                        <small>DA LEGGERE</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark text-center">
+                    <div class="card-body py-2">
+                        <h5 class="mb-0">{{ notifications|selectattr('icon', 'equalto', '🎉')|list|length }}</h5>
+                        <small>VITTORIE</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white text-center">
+                    <div class="card-body py-2">
+                        <h5 class="mb-0">{{ notifications|selectattr('icon', 'equalto', '🎯')|list|length }}</h5>
+                        <small>SFIDE</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTA NOTIFICHE -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Ultime notifiche</span>
+                    <small class="text-muted">Ordinate dalla più recente</small>
+                </div>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for notification in notifications %}
+                <a href="{{ notification.link }}" 
+                   class="list-group-item list-group-item-action notification-item 
+                          {{ 'notification-unread' if not notification.read else 'notification-read' }}"
+                   data-notification-id="{{ notification.id }}">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <!-- ICONA -->
+                        <div class="me-3 flex-shrink-0">
+                            <div class="notification-icon {{ notification.bg_color }} text-white">
+                                {{ notification.icon }}
+                            </div>
+                        </div>
+                        
+                        <!-- MESSAGGIO -->
+                        <div class="flex-grow-1 me-3">
+                            <div class="mb-1 notification-message">
+                                {{ notification.message|safe }}
+                            </div>
+                            <small class="text-muted">
+                                ⏰ {{ notification.timestamp.strftime('%d/%m/%Y alle %H:%M') }}
+                            </small>
+                        </div>
+                        
+                        <!-- INDICATORI -->
+                        <div class="flex-shrink-0 text-end">
+                            {% if not notification.read %}
+                            <span class="badge bg-danger pulse notification-badge">NUOVA</span>
+                            {% else %}
+                            <small class="text-muted">Letta</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- PULSANTI AZIONE -->
+        <div class="text-center mt-4">
+            <form action="{{ url_for('main.clear_all_notifications') }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm" 
+                        onclick="return confirm('Sicuro di voler segnare tutte le notifiche come lette?')">
+                    ✅ Segna Tutte Come Lette
+                </button>
+            </form>
+            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary btn-sm ms-2">
+                🎯 Trova Nuove Sfide
+            </a>
+        </div>
+
+    {% else %}
+        <!-- STATO VUOTO -->
+        <div class="text-center py-5">
+            <div class="mb-3" style="font-size: 4rem;">
+                🔕
+            </div>
+            <h3 class="text-muted">Nessuna notifica</h3>
+            <p class="text-muted mb-4">Quando riceverai nuove notifiche, le troverai qui.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary">
+                    🎯 Partecipa a una Sfida
+                </a>
+                <a href="{{ url_for('main.explore_users') }}" class="btn btn-outline-primary">
+                    👥 Esplora Utenti
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.notification-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    transition: transform 0.3s ease;
+}
+
+.notification-item:hover .notification-icon {
+    transform: scale(1.1);
+}
+
+.notification-unread {
+    background-color: #f8f9fa !important;
+    border-left: 4px solid #007bff !important;
+}
+
+.notification-read {
+    opacity: 0.7;
+    background-color: #ffffff !important;
+}
+
+.notification-item:hover {
+    background-color: #e9ecef !important;
+    text-decoration: none;
+}
+
+.notification-message {
+    line-height: 1.4;
+}
+
+.notification-badge {
+    font-size: 0.7em;
+    padding: 4px 8px;
+}
+
+/* Animazione pulse per notifiche nuove */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2em;
+    }
+    
+    .notification-message {
+        font-size: 0.9em;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Animazioni al caricamento
+document.addEventListener('DOMContentLoaded', function() {
+    // Aggiungi effetto di apparizione progressiva
+    const notificationItems = document.querySelectorAll('.notification-item');
+    notificationItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            item.style.transition = 'all 0.5s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+
+    // Rimuovi animazione pulse dopo 3 secondi
+    setTimeout(function() {
+        document.querySelectorAll('.pulse').forEach(function(badge) {
+            badge.style.animation = 'none';
+        });
+    }, 3000);
+});
+
+// Conferma azioni
+function confirmAction(message) {
+    return confirm(message);
+}
+</script>
+{% endblock %}

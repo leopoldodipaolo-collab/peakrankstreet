@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PeakRankStreet App{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    
+    <!-- Leaflet.markercluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#28a745">
+
+    <style>
+        /* Questo blocco deve essere vuoto o rimosso dopo aver spostato gli stili in styles.css */
+    </style>
+</head>
+<body>
+    <div class="main-wrapper"> 
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3"> 
+                <div class="container">
+                    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                        <img src="{{ url_for('static', filename='icons/logo.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
+                        <span class="fw-bold">PeakRankStreet</span>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                        <ul class="navbar-nav align-items-center">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" aria-current="page" href="{{ url_for('main.index') }}">Home</a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.create_route' %}active{% endif %}" href="{{ url_for('main.create_route') }}"><i class="bi bi-geo-alt me-1"></i>Crea Percorso</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.create_challenge' %}active{% endif %}" href="{{ url_for('main.create_challenge') }}"><i class="bi bi-award me-1"></i>Crea Sfida</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.challenges_list' %}active{% endif %}" href="{{ url_for('main.challenges_list') }}"><i class="bi bi-grid-3x3-gap-fill me-1"></i>Sfide</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.explore_users' %}active{% endif %}" href="{{ url_for('main.explore_users') }}"><i class="bi bi-people-fill me-1"></i>Esplora</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.all_activities' %}active{% endif %}" href="{{ url_for('main.all_activities') }}"><i class="bi bi-activity me-1"></i>Attività</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.feed' %}active{% endif %}" href="{{ url_for('main.feed') }}"><i class="bi bi-rss-fill me-1"></i>Feed</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link position-relative {% if request.endpoint == 'main.notifications' %}active{% endif %}" 
+                                    href="{{ url_for('main.notifications') }}">
+                                        <i class="bi bi-bell-fill"></i>
+                                        {% if unread_notifications_count > 0 %}
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge">
+                                                {{ unread_notifications_count }}
+                                                <span class="visually-hidden">notifiche non lette</span>
+                                            </span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.track_activity' %}active{% endif %}" 
+                                    href="{{ url_for('main.track_activity') }}">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>Traccia Live
+                                    </a>
+                                </li>
+                                                                
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-trophy-fill me-1"></i>Classifiche
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownLeaderboards">
+                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_total_distance') }}">Distanza Totale</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_most_routes') }}">Percorsi Creati</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.finished_challenges') }}">🏁 Sfide Terminate</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar">
+                                        <span class="d-lg-none d-xl-inline">Profilo ({{ current_user.username }})</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownMenuLink">
+                                        <li><a class="dropdown-item" href="{{ url_for('main.user_profile', user_id=current_user.id) }}">Il mio profilo</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.edit_profile') }}">Modifica profilo</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-outline-success mx-2 px-3 {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-success px-3 {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">Registrati</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-shrink-0">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container mt-5 pt-5">
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if is_homepage %}
+                <!-- Hero Section -->
+                <section class="hero-section text-white text-center d-flex align-items-center justify-content-center">
+                    <div class="container">
+                        <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
+                        <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di StreetSport.</p>
+                        {% if not current_user.is_authenticated %}
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn">Inizia Ora!</a>
+                            <a href="{{ url_for('main.explore_users') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn">Esplora</a>
+                        {% else %}
+                             <a href="{{ url_for('main.track_activity') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn"><i class="bi bi-geo-alt-fill me-2"></i>Inizia a Tracciare!</a>
+                             <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <div class="container mt-5">
+                    <h2 class="text-center mb-4 section-title">La Tua Avventura Ti Aspetta</h2>
+                    
+                    <div class="row mb-5 justify-content-center">
+                        <div class="col-12 col-md-8">
+                            <div class="card p-3 shadow-lg rounded-pill-custom">
+                                <div class="input-group">
+                                    <input type="text" id="citySearchInput" class="form-control form-control-lg rounded-pill-left" placeholder="Cerca la tua città o un'area..." value="{{ user_city if user_city else '' }}">
+                                    <button class="btn btn-primary-custom rounded-pill-right" type="button" id="searchCityButton">
+                                        Cerca
+                                        <span id="citySearchSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                    </button>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <div class="btn-group activity-type-filter" role="group" id="activityTypeFilter">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm active" data-type="all"><i class="bi bi-globe me-1"></i>Tutti</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Corsa"><i class="bi bi-person-running me-1"></i>Corsa</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Bici"><i class="bi bi-bicycle me-1"></i>Bici</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Hike"><i class="bi bi-mountains me-1"></i>Hike</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    <div class="card shadow-lg mb-5 map-card-custom">
+                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="bi bi-map-fill me-2"></i>Mappa Esplorativa</h4>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="mapLoadingSpinner" style="display:none;"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="mainMap" class="map-container"></div>
+                            <div class="map-overlay-instructions p-3 bg-light text-muted" id="map-instructions">
+                                <i class="bi bi-info-circle me-2"></i>Usa la barra di ricerca per esplorare nuove aree o clicca su un percorso sulla mappa per vederne i dettagli.
+                            </div>
+                            
+                            <!-- Route Details Overlay - Mostrato sopra la mappa su desktop, come modale su mobile -->
+                            <div id="selected-route-details" class="route-details-modal modal fade" tabindex="-1" aria-labelledby="routeDetailsModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-success-custom text-white">
+                                            <h5 class="modal-title" id="routeDetailsModalLabel">Dettagli Percorso</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h5 class="card-title text-success-custom fw-bold" id="detail-route-name"></h5>
+                                            <p class="card-text text-muted" id="detail-route-description"></p>
+                                            <p class="card-text"><small class="text-muted" id="detail-route-meta"></small></p>
+                                            
+                                            <div id="detail-king-queen" class="king-queen-highlight mt-3" role="alert" style="display:none;">
+                                                <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Re/Regina del Percorso!</h5>
+                                                <p class="mb-1">Detenuto da: <strong id="kq-username"></strong> - <strong id="kq-duration"></strong>
+                                                    <a href="#" id="kq-activity-link" class="btn btn-sm btn-link p-0 ms-1 text-dark" style="font-size:0.8em; vertical-align: baseline;">(Attività)</a>
+                                                </p>
+                                                <small class="text-muted" id="kq-created-at"></small>
+                                            </div>
+
+                                            <div id="detail-top-5-times" class="mt-4" style="display:none;">
+                                                <h6 class="border-bottom pb-2">Top 5 Tempi</h6>
+                                                <ul class="list-group list-group-flush list-group-small" id="top-5-list"></ul>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="#" id="detail-route-link" class="btn btn-sm btn-outline-success-custom">Vedi Dettagli Completi del Percorso</a>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Elementi nascosti per passare dati a JavaScript -->
+                        <div id="user-profile-url-base" style="display:none;">{{ url_for('main.user_profile', user_id=12345) }}</div> 
+                        <div id="route-detail-url-base" style="display:none;">{{ url_for('main.route_detail', route_id=12345) }}</div>
+                        <div id="activity-detail-url-base" style="display:none;">{{ url_for('main.activity_detail', activity_id=12345) }}</div>
+                        <div id="map-data-api-url" style="display:none;">{{ url_for('api.get_map_data') }}</div>
+                        <div id="user-initial-city" style="display:none;">{{ user_city if user_city else '' }}</div> 
+                        <div id="profile-pics-base-url" style="display:none;">{{ url_for('static', filename='profile_pics/') }}</div>
+                    </div>
+
+                    <!-- TABBED CONTENT SECTIONS FOR MOBILE (d-lg-none) -->
+                    <!-- VISIBLE ON DESKTOP, TABBED ON MOBILE -->
+                    <ul class="nav nav-pills nav-fill mb-3 d-lg-none" id="mainTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="leaderboards-tab" data-bs-toggle="pill" data-bs-target="#leaderboards-pane" type="button" role="tab" aria-controls="leaderboards-pane" aria-selected="true"><i class="bi bi-trophy"></i> Classifiche</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="challenges-tab" data-bs-toggle="pill" data-bs-target="#challenges-pane" type="button" role="tab" aria-controls="challenges-pane" aria-selected="false"><i class="bi bi-award"></i> Sfide</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="activities-tab" data-bs-toggle="pill" data-bs-target="#activities-pane" type="button" role="tab" aria-controls="activities-pane" aria-selected="false"><i class="bi bi-activity"></i> Attività</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content d-lg-block"> <!-- d-lg-block mantiene le sezioni visibili su desktop -->
+                        <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel" aria-labelledby="leaderboards-tab">
+                            <!-- Sezione Classifiche Locali -->
+                            <div class="row my-4">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-lg h-100 leaderboard-card">
+                                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
+                                            <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom"><i class="bi bi-globe me-1"></i>Vedi Globale</a>
+                                        </div>
+                                        <ul class="list-group list-group-flush" id="top-distance-list">
+                                            <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card shadow-lg h-100 leaderboard-card">
+                                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
+                                            <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom"><i class="bi bi-globe me-1"></i>Vedi Globale</a>
+                                        </div>
+                                        <ul class="list-group list-group-flush" id="top-creators-list">
+                                            <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade d-lg-block" id="challenges-pane" role="tabpanel" aria-labelledby="challenges-tab">
+                            <!-- Sezione Percorsi Classici della Città -->
+                            <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
+                                <div class="card-header bg-secondary-custom text-white">
+                                    <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city"></span></h3>
+                                    <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
+                                </div>
+                                <div class="card-body">
+                                    <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
+                                        <!-- Le card dei percorsi verranno caricate qui dinamicamente via JavaScript -->
+                                    </div>
+                                    <div id="no-classic-routes" class="text-center p-3" style="display: none;">
+                                        <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
+                                        <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sezione Sfide Recenti -->
+                            <div class="card shadow-lg my-5">
+                                <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
+                                    <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti</h3>
+                                    <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recent-challenges-list" class="list-group">
+                                        <p class="text-center text-muted">Caricamento sfide...</p>
+                                    </div>
+                                    <hr class="my-4">
+                                    <div class="text-center">
+                                         <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab">
+                            <!-- Feed Attività Recenti -->
+                            <div class="social-feed-section card shadow-lg my-5">
+                                <div class="card-header bg-info-custom text-white">
+                                    <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recent-activities-list" class="list-group">
+                                        <p class="text-center text-muted">Caricamento attività...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sezione Percorsi Disponibili -->
+                            <div class="routes-list-section card shadow-lg my-5">
+                                <div class="card-header bg-success-custom text-white">
+                                    <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div id="available-routes-list" class="list-group">
+                                        <p class="text-center text-muted">Caricamento percorsi...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /tab-content -->
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+
+        </main>
+
+        <footer class="footer bg-dark-custom py-4 mt-auto border-top text-white-50">
+            <div class="container text-center">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <h6 class="text-white">StreetSport</h6>
+                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Link Utili</h6>
+                        <ul class="list-unstyled small">
+                            <li><a href="{{ url_for('main.explore_users') }}" class="text-white-50 text-decoration-none">Esplora Utenti</a></li>
+                            <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Le mie Sfide</a></li>
+                            <li><a href="{{ url_for('main.all_activities') }}" class="text-white-50 text-decoration-none">Tutte le Attività</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Contatti</h6>
+                        <p class="small mb-0"><i class="bi bi-envelope-fill me-1"></i> info@streetsport.com</p>
+                        <div class="social-icons mt-2">
+                            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+                            <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <hr class="text-white-50 my-3">
+                <p class="mb-0 small">&copy; 2025 StreetSport App. Tutti i diritti riservati.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script>var is_homepage_js = {{ is_homepage | default(false) | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

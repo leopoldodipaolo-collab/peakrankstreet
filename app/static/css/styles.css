@@ -1,0 +1,1079 @@
+/* static/css/styles.css */
+
+/* --------------------------------------------------- */
+/*  1. IMPOSTAZIONI GLOBALI E TIPOGRAFIA (CSS Variables & Base)
+/* --------------------------------------------------- */
+
+/* Importa un font moderno da Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Colori Base / Brand */
+    --brand-primary: #28a745;       /* Verde StreetSport */
+    --brand-primary-dark: #218838;  /* Verde più scuro per hover */
+    --brand-secondary: #007bff;     /* Blu per elementi primari non-brand */
+    --brand-secondary-dark: #0056b3;/* Blu più scuro */
+    --brand-dark: #212529;          /* Scuro per navbar/footer */
+    --brand-light: #f8f9fa;         /* Sfondo chiaro */
+    
+    /* Colori Contesto Bootstrap (per coerenza) */
+    --bs-success: #28a745;
+    --bs-primary: #0d6efd;
+    --bs-warning: #ffc107;
+    --bs-info: #0dcaf0;
+    --bs-danger: #dc3545;
+    --bs-secondary: #6c757d;
+    --bs-white-rgb: 255, 255, 255; /* RGB per opacità */
+
+    /* Tipografia */
+    --font-family-base: 'Poppins', sans-serif;
+    --text-color-dark: #212529;
+    --text-color-muted: #6c757d;
+
+    /* Bordi e Ombre */
+    --border-radius-base: 0.75rem; /* Per card e bottoni */
+    --box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --box-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --box-shadow-lg: 0 0.8rem 2rem rgba(0, 0, 0, 0.1);
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--brand-light);
+    color: var(--text-color-dark);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-wrapper {
+    flex: 1; /* Permette al main-wrapper di occupare lo spazio disponibile per sticky footer */
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1; /* Permette al main content di occupare lo spazio disponibile */
+    padding-top: 80px; /* Spazio per la navbar fixed */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: var(--text-color-dark);
+}
+
+p {
+    line-height: 1.6;
+}
+
+a {
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+a:hover {
+    color: var(--brand-primary-dark);
+    text-decoration: underline;
+}
+
+.text-muted {
+    color: var(--text-color-muted) !important;
+}
+
+/* --- 2. NAVBAR E HEADER --- */
+
+.bg-dark-custom {
+    background-color: var(--brand-dark) !important;
+    box-shadow: var(--box-shadow-md);
+}
+
+.navbar-logo {
+    height: 35px; /* Dimensione del logo */
+    width: auto;
+}
+
+.profile-image-navbar {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--brand-primary);
+    box-shadow: var(--box-shadow-sm);
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-weight: 500;
+    margin: 0 0.4rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--border-radius-base); /* Bordi arrotondati */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white !important;
+}
+
+.navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white !important;
+}
+
+.notifications-badge {
+    font-size: 0.7em;
+    padding: 0.3em 0.6em;
+    top: -0.5em !important;
+    right: -0.5em !important;
+}
+
+.navbar-nav .dropdown-menu {
+    background-color: var(--brand-dark); /* Sfondo scuro */
+    border: none;
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--box-shadow-md);
+}
+.navbar-nav .dropdown-item {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+.navbar-nav .dropdown-item:hover {
+    background-color: var(--brand-primary);
+    color: white;
+}
+
+/* Navbar Login/Register Buttons */
+.navbar-nav .btn {
+    margin: 0 0.5rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: var(--border-radius-base);
+    font-weight: 600;
+}
+.navbar-nav .btn-outline-success {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    background-color: transparent;
+}
+.navbar-nav .btn-outline-success:hover {
+    background-color: var(--brand-primary);
+    color: white;
+}
+.navbar-nav .btn-success {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}
+.navbar-nav .btn-success:hover {
+    background-color: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+}
+
+/* --- 3. HERO SECTION --- */
+.hero-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('../img/hero-background.jpg') no-repeat center center/cover; /* Assicurati che l'immagine esista */
+    min-height: 65vh; /* Altezza maggiore */
+    padding-top: 100px; /* Per compensare la navbar fixed */
+    padding-bottom: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-section h1 {
+    font-size: 4.5rem;
+    color: white;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.hero-section .lead {
+    font-size: 1.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    max-width: 800px;
+    margin: 0 auto 2.5rem;
+}
+
+.btn-success-custom { /* Pulsante custom per CTA nell'Hero */
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+    font-weight: 600;
+    padding: 0.9rem 2.5rem;
+    border-radius: 50px; /* Pill-shaped button */
+    transition: all 0.3s ease;
+    box-shadow: var(--box-shadow-md);
+}
+.btn-success-custom:hover {
+    background-color: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-outline-light {
+    font-weight: 600;
+    padding: 0.9rem 2.5rem;
+    border-radius: 50px; /* Pill-shaped button */
+    transition: all 0.3s ease;
+    box-shadow: var(--box-shadow-md);
+}
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* --- 4. SEZIONI CONTENUTO (generali) --- */
+.container.mt-5 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.section-title {
+    color: var(--text-color-dark);
+    position: relative;
+    padding-bottom: 0.75rem;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+}
+.section-title::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    height: 4px;
+    width: 80px;
+    background-color: var(--brand-primary);
+    border-radius: 2px;
+}
+
+.card {
+    border-radius: var(--border-radius-base);
+    border: 1px solid rgba(0, 0, 0, 0.08); /* Bordo sottile */
+    box-shadow: var(--box-shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-top-left-radius: var(--border-radius-base) !important;
+    border-top-right-radius: var(--border-radius-base) !important;
+    padding: 1.25rem 1.5rem;
+    background-color: var(--brand-dark); /* Default scuro, poi sovrascritto */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.card-header h2, .card-header h3, .card-header h4, .card-header h5 {
+    color: white;
+    margin-bottom: 0;
+}
+.card-header .btn-sm {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-weight: 500;
+}
+.card-header .btn-sm:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Colori specifici per le card header (custom overrides) */
+.card .bg-primary-custom { background-color: var(--brand-secondary) !important; }
+.card .bg-success-custom { background-color: var(--brand-primary) !important; }
+.card .bg-warning-custom { background-color: var(--bs-warning) !important; color: var(--text-color-dark) !important;} /* Warning ha testo scuro */
+.card .bg-info-custom   { background-color: var(--bs-info) !important; }
+.card .bg-secondary-custom { background-color: var(--bs-secondary) !important; }
+
+
+/* Search input with pills */
+.rounded-pill-custom {
+    border-radius: 50px !important;
+    background-color: white;
+    padding: 0.5rem 1rem;
+    box-shadow: var(--box-shadow-md);
+}
+.rounded-pill-left {
+    border-top-left-radius: 50px !important;
+    border-bottom-left-radius: 50px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right: none;
+    font-size: 1.1rem;
+    padding: 0.75rem 1.25rem;
+}
+.rounded-pill-right {
+    border-top-right-radius: 50px !important;
+    border-bottom-right-radius: 50px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+.btn-primary-custom {
+    background-color: var(--brand-secondary);
+    border-color: var(--brand-secondary);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+}
+.btn-primary-custom:hover {
+    background-color: var(--brand-secondary-dark);
+    border-color: var(--brand-secondary-dark);
+}
+.activity-type-filter {
+    margin-top: 1rem;
+}
+.activity-type-filter .btn {
+    border-radius: 50px;
+    margin: 0 0.25rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+    border-color: var(--bs-secondary);
+    color: var(--bs-secondary);
+}
+.activity-type-filter .btn.active {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+}
+.activity-type-filter .btn:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* --- 5. MAPPA E ELEMENTI CORRELATI --- */
+.map-card-custom {
+    box-shadow: var(--box-shadow-lg);
+}
+
+.map-container {
+    height: 550px; /* Altezza maggiore per la mappa */
+    width: 100%;
+    border-bottom-left-radius: var(--border-radius-base);
+    border-bottom-right-radius: var(--border-radius-base);
+    overflow: hidden; 
+}
+
+.map-overlay-instructions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border-bottom-left-radius: var(--border-radius-base);
+    border-bottom-right-radius: var(--border-radius-base);
+    font-size: 0.9em;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    z-index: 500; 
+}
+
+/* Modale per i dettagli del percorso su mobile */
+.route-details-modal .modal-content {
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--box-shadow-lg);
+}
+.route-details-modal .modal-header {
+    border-top-left-radius: var(--border-radius-base);
+    border-top-right-radius: var(--border-radius-base);
+}
+.route-details-modal .btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%); /* Rende la X bianca */
+}
+
+
+.text-success-custom { color: var(--brand-primary) !important; }
+.btn-outline-success-custom {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+.btn-outline-success-custom:hover {
+    background-color: var(--brand-primary);
+    color: white;
+}
+
+/* Leaflet Overrides for better integration */
+.leaflet-container {
+    border-radius: var(--border-radius-base); 
+}
+.leaflet-control-layers { 
+    background: white; 
+    padding: 10px; 
+    border-radius: var(--border-radius-base); 
+    box-shadow: var(--box-shadow-md); 
+    z-index: 1000; 
+    font-family: var(--font-family-base);
+}
+.leaflet-control-layers-selector { vertical-align: middle; margin-right: 5px; }
+.leaflet-control-layers label { 
+    display: flex; 
+    align-items: center; 
+    margin-bottom: 5px; 
+    font-size: 0.9em; 
+    cursor: pointer; 
+    color: var(--text-color-dark);
+}
+.leaflet-control-layers-separator { margin: 5px 0; border-top: 1px solid #eee; }
+
+/* King/Queen Highlight */
+.king-queen-highlight {
+    background-color: var(--bs-warning); /* Colore giallo */
+    color: var(--text-color-dark);
+    border-radius: var(--border-radius-base);
+    padding: 1rem;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: var(--box-shadow-sm);
+    border: 1px solid var(--bs-warning);
+}
+.king-queen-highlight h5 { color: var(--text-color-dark); }
+.king-queen-highlight .user-link { color: var(--text-color-dark) !important; font-weight: bolder; text-decoration: underline; }
+.king-queen-highlight .trophy-icon { font-size: 1.5em; color: #daa520; }
+.list-group-small .list-group-item { padding: .5rem 1rem; font-size: .875em; }
+.list-group-small .profile-image-small { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; margin-right: 0.5em; border: 1px solid var(--brand-primary);}
+.leaderboard-entry-current-user { 
+    background-color: #e6ffed; /* Light green for current user */
+    border-color: var(--brand-primary); 
+    font-weight: bold; 
+}
+.leaderboard-entry-current-user .text-muted {
+    color: var(--brand-primary-dark) !important;
+}
+.leaderboard-entry-current-user .user-link {
+    color: var(--brand-primary-dark) !important;
+}
+
+
+/* --- 6. LISTE DATI E CARD (Classifiche, Sfide, Attività, Percorsi) --- */
+.leaderboard-card .list-group-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+.leaderboard-card .list-group-item:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.leaderboard-card .list-group-item:last-child {
+    border-bottom-left-radius: var(--border-radius-base);
+    border-bottom-right-radius: var(--border-radius-base);
+}
+.leaderboard-card .profile-image-small {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 0.75em;
+    border: 1px solid var(--brand-primary);
+}
+.leaderboard-card .position {
+    font-weight: bold;
+    color: var(--brand-secondary);
+    margin-right: 1em;
+}
+.leaderboard-card .username {
+    flex-grow: 1;
+    font-weight: 500;
+}
+.leaderboard-card .value {
+    font-weight: bold;
+    color: var(--brand-primary);
+}
+
+/* Classic Routes Cards */
+.classic-route-card {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--card-border);
+}
+.classic-route-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+.classic-route-card .card-img-top {
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 3px solid var(--bs-danger); /* Colore per evidenziare */
+}
+.classic-route-card .card-body {
+    padding: 1.25rem;
+}
+.classic-route-card .card-title {
+    font-size: 1.25rem;
+    color: var(--text-color-dark);
+}
+.classic-route-card .card-text {
+    font-size: 0.9rem;
+    color: var(--text-color-muted);
+}
+.classic-route-card .card-footer {
+    background-color: var(--brand-light);
+    border-top: 1px solid rgba(0,0,0,0.05);
+    font-size: 0.85rem;
+    color: var(--text-color-muted);
+}
+.classic-routes-section .card-header {
+    background-color: var(--bs-secondary) !important;
+}
+
+
+/* Challenge and Activity List Items */
+.list-group-item {
+    border-color: rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s ease;
+}
+.list-group-item:hover {
+    background-color: rgba(0,0,0,0.03);
+}
+
+/* Stili specifici per pulsante "like" */
+.like-button {
+    background-color: #e9ecef;
+    color: var(--text-color-dark);
+    border: 1px solid var(--card-border);
+    padding: 5px 10px;
+    border-radius: var(--border-radius-base);
+}
+.like-button.liked {
+    background-color: var(--bs-danger);
+    color: white;
+    border-color: var(--bs-danger);
+}
+.like-button.liked:hover {
+    background-color: #c82333;
+}
+
+
+/* ===== STILI PERCORSI CLASSICI & LEADERBOARD DETTAGLI ===== */
+.bg-gradient-classic {
+    background: linear-gradient(135deg, var(--bs-danger) 0%, #fd7e14 100%);
+}
+
+.record-badge {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid var(--bs-warning);
+    border-radius: var(--border-radius-base);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.route-info div {
+    margin-bottom: 0.25rem;
+}
+
+/* Badge per difficoltà */
+.badge.bg-warning-route { /* Classe specifica per badge difficoltà route */
+    background: linear-gradient(45deg, var(--bs-warning), #ff8c00) !important;
+    color: white;
+}
+.badge.bg-success-route {
+    background: linear-gradient(45deg, var(--bs-success), var(--brand-primary-dark)) !important;
+    color: white;
+}
+.badge.bg-danger-route {
+    background: linear-gradient(45deg, var(--bs-danger), #dc143c) !important;
+    color: white;
+}
+
+
+/* Stili per la sezione Top 5 Tempi compatta */
+.top-times-compact {
+    background: var(--brand-light);
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid var(--card-border);
+}
+
+.top-times-compact h6 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-color-dark);
+}
+
+.top-times-list {
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 5px; /* Spazio per scrollbar */
+}
+
+.top-times-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.top-times-list::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary);
+    border-radius: 2px;
+}
+.top-times-list li {
+    font-size: 0.85rem;
+    padding: 0.2rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.top-times-list li span {
+    font-weight: 500;
+}
+.top-times-list li .time {
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+/* Assicurati che il testo sia compatto */
+.route-card .card-body {
+    padding: 1rem;
+}
+
+.route-card .card-text {
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.route-details small {
+    line-height: 1.2;
+}
+
+/* Stili per i pulsanti azione */
+.action-buttons .btn {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    white-space: nowrap;
+}
+
+/* Layout a due colonne per schermi piccoli */
+@media (max-width: 576px) {
+    .action-buttons {
+        flex-direction: row !important;
+        gap: 0.5rem;
+    }
+    .action-buttons .btn {
+        flex: 1;
+    }
+}
+
+
+/* ===== STILI PER LE SCOMMESSE (BETTING) ===== */
+.bet-card {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--border-radius-base);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--box-shadow-sm);
+}
+
+.bet-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-md);
+}
+
+.bet-won { border-left: 4px solid var(--bs-success); }
+.bet-lost { border-left: 4px solid var(--bs-danger); }
+.bet-pending { border-left: 4px solid var(--bs-warning); }
+
+.bet-paid {
+    opacity: 0.7;
+    background-color: rgba(var(--bs-white-rgb), 1); 
+}
+
+.bet-badge {
+    font-size: 1.1em;
+    padding: 0.5rem 1rem;
+    border-radius: 50px; 
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.bet-beer { background: linear-gradient(45deg, #FFD700, #FFA500); color: var(--text-color-dark); border: 2px solid #FFA500; }
+.bet-coffee { background: linear-gradient(45deg, #8B4513, #A0522D); color: white; border: 2px solid #A0522D; }
+.bet-dinner { background: linear-gradient(45deg, var(--bs-danger), #E83E8C); color: white; border: 2px solid #E83E8C; }
+.bet-custom { background: linear-gradient(45deg, var(--bs-info), #20c997); color: white; border: 2px solid #20c997; }
+
+.bet-icon {
+    font-size: 1.5em;
+    margin-right: 8px;
+}
+
+.status-badge {
+    font-size: 0.9em;
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-weight: 600;
+}
+
+/* --- 7. ANIMAZIONI --- */
+
+/* Animazione di entrata per le card */
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Animazione pulse per elementi importanti */
+@keyframes gentlePulse {
+    0%, 100% { transform: scale(1); box-shadow: var(--box-shadow-sm); }
+    50% { transform: scale(1.02); box-shadow: var(--box-shadow-md); }
+}
+
+/* Animazione per vittorie */
+@keyframes victoryGlow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--bs-success-rgb), 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--bs-success-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--bs-success-rgb), 0); }
+}
+
+/* Animazione per sconfitte */
+@keyframes defeatShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Animazione per nuovi elementi */
+@keyframes newItemHighlight {
+    0% { background-color: rgba(var(--bs-warning-rgb), 0.3); }
+    50% { background-color: rgba(var(--bs-warning-rgb), 0.1); }
+    100% { background-color: transparent; }
+}
+
+/* APPLICAZIONE DELLE ANIMAZIONI */
+.card, .list-group-item { /* Applica animazione di entrata a card e list item */
+    animation: slideInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+/* Ritardo progressivo per le card */
+.card:nth-child(1) { animation-delay: 0.05s; }
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.15s; }
+.card:nth-child(4) { animation-delay: 0.2s; }
+.card:nth-child(5) { animation-delay: 0.25s; }
+
+/* Hover effects avanzati */
+.bet-card:hover {
+    animation: gentlePulse 2s infinite; 
+    transform: translateY(-5px) scale(1.01);
+}
+
+.bet-won:hover { animation: gentlePulse 2s infinite, victoryGlow 2s infinite; }
+.bet-lost:hover { animation: gentlePulse 2s infinite, defeatShake 0.6s ease; } 
+
+/* Animazione per scommesse nuove (prime 24h) */
+.bet-new { animation: newItemHighlight 3s ease-in-out forwards; } 
+.bet-new::before { 
+    content: 'NUOVO';
+    position: absolute;
+    top: 10px;
+    right: -35px;
+    background: linear-gradient(45deg, #ff6b6b, var(--bs-warning));
+    color: white;
+    padding: 5px 35px;
+    font-size: 0.7em;
+    font-weight: bold;
+    transform: rotate(45deg);
+    box-shadow: var(--box-shadow-md);
+    z-index: 10;
+}
+
+/* Animazione per pagamento completato */
+.bet-paid { position: relative; transition: all 0.5s ease; }
+.bet-paid::after { 
+    content: '✅ PAGATA';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--bs-success);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.7em;
+    font-weight: bold;
+    animation: gentlePulse 3s infinite;
+    z-index: 5;
+}
+
+/* Animazione per badge scommesse */
+.bet-badge {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.bet-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.bet-badge:hover::before {
+    left: 100%;
+}
+
+.bet-badge:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* Animazioni per i pulsanti di azione */
+.btn-bet-action {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-bet-action::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn-bet-action:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.btn-bet-action:active { transform: scale(0.95); }
+
+/* Animazione per le statistiche */
+.stats-card {
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.6s;
+}
+
+.stats-card:hover::before {
+    left: 100%;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* Animazione per notifiche */
+.notification-item {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.notification-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, rgba(var(--bs-info-rgb),0.1), transparent);
+    transition: width 0.3s ease;
+}
+
+.notification-item:hover::before { width: 100%; }
+
+/* Loading animation per azioni */
+@keyframes loadingSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(var(--bs-white-rgb),0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: loadingSpin 1s linear infinite;
+}
+
+/* Animazione per transizioni di stato */
+.status-transition { transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.status-transition.pending-to-paid { animation: victoryGlow 1s ease-out; }
+
+
+/* --- 8. FOOTER --- */
+.footer {
+    background-color: var(--brand-dark) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    flex-shrink: 0; /* Per sticky footer */
+}
+
+.footer h6 {
+    color: white;
+    margin-bottom: 0.8rem;
+}
+
+.footer a {
+    color: rgba(255, 255, 255, 0.6);
+}
+.footer a:hover {
+    color: white;
+}
+
+.social-icons a {
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    transition: color 0.3s ease;
+}
+.social-icons a:hover {
+    color: var(--brand-primary) !important;
+}
+
+
+/* --- 9. MEDIA QUERIES (Responsiveness) --- */
+@media (max-width: 991.98px) { /* Schermi medi e piccoli */
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    .navbar-nav .nav-item {
+        margin: 0.25rem 0;
+    }
+    .navbar-nav .nav-link {
+        padding: 0.5rem 1rem;
+    }
+    .hero-section {
+        min-height: 50vh;
+        padding-top: 60px;
+    }
+    .hero-section h1 {
+        font-size: 2.8rem;
+    }
+    .hero-section .lead {
+        font-size: 1.2rem;
+    }
+    .map-container {
+        height: 400px;
+    }
+    .section-title {
+        font-size: 2rem;
+    }
+
+    /* Mappa e overlay su mobile */
+    .map-card-custom {
+        margin-bottom: 2rem !important; /* Più spazio sotto la mappa su mobile */
+    }
+    .map-overlay-instructions {
+        position: static; /* Non più in overlay */
+        border-radius: var(--border-radius-base);
+        margin: 0 1rem 1rem 1rem; /* Margini per separarlo dalla mappa */
+        box-shadow: var(--box-shadow-sm);
+    }
+    .route-details-overlay { /* Questa classe non dovrebbe più essere usata per la modale */
+        position: static; 
+        max-width: 100%;
+        margin: 15px auto;
+        box-shadow: none;
+    }
+    .route-details-modal .modal-dialog.modal-lg {
+        margin: 0.5rem; /* Margine minore per la modale */
+    }
+
+
+    .activity-type-filter .btn {
+        margin-bottom: 0.5rem;
+    }
+    .section-title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+    .tab-content .tab-pane.fade.d-lg-block {
+        display: none !important; /* Nasconde le tab content su mobile */
+    }
+    .tab-content .tab-pane.fade.show.active.d-lg-block {
+        display: block !important; /* Mostra la tab attiva su mobile */
+    }
+    .nav-pills .nav-link {
+        font-size: 0.9rem;
+        padding: 0.8rem 0.5rem;
+    }
+
+}
+
+@media (max-width: 767.98px) { /* Schermi piccoli */
+    .hero-section {
+        min-height: 40vh;
+        padding-top: 60px;
+    }
+    .hero-section h1 {
+        font-size: 2.2rem;
+    }
+    .hero-section .lead {
+        font-size: 1rem;
+    }
+    .btn-lg {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    .map-container {
+        height: 300px;
+    }
+    .section-title {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    .footer .col-md-4 {
+        margin-bottom: 1rem;
+    }
+    .profile-image-navbar {
+        border: none; 
+    }
+    .rounded-pill-left, .rounded-pill-right {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .btn-primary-custom {
+        padding: 0.5rem 1rem;
+    }
+    .activity-type-filter {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+    .activity-type-filter .btn {
+        flex-grow: 1;
+        margin: 0.2rem;
+    }
+    .nav-pills {
+        font-size: 0.85rem;
+    }
+}

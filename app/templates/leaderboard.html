@@ -1,0 +1,49 @@
+{% extends "index.html" %}
+
+{% block title %}Classifica Sfida: {{ challenge.name }}{% endblock %}
+
+{% block content %}
+    <!-- MODIFICATO: Aggiunto 'main.' -->
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+    <h2 class="mb-3">Classifica per la Sfida: "{{ challenge.name }}"</h2>
+    <p>Percorso: <strong>{{ challenge.route_info.name }}</strong> (Distanza: {{ "%.2f"|format(challenge.route_info.distance_km) }} km)</p>
+    <p>Periodo: Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
+
+    {% if leaderboard_entries %}
+        <div class="table-responsive"> {# Rende la tabella scrollabile su schermi piccoli #}
+            <table class="table table-striped table-hover mt-4">
+                <thead class="table-success"> {# Intestazione con colore Bootstrap #}
+                    <tr>
+                        <th scope="col">Pos.</th>
+                        <th scope="col">Atleta</th>
+                        <th scope="col">Tempo</th>
+                        <th scope="col">Vel. Media (km/h)</th>
+                        <th scope="col">Distanza (km)</th>
+                        <th scope="col">Data Attività</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity, user in leaderboard_entries %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <!-- MODIFICATO: Aggiunto 'main.' -->
+                            <td><a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="user-link">{{ user.username }}</a></td>
+                            <td>
+                                {% set hours = activity.duration // 3600 %}
+                                {% set minutes = (activity.duration % 3600) // 60 %}
+                                {% set seconds = activity.duration % 60 %}
+                                {{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}
+                            </td>
+                            <td>{{ "%.2f"|format(activity.avg_speed) }}</td>
+                            <td>{{ "%.2f"|format(activity.distance) }}</td>
+                            <td>{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center text-muted mt-4">Nessuna attività registrata per questa sfida. Sii il primo a partecipare!</p>
+    {% endif %}
+
+{% endblock %}

@@ -1,0 +1,248 @@
+{% extends "index.html" %}
+
+{% block title %}Dettaglio Percorso: {{ route.name }}{% endblock %}
+
+{% block content %}
+    <!-- MODIFICATO -->
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h2 class="mb-0">{{ route.name }}</h2>
+        </div>
+        <div class="card-body">
+            <p class="card-text"><strong>Descrizione:</strong> {{ route.description if route.description else "Nessuna descrizione." }}</p>
+            <p class="card-text"><strong>Distanza:</strong> {% if route.distance_km %}{{ "%.2f"|format(route.distance_km) }} km{% else %}N/D{% endif %}</p>
+            <!-- MODIFICATO -->
+            <p class="card-text"><strong>Creato da:</strong> <a href="{{ url_for('main.user_profile', user_id=route.creator.id) }}" class="user-link">{{ route.creator.username }}</a> il {{ route.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+
+            <div class="card bg-warning text-dark mb-4 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title text-center mb-3"><i class="bi bi-trophy-fill me-2"></i> King/Queen of the Route!</h4>
+                    {% if route_record %}
+                        <div class="d-flex align-items-center justify-content-center flex-column flex-sm-row">
+                            <img src="{{ url_for('static', filename='profile_pics/' + route_record.record_holder.profile_image) }}" class="rounded-circle me-3 mb-2 mb-sm-0 border border-3 border-dark" alt="Avatar" style="width: 80px; height: 80px; object-fit: cover;">
+                            <div>
+                                <!-- MODIFICATO -->
+                                <p class="mb-1 lead">Detenuto da: <strong><a href="{{ url_for('main.user_profile', user_id=route_record.record_holder.id) }}" class="user-link text-dark">{{ route_record.record_holder.username }}</a></strong></p>
+                                <p class="mb-1">Tempo Record:
+                                    {% set hours = route_record.duration // 3600 %}
+                                    {% set minutes = (route_record.duration % 3600) // 60 %}
+                                    {% set seconds = route_record.duration % 60 %}
+                                    <strong class="fs-4">{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</strong>
+                                </p>
+                                <!-- MODIFICATO -->
+                                <small class="text-muted">Registrato il: {{ route_record.created_at.strftime('%d/%m/%Y %H:%M') }} con attività ID: <a href="{{ url_for('main.activity_detail', activity_id=route_record.activity.id) }}" class="text-dark">#{{ route_record.activity.id }}</a></small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-center mb-0">Nessun King/Queen of the Route ancora! Sii il primo a stabilire un record!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Top 5 Tempi su Questo Percorso</h4>
+                </div>
+                <div class="card-body">
+                    {% if top_5_activities_for_route %}
+                        <ul class="list-group list-group-flush">
+                            {% for activity in top_5_activities_for_route %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center {% if current_user.is_authenticated and current_user.id == activity.user_id %}leaderboard-entry-current-user{% endif %}">
+                                    <span class="badge bg-secondary rounded-pill me-2">{{ loop.index }}</span>
+                                    <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
+                                    <!-- MODIFICATO -->
+                                    <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="user-link text-primary flex-grow-1">{{ activity.user_activity.username }}</a>
+                                    <span class="badge bg-info rounded-pill">
+                                        {% set hours = activity.duration // 3600 %}
+                                        {% set minutes = (activity.duration % 3600) // 60 %}
+                                        {% set seconds = activity.duration % 60 %}
+                                        {{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}
+                                    </span>
+                                    <!-- MODIFICATO -->
+                                    <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-link p-0 ms-2 text-primary" style="font-size:0.8em; vertical-align: baseline;">(Dettagli)</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center text-muted">Nessuna attività registrata su questo percorso. Sii il primo a salire in classifica!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h3 class="mt-4">Mappa del Percorso</h3>
+            <div id="routeDetailMap" style="height: 500px; width: 100%; border: 1px solid #ddd; border-radius: 5px;"></div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
+                <!-- MODIFICATO -->
+                <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-primary">Registra Attività per questo Percorso</a>
+            </div>
+        </div>
+    </div>
+
+    {% if challenges_for_route %}
+        <div class="card my-4 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0">Sfide Attive su Questo Percorso</h3>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for challenge in challenges_for_route %}
+                        <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-2">
+                            <div class="route-info flex-grow-1 mb-2 mb-md-0">
+                                <h5>{{ challenge.name }}</h5>
+                                <p class="mb-1">Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
+                                <!-- MODIFICATO -->
+                                <small class="text-muted">Creata da: <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a></small>
+                            </div>
+                            <div class="route-actions text-end ms-md-auto">
+                                {% if current_user.is_authenticated and challenge.end_date >= now %}
+                                    <!-- MODIFICATO -->
+                                    <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm me-2">Partecipa</a>
+                                {% elif challenge.end_date < now %}
+                                    <span class="badge bg-secondary me-2">Terminata</span>
+                                {% endif %}
+                                <!-- MODIFICATO -->
+                                <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-success btn-sm">Classifica</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="text-center my-4 p-3 bg-light rounded">
+        <h3>Ti senti competitivo?</h3>
+        <p class="lead">Trasforma questo percorso nel tuo campo di battaglia personale!</p>
+        <!-- MODIFICATO -->
+        <a href="{{ url_for('main.create_challenge', route_id=route.id) }}" class="btn btn-warning btn-lg shadow">
+            <i class="bi bi-trophy-fill me-2"></i>Lancia una Sfida su questo Percorso!
+        </a>
+    </div>
+
+    <div class="card my-4 shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h3 class="mb-0">Commenti</h3>
+        </div>
+        <div class="card-body">
+            {% if current_user.is_authenticated %}
+                <form method="POST" class="mb-4 needs-validation" novalidate id="commentForm">
+                    <div class="mb-3">
+                        <label for="comment_content" class="form-label">Aggiungi un commento:</label>
+                        <textarea id="comment_content" name="comment_content" rows="3" class="form-control" required></textarea>
+                        <div class="invalid-feedback">
+                            Il commento non può essere vuoto.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Invia Commento</button>
+                </form>
+            {% else %}
+                <!-- MODIFICATO -->
+                <p class="text-center text-muted">Accedi per aggiungere un commento. <a href="{{ url_for('auth.login') }}">Login</a></p>
+            {% endif %}
+
+            {% if comments_with_like_info %}
+                <div class="list-group">
+                    {% for item in comments_with_like_info %}
+                        {% set comment = item.comment %}
+                        {% set author_username = item.author_username %}
+                        {% set author_id = item.author_id %}
+                        {% set like_count = item.like_count %}
+                        {% set has_liked = item.has_liked %}
+                        <div class="list-group-item mb-2">
+                            <p class="mb-1">
+                                <img src="{{ url_for('static', filename='profile_pics/' + comment.author.profile_image) }}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
+                                <!-- MODIFICATO -->
+                                <strong><a href="{{ url_for('main.user_profile', user_id=author_id) }}" class="user-link text-primary">{{ author_username }}</a></strong>:
+                            </p>
+                            <p class="mb-1">{{ comment.content }}</p>
+                            <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                            <div class="mt-2">
+                                {% if current_user.is_authenticated %}
+                                    <button class="btn btn-sm {% if has_liked %}btn-primary liked{% else %}btn-outline-primary{% endif %} like-button" data-comment-id="{{ comment.id }}">
+                                        {% if has_liked %}Non Mi Piace più{% else %}Mi Piace{% endif %}
+                                    </button>
+                                {% endif %}
+                                <span id="likes-count-{{ comment.id }}" class="ms-2 badge bg-light text-dark">{{ like_count }} Mi Piace</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted mt-3">Ancora nessun commento. Sii il primo a lasciare un feedback!</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        var routeDetailMap = L.map('routeDetailMap').setView([45.4642, 9.1900], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(routeDetailMap);
+
+        var routeGeoJSONData = {{ route_geojson_data | safe }};
+        if (routeGeoJSONData && routeGeoJSONData.geometry && routeGeoJSONData.geometry.coordinates.length > 0) {
+            var routeLayer = L.geoJSON(routeGeoJSONData, {
+                style: {
+                    color: '#28a745',
+                    weight: 5,
+                    opacity: 0.9
+                }
+            }).addTo(routeDetailMap);
+            routeDetailMap.fitBounds(routeLayer.getBounds());
+        }
+
+        document.querySelectorAll('.like-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.dataset.commentId;
+                const currentButton = this;
+                
+                // MODIFICATO: Usiamo url_for per generare l'URL corretto per la chiamata API
+                const url = `{{ url_for('main.toggle_like', comment_id=0) }}`.replace('0', commentId);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById(`likes-count-${commentId}`).textContent = `${data.new_like_count} Mi Piace`;
+                        
+                        if (data.action === 'liked') {
+                            currentButton.classList.remove('btn-outline-primary');
+                            currentButton.classList.add('btn-primary', 'liked');
+                            currentButton.textContent = 'Non Mi Piace più';
+                        } else {
+                            currentButton.classList.remove('btn-primary', 'liked');
+                            currentButton.classList.add('btn-outline-primary');
+                            currentButton.textContent = 'Mi Piace';
+                        }
+                    } else {
+                        alert('Errore: ' + (data.message || 'Riprova più tardi'));
+                    }
+                })
+                .catch(error => console.error('Errore nella richiesta AJAX:', error));
+            });
+        });
+
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
+{% endblock %}

@@ -1,0 +1,135 @@
+<!-- MACRO PER SCHEDA SCOMMESSA -->
+{% macro bet_card(bet, current_user, show_actions=true) %}
+<div class="col-lg-6 mb-3 bet-card-container">
+    <div class="card h-100 bet-card 
+                {{ 'bet-won' if bet.winner_id == current_user.id else 'bet-lost' }}
+                {{ 'bet-paid' if bet.status == 'paid' else '' }}
+                {{ 'bet-new' if bet.created_at > today_minus_1day else '' }}
+                status-transition"
+         data-bet-id="{{ bet.id }}"
+         data-bet-status="{{ bet.status }}">
+        
+        <!-- HEADER CON STATO -->
+        <div class="card-header d-flex justify-content-between align-items-center 
+                    {{ 'bg-success' if bet.winner_id == current_user.id else 'bg-danger' }} text-white">
+            <div>
+                <small class="text-light">
+                    {% if bet.winner_id == current_user.id %}
+                    🎉 HAI VINTO
+                    {% else %}
+                    💸 HAI PERSO
+                    {% endif %}
+                </small>
+            </div>
+            <div>
+                <span class="badge bg-{{ 'light' if bet.status == 'pending' else 'success' }} text-dark">
+                    {{ '⏳ In attesa' if bet.status == 'pending' else '✅ Pagata' }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <!-- BADGE TIPO SCOMMESSA -->
+            <div class="text-center mb-3">
+                {% if bet.bet_type == 'beer' %}
+                <span class="badge bet-badge bet-beer fs-6">
+                    🍺 {{ bet.bet_value }}
+                </span>
+                {% elif bet.bet_type == 'coffee' %}
+                <span class="badge bet-badge bet-coffee fs-6">
+                    ☕ {{ bet.bet_value }}
+                </span>
+                {% elif bet.bet_type == 'dinner' %}
+                <span class="badge bet-badge bet-dinner fs-6">
+                    🍝 {{ bet.bet_value }}
+                </span>
+                {% else %}
+                <span class="badge bet-badge bet-custom fs-6">
+                    🎯 {{ bet.bet_value }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- INFO UTENTI -->
+            <div class="d-flex align-items-center justify-content-around mb-3">
+                <!-- VINCITORE -->
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='profile_pics/' + bet.winner.profile_image) }}" 
+                         class="rounded-circle border {{ 'border-success' if bet.winner_id == current_user.id else 'border-secondary' }}" 
+                         width="50" height="50"
+                         onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
+                    <div class="mt-1">
+                        <small class="fw-bold {{ 'text-success' if bet.winner_id == current_user.id }}">{{ bet.winner.username }}</small>
+                        <br>
+                        <small class="text-muted">Vincitore</small>
+                    </div>
+                </div>
+                
+                <div class="text-primary fs-4">VS</div>
+                
+                <!-- PERDENTE -->
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='profile_pics/' + bet.loser.profile_image) }}" 
+                         class="rounded-circle border {{ 'border-danger' if bet.loser_id == current_user.id else 'border-secondary' }}" 
+                         width="50" height="50"
+                         onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
+                    <div class="mt-1">
+                        <small class="fw-bold {{ 'text-danger' if bet.loser_id == current_user.id }}">{{ bet.loser.username }}</small>
+                        <br>
+                        <small class="text-muted">Perdente</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- METADATI -->
+            <div class="text-center">
+                <small class="text-muted">
+                    📅 {{ bet.created_at.strftime('%d/%m/%Y') }}
+                    {% if bet.paid_at %}
+                    <br>✅ Pagata il: {{ bet.paid_at.strftime('%d/%m/%Y') }}
+                    {% endif %}
+                </small>
+            </div>
+            
+            <!-- AZIONI -->
+            {% if show_actions %}
+            <div class="text-center mt-3">
+                <a href="{{ url_for('main.bet_details', bet_id=bet.id) }}" 
+                   class="btn btn-outline-primary btn-sm">
+                    📋 Dettagli
+                </a>
+                
+                {% if bet.loser_id == current_user.id and bet.status == 'pending' %}
+                <form action="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm"
+                            onclick="return confirm('Confermi di aver pagato {{ bet.bet_value }} a {{ bet.winner.username }}?')">
+                        ✅ Pagata
+                    </button>
+                </form>
+                {% endif %}
+                
+                {% if bet.challenge_id %}
+                <a href="{{ url_for('main.challenge_detail', challenge_id=bet.challenge_id) }}" 
+                   class="btn btn-outline-info btn-sm">
+                    🎯 Sfida
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- MACRO PER STATS SCHEde -->
+{% macro stats_card(number, label, color='primary', icon='📊') %}
+<div class="col-md-3 mb-3">
+    <div class="card bg-{{ color }} text-white text-center h-100 stats-card">
+        <div class="card-body">
+            <div class="fs-2 mb-2 stats-icon">{{ icon }}</div>
+            <h3 class="mb-0 stats-number">{{ number }}</h3>
+            <small class="stats-label">{{ label }}</small>
+        </div>
+    </div>
+</div>
+{% endmacro %}

@@ -1,0 +1,22 @@
+{
+    "name": "StreetSport",
+    "short_name": "StreetSport",
+    "description": "La tua community sportiva locale",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#28a745",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/static/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

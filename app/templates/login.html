@@ -1,0 +1,37 @@
+{% extends "index.html" %}
+
+{% block title %}Login - StreetSport App{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center my-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h2 class="mb-0 text-center">Accedi</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Il tag <form> non ha un 'action', quindi invia alla stessa URL (corretto) -->
+                    <form method="POST" class="needs-validation" novalidate id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username:</label>
+                            <input type="text" id="username" name="username" class="form-control" required>
+                            <div class="invalid-feedback">
+                                Per favore, inserisci il tuo username.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password:</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                            <div class="invalid-feedback">
+                                Per favore, inserisci la tua password.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Login</button>
+                    </form>
+                    <!-- MODIFICATO: Aggiunto 'auth.' -->
+                    <p class="text-center mt-3">Non hai un account? <a href="{{ url_for('auth.register') }}">Registrati ora</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

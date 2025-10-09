@@ -1,0 +1,91 @@
+{% extends "index.html" %}
+
+{% block title %}Dettaglio Attività{% endblock %}
+
+{% block content %}
+    <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
+    <a href="{{ url_for('main.all_activities') }}" class="btn btn-secondary mb-3">&larr; Tutte le Attività</a>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Dettaglio Attività</h2>
+        </div>
+        <div class="card-body">
+            <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
+            <p class="card-text"><strong>Atleta:</strong> <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="user-link text-primary">{{ user.username }}</a></p>
+            <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
+            <p class="card-text"><strong>Percorso:</strong> <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="user-link text-success">{{ route.name }}</a></p>
+            {% if challenge %}
+                <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
+                <p class="card-text"><strong>Sfida:</strong> <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="user-link text-info">{{ challenge.name }}</a></p>
+            {% endif %}
+            <p class="card-text"><strong>Data Attività:</strong> {{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+            <p class="card-text"><strong>Distanza:</strong> {{ "%.2f"|format(activity.distance) }} km</p>
+            <p class="card-text"><strong>Tempo:</strong>
+                {% set hours = activity.duration // 3600 %}
+                {% set minutes = (activity.duration % 3600) // 60 %}
+                {% set seconds = activity.duration % 60 %}
+                <strong>{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</strong>
+            </p>
+            <p class="card-text"><strong>Velocità Media:</strong> {{ "%.2f"|format(activity.avg_speed) }} km/h</p>
+
+            <h3 class="mt-4">Tracciato GPS dell'Attività e Percorso di Riferimento</h3>
+            <div id="activityMap" style="height: 500px; width: 100%; border: 1px solid #ddd; border-radius: 5px;"></div>
+            <div class="map-legend mt-2">
+                <span class="d-inline-block" style="width: 15px; height: 10px; background-color: #007bff; margin-right: 5px;"></span>Tracciato Attività
+                <span class="d-inline-block" style="width: 15px; height: 10px; background-color: #FF7800; margin-left: 15px; margin-right: 5px;"></span>Percorso di Riferimento
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Importante per includere gli script del blocco padre #}
+    <script>
+        var activityMap = L.map('activityMap').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(activityMap);
+
+        var allLayers = L.featureGroup();
+
+        var activityGeoJSONData = {{ activity_geojson_data | safe }};
+        if (activityGeoJSONData && activityGeoJSONData.geometry && activityGeoJSONData.geometry.coordinates.length > 0) {
+            var activityLayer = L.geoJSON(activityGeoJSONData, {
+                style: {
+                    color: '#007bff',
+                    weight: 5,
+                    opacity: 0.9
+                }
+            });
+            allLayers.addLayer(activityLayer);
+        } else {
+            console.warn("Nessun dato GeoJSON valido per il tracciato dell'attività da visualizzare.");
+        }
+
+        var routeGeoJSONData = {{ route_geojson_data | safe }};
+        if (routeGeoJSONData && routeGeoJSONData.geometry && routeGeoJSONData.geometry.coordinates.length > 0) {
+            var routeLayer = L.geoJSON(routeGeoJSONData, {
+                style: {
+                    color: '#FF7800',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '5, 5'
+                }
+            });
+            allLayers.addLayer(routeLayer);
+        } else {
+            console.warn("Nessun dato GeoJSON valido per il percorso di riferimento da visualizzare.");
+        }
+        
+        if (allLayers.getLayers().length > 0) {
+            allLayers.addTo(activityMap);
+            activityMap.fitBounds(allLayers.getBounds());
+        } else {
+            activityMap.setView([45.4642, 9.1900], 13);
+            L.popup()
+                .setLatLng([45.4642, 9.1900])
+                .setContent("Nessun tracciato GPS o percorso di riferimento disponibile per la visualizzazione.")
+                .openOn(activityMap);
+        }
+    </script>
+{% endblock %}

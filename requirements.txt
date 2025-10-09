@@ -1,0 +1,4 @@
+# requirements.txt
+# ... (le tue dipendenze esistenti, es. Flask==X.X.X, etc.) ...
+gunicorn
+psycopg2-binary

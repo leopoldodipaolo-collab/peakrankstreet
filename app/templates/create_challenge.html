@@ -1,0 +1,241 @@
+{% extends "index.html" %}
+
+{% block title %}Crea Nuova Sfida{% endblock %}
+
+{% block content %}
+    <!-- MODIFICATO: Aggiunto 'main.' -->
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">🎯 Crea Nuova Sfida</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate id="createChallengeForm">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome della Sfida:</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                            <div class="invalid-feedback">
+                                Per favore, inserisci un nome per la sfida.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="route_id" class="form-label">Seleziona il Percorso:</label>
+                            <select id="route_id" name="route_id" class="form-select" required>
+                                <option value="">-- Seleziona un Percorso --</option>
+                                {% for route in routes %}
+                                    <option value="{{ route.id }}">{{ route.name }} (Distanza: {{ "%.2f"|format(route.distance_km) }} km)</option>
+                                {% else %}
+                                    <option value="" disabled>Nessun percorso disponibile. Crea prima un percorso!</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Per favore, seleziona un percorso.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Data di Inizio:</label>
+                                    <input type="date" id="start_date" name="start_date" class="form-control" required>
+                                    <div class="invalid-feedback" id="start-date-feedback">
+                                        Per favore, inserisci una data di inizio valida.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">Data di Fine:</label>
+                                    <input type="date" id="end_date" name="end_date" class="form-control" required>
+                                    <div class="invalid-feedback" id="end-date-feedback">
+                                        La data di fine deve essere successiva alla data di inizio.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- === NUOVA SEZIONE: TIPO SFIDA === -->
+                        <div class="mb-3">
+                            <label class="form-label">Tipo di Sfida:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="challenge_type" value="open" id="challengeOpen" checked>
+                                <label class="form-check-label" for="challengeOpen">
+                                    🔓 Sfida Aperta - Chiunque può partecipare
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="challenge_type" value="closed" id="challengeClosed">
+                                <label class="form-check-label" for="challengeClosed">
+                                    🔒 Sfida Chiusa - Solo utenti invitati
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- === NUOVA SEZIONE: SCOMMESSA === -->
+                        <div class="mb-3">
+                            <label for="betType" class="form-label">Cosa si scommette? 🎯</label>
+                            <select class="form-select" name="bet_type" id="betType">
+                                <option value="none">Nessuna scommessa</option>
+                                <option value="beer">🍺 Birra</option>
+                                <option value="dinner">🍝 Cena</option>
+                                <option value="coffee">☕ Caffè</option>
+                                <option value="custom">🎁 Personalizzato</option>
+                            </select>
+                            <div id="customBetContainer" class="mt-2" style="display: none;">
+                                <input type="text" class="form-control" name="custom_bet" placeholder="Es: Un gelato, Una pizza, etc.">
+                            </div>
+                        </div>
+
+                        <!-- === NUOVA SEZIONE: INVITI AMICI === -->
+                        <div class="mb-3" id="inviteSection">
+                            <label class="form-label">Invita Amici:</label>
+                            <div class="friends-list border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                <div id="friendsCheckboxes">
+                                    <p class="text-muted text-center">Caricamento amici...</p>
+                                </div>
+                            </div>
+                            <small class="text-muted" id="inviteHelp">
+                                Invita amici per renderla più divertente! (Opzionale per sfide aperte)
+                            </small>
+                        </div>
+
+                        <p class="text-muted"><small>In futuro, potrai definire qui altri parametri della sfida (es. velocità target, tempo massimo).</small></p>
+
+                        <button type="submit" class="btn btn-success w-100 mt-3">Crea Sfida</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestione cambio tipo sfida
+    document.querySelectorAll('input[name="challenge_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isClosed = this.value === 'closed';
+            const inviteHelp = document.getElementById('inviteHelp');
+            
+            if (isClosed) {
+                inviteHelp.innerHTML = '⚠️ <strong>Per le sfide chiuse, devi invitare almeno un amico</strong>';
+                inviteHelp.className = 'text-warning';
+            } else {
+                inviteHelp.innerHTML = 'Invita amici per renderla più divertente! (Opzionale)';
+                inviteHelp.className = 'text-muted';
+            }
+        });
+    });
+
+    // Gestione tipo scommessa
+    document.getElementById('betType').addEventListener('change', function() {
+        const customContainer = document.getElementById('customBetContainer');
+        customContainer.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+
+    // Caricamento lista amici
+    function loadFriendsList() {
+        fetch('/api/my-friends')
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.json();
+            })
+            .then(friends => {
+                const container = document.getElementById('friendsCheckboxes');
+                if (friends && friends.length > 0) {
+                    container.innerHTML = friends.map(friend => `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="invited_friends" value="${friend.id}" id="friend-${friend.id}">
+                            <label class="form-check-label d-flex align-items-center" for="friend-${friend.id}">
+                                <img src="/static/profile_pics/${friend.profile_image}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                <span>${friend.username}</span>
+                            </label>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">Non segui ancora nessun utente.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Errore caricamento amici:', error);
+                document.getElementById('friendsCheckboxes').innerHTML = '<p class="text-danger text-center">Errore nel caricamento degli amici</p>';
+            });
+    }
+
+    // Validazione form personalizzata
+    document.getElementById('createChallengeForm').addEventListener('submit', function(e) {
+        // Validazione date esistente
+        const startDate = new Date(document.getElementById('start_date').value);
+        const endDate = new Date(document.getElementById('end_date').value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate < today) {
+            e.preventDefault();
+            document.getElementById('start-date-feedback').textContent = 'La data di inizio non può essere nel passato.';
+            document.getElementById('start_date').classList.add('is-invalid');
+            return false;
+        }
+
+        if (endDate <= startDate) {
+            e.preventDefault();
+            document.getElementById('end-date-feedback').textContent = 'La data di fine deve essere successiva alla data di inizio.';
+            document.getElementById('end_date').classList.add('is-invalid');
+            return false;
+        }
+
+        // NUOVA VALIDAZIONE: Per sfide chiuse
+        const challengeType = document.querySelector('input[name="challenge_type"]:checked').value;
+        const isClosed = challengeType === 'closed';
+        const invitedFriends = document.querySelectorAll('input[name="invited_friends"]:checked').length;
+        
+        if (isClosed && invitedFriends === 0) {
+            e.preventDefault();
+            alert('⚠️ Per le sfide chiuse devi invitare almeno un amico!');
+            return false;
+        }
+
+        // Validazione Bootstrap
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        this.classList.add('was-validated');
+    });
+
+    // Validazione date in tempo reale
+    document.getElementById('start_date').addEventListener('change', validateDates);
+    document.getElementById('end_date').addEventListener('change', validateDates);
+
+    function validateDates() {
+        const startDate = new Date(document.getElementById('start_date').value);
+        const endDate = new Date(document.getElementById('end_date').value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate && startDate < today) {
+            document.getElementById('start-date-feedback').textContent = 'La data di inizio non può essere nel passato.';
+            document.getElementById('start_date').classList.add('is-invalid');
+        } else {
+            document.getElementById('start_date').classList.remove('is-invalid');
+        }
+
+        if (endDate && startDate && endDate <= startDate) {
+            document.getElementById('end-date-feedback').textContent = 'La data di fine deve essere successiva alla data di inizio.';
+            document.getElementById('end_date').classList.add('is-invalid');
+        } else {
+            document.getElementById('end_date').classList.remove('is-invalid');
+        }
+    }
+
+    // Carica la lista amici
+    loadFriendsList();
+});
+</script>
+{% endblock %}
