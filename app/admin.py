@@ -1,12 +1,10 @@
 from flask import redirect, url_for, request
-# from flask_admin import Admin, AdminIndexView, expose # Rimosso Admin, lo importiamo in __init__.py
-from flask_admin import AdminIndexView, expose # Solo AdminIndexView
+from flask_admin import Admin, AdminIndexView, expose # <--- RE-IMPORTA Admin CLASSE QUI!
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from wtforms import fields, validators
 import sys 
 import traceback 
-
 print("DEBUG: app/admin.py caricato.", file=sys.stderr)
 sys.stderr.flush()
 
@@ -165,7 +163,7 @@ class NotificationAdminView(SecureModelView):
 print("DEBUG: Flask-Admin istanza admin NON creata qui, la creerà create_app().", file=sys.stderr)
 sys.stderr.flush()
 
-def setup_admin_views(admin_instance, db): # <--- MODIFICATO: ora riceve 'admin_instance' come argomento
+def setup_admin_views(admin_instance, db): # <--- MODIFICATO: ora riceve `admin_instance` come argomento
     """Configura le viste dell'Admin Panel."""
     print("DEBUG: Inizio esecuzione setup_admin_views...", file=sys.stderr)
     sys.stderr.flush()
@@ -176,7 +174,7 @@ def setup_admin_views(admin_instance, db): # <--- MODIFICATO: ora riceve 'admin_
     sys.stderr.flush()
     
     try:
-        # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI ===
+        # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI (usa admin_instance) ===
         admin_instance.add_view(UserAdminView(User, db.session, name='Utenti', endpoint='admin_users'))
         admin_instance.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
         admin_instance.add_view(ActivityAdminView(Activity, db.session, name='Attività', endpoint='admin_activities'))
@@ -198,4 +196,4 @@ def setup_admin_views(admin_instance, db): # <--- MODIFICATO: ora riceve 'admin_
         import traceback
         traceback.print_exc(file=sys.stderr) 
         sys.stderr.flush()
-        raise # Rilancia l'eccezione
+        raise
