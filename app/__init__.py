@@ -108,17 +108,16 @@ def create_app():
     print("DEBUG: create_app: Inizio inizializzazione Admin Panel.", file=sys.stderr)
     sys.stderr.flush()
     try:
-        # Importa le classi Admin e le viste qui, all'interno della funzione
-        from .admin import Admin, SecureAdminIndexView, setup_admin_views, UserAdminView, RouteAdminView, ActivityAdminView, ChallengeAdminView, ChallengeInvitationAdminView, CommentAdminView, LikeAdminView, ActivityLikeAdminView, RouteRecordAdminView, BadgeAdminView, UserBadgeAdminView, NotificationAdminView
+        from flask_admin import Admin 
+        from .admin import SecureAdminIndexView, setup_admin_views 
         
-        # Crea l'istanza Admin e la inizializza direttamente con l'app
-        admin = Admin(
-            app, # <--- Passa l'istanza dell'app qui
+        admin_instance_local = Admin( 
+            app, 
             name='StreetSport Admin',
             template_mode='bootstrap4',
             index_view=SecureAdminIndexView(),
             endpoint='admin',
-            url='/admin' # <--- Specifica esplicitamente l'URL
+            url='/admin' 
         )
         print("DEBUG: create_app: Flask-Admin istanza creata e inizializzata con l'app.", file=sys.stderr)
         sys.stderr.flush()
@@ -126,10 +125,16 @@ def create_app():
         with app.app_context():
             print("DEBUG: create_app: Entrato nel contesto dell'app per setup_admin_views.", file=sys.stderr)
             sys.stderr.flush()
-            # Chiama la funzione per configurare le viste, passandole l'istanza admin e db
-            setup_admin_views(db) # setup_admin_views ora deve ricevere 'admin' come argomento
-            print("DEBUG: create_app: setup_admin_views completato.", file=sys.stderr)
-            sys.stderr.flush()
+            try: 
+                # CORREZIONE QUI: PASSA ANCHE 'admin_instance_local'
+                setup_admin_views(admin_instance_local, db) # <--- MODIFICATO!
+                print("DEBUG: create_app: setup_admin_views completato.", file=sys.stderr)
+                sys.stderr.flush()
+            except Exception as e:
+                print(f"❌ CRITICAL ERROR: create_app: Errore durante setup_admin_views: {e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+                sys.stderr.flush()
         print("✅ Admin panel caricato con successo", file=sys.stderr)
         sys.stderr.flush()
     except Exception as e: 
