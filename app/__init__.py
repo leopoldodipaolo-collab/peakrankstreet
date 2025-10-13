@@ -1,5 +1,3 @@
-# app/__init__.py
-
 # --- IMPORT NECESSARIE ---
 import os
 from flask import Flask
@@ -8,10 +6,12 @@ from flask_login import LoginManager, current_user
 from datetime import datetime
 from dotenv import load_dotenv
 import sys # Necessario per i messaggi di debug su stderr
+from flask_apscheduler import APScheduler # <--- AGGIUNGI QUESTA LINEA
 
 # 1. Inizializza le estensioni a livello globale
 db = SQLAlchemy()
 login_manager = LoginManager()
+scheduler = APScheduler() # <--- AGGIUNGI QUESTA LINEA
 
 # 2. Configura Flask-Login
 login_manager.login_view = 'auth.login' # Route per il login
@@ -20,7 +20,7 @@ login_manager.login_message_category = "info"
 
 # --- IMPORTA QUI I BLUEPRINT PER EVITARE CIRCOLARITA' ---
 # Importazioni fatte dentro create_app per risolvere le dipendenze circolari
-# from app.main.routes import main as main_blueprint 
+# from app.main.routes import main as main_blueprint
 # from app.auth.routes import auth as auth_blueprint
 # from app.api.routes import api as api_blueprint
 
@@ -49,8 +49,8 @@ class SecureAdminIndexView(AdminIndexView):
 
 # Istanza Admin
 admin = Admin(
-    name='StreetSport Admin', 
-    template_mode='bootstrap4', 
+    name='StreetSport Admin',
+    template_mode='bootstrap4',
     index_view=SecureAdminIndexView()
 )
 
@@ -71,20 +71,35 @@ def create_app():
         'sqlite:///' + os.path.join(basedir, 'site.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics')
-    
+
+    # Configurazione per APScheduler (esempio, puoi personalizzarla)
+    app.config['SCHEDULER_API_ENABLED'] = True # Se vuoi abilitare l'API per controllare lo scheduler
+    # app.config['SCHEDULER_JOBSTORES'] = {
+    #     'default': {'type': 'sqlalchemy', 'url': app.config['SQLALCHEMY_DATABASE_URI']}
+    # }
+    # app.config['SCHEDULER_EXECUTORS'] = {
+    #     'default': {'type': 'threadpool', 'max_workers': 20}
+    # }
+    # app.config['SCHEDULER_JOB_DEFAULTS'] = {
+    #     'coalesce': False,
+    #     'max_instances': 3
+    # }
+
+
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-    
+
     app.jinja_env.add_extension('jinja2.ext.do')
     # --- FINE CONFIGURAZIONE ---
 
     # Inizializza le estensioni con l'app
     db.init_app(app)
     login_manager.init_app(app)
+    scheduler.init_app(app) # <--- AGGIUNGI QUESTA LINEA
 
     # --- BLOCCO PER GLI IMPORT NECESSARI E IL USER_LOADER ---
     # Importiamo i modelli QUI dentro per evitare ImportError dovuti a dipendenze circolari
-    from .models import User, Notification 
+    from .models import User, Notification
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -106,7 +121,7 @@ def create_app():
             unread_notifications_count=unread_notifications_count
         )
     # --- FINE CONTEXT PROCESSOR ---
-    
+
     # --- REGISTRAZIONE BLUEPRINTS ---
     from .main.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
@@ -120,16 +135,16 @@ def create_app():
     # --- INIZIALIZZAZIONE FLASK-ADMIN ---
     # Inizializza Flask-Admin con l'app e il db
     admin.init_app(app)
-    
+
     # Aggiunge le viste dei modelli all'istanza admin
     # Usiamo un blocco app_context per assicurarci che 'current_app' sia disponibile
     with app.app_context():
         # Importiamo i modelli necessari QUI, DOPO aver importato db e admin
         from .models import User, Route, Activity, Challenge, ChallengeInvitation, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ActivityLike
         from wtforms import fields # Necessario per i campi personalizzati
-        
+
         # --- Configurazione delle Viste Admin ---
-        
+
         # Vista Utenti
         UserAdminView = type('UserAdminView', (SecureModelView,), {
             'column_list': ['id', 'username', 'email', 'city', 'is_admin', 'created_at'],
@@ -183,5 +198,5 @@ def create_app():
 
         print("✅ Setup viste Admin completato con successo.", file=sys.stderr)
         sys.stderr.flush()
-        
+
     return app
