@@ -1,73 +1,113 @@
 # app/__init__.py
 
+# --- IMPORT NECESSARIE ---
 import os
-import sys 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 from datetime import datetime
 from dotenv import load_dotenv
-from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime, timedelta
+import sys # Necessario per i messaggi di debug su stderr
 
-# Carica le variabili d'ambiente dal file .env nella cartella principale
-basedir = os.path.abspath(os.path.dirname(__file__))
-load_dotenv(os.path.join(basedir, '..', '.env'))
-
-# Inizializza le estensioni globalmente
+# 1. Inizializza le estensioni a livello globale
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+
+# 2. Configura Flask-Login
+login_manager.login_view = 'auth.login' # Route per il login
 login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
 login_manager.login_message_category = "info"
-jwt = JWTManager()
 
-# Crea lo scheduler globalmente ma non avviarlo ancora
-scheduler = BackgroundScheduler()
+# --- IMPORTA QUI I BLUEPRINT PER EVITARE CIRCOLARITA' ---
+# Importazioni fatte dentro create_app per risolvere le dipendenze circolari
+# from app.main.routes import main as main_blueprint 
+# from app.auth.routes import auth as auth_blueprint
+# from app.api.routes import api as api_blueprint
 
-# === DICHIARAZIONE GLOBALE PER FLASK-ADMIN ===
-# Rimuoviamo le variabili globali `admin_instance` e `setup_admin_func`
-# L'istanza Admin verrà creata direttamente in create_app()
-# === FINE DICHIARAZIONE ===
-
-# === RIMUOVI COMPLETAMENTE L'INTERO BLOCCO 'INIZIALIZZAZIONE PRECOCE ADMIN PANEL' QUI ===
+# --- IMPORTA QUI I MODELLI NECESSARI AL CONTEXT PROCESSOR ---
+# Visto che user.city è usato nel context processor, dobbiamo importare User qui
+# prima che venga inizializzato l'app contest
+from app.models import User, Notification # Notification serve per il conteggio
 
 
+# --- ISTANZA GLOBALE PER FLASK-ADMIN ---
+# Creiamo l'istanza qui, ma la inizializzeremo con l'app dentro create_app
+from flask_admin import Admin, AdminIndexView
+from flask_admin.contrib.sqla import ModelView
+from wtforms import fields
+import traceback # Per il debug
+
+# Vista indice admin protetta
+class SecureAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        print(f"DEBUG Admin: Accesso negato a {name}. Reindirizzo al login.", file=sys.stderr)
+        sys.stderr.flush()
+        return redirect(url_for('auth.login', next=request.url))
+
+# Istanza Admin
+admin = Admin(
+    name='StreetSport Admin', 
+    template_mode='bootstrap4', 
+    index_view=SecureAdminIndexView()
+)
+
+
+# --- FACTORY FUNCTION ---
 def create_app():
-    """Factory function per creare l'istanza dell'app Flask."""
+    """
+    Factory function per creare e configurare l'applicazione Flask.
+    """
     app = Flask(__name__)
 
-    # --- CONFIGURAZIONE ROBUSTA ---
-    basedir = os.path.abspath(os.path.dirname(__file__)) 
-    
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-per-sicurezza'
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    
-    # COSTRUISCE IL PERCORSO ASSOLUTO AL DATABASE
+    # --- CONFIGURAZIONE DELL'APPLICAZIONE ---
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    load_dotenv(os.path.join(basedir, '..', '.env')) # Carica da .env nella cartella principale
+
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-                                        'sqlite:///' + os.path.join(basedir, 'site.db')
-    
+        'sqlite:///' + os.path.join(basedir, 'site.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    # Percorso per le immagini del profilo, relativo alla directory 'app'
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics') 
-    # --- FINE SEZIONE ---
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics')
     
-    # Crea la cartella per le immagini se non esiste
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     
-    # Aggiunge estensioni a Jinja2 se necessario
     app.jinja_env.add_extension('jinja2.ext.do')
+    # --- FINE CONFIGURAZIONE ---
 
     # Inizializza le estensioni con l'app
     db.init_app(app)
     login_manager.init_app(app)
-    jwt.init_app(app)
-    CORS(app)
 
-    # --- IMPORTA E REGISTRA BLUEPRINTS ---
+    # --- BLOCCO PER GLI IMPORT NECESSARI E IL USER_LOADER ---
+    # Importiamo i modelli QUI dentro per evitare ImportError dovuti a dipendenze circolari
+    from .models import User, Notification 
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    # --- FINE BLOCCO ---
+
+    # --- CONTEXT PROCESSOR ---
+    @app.context_processor
+    def inject_global_variables():
+        unread_notifications_count = 0
+        if current_user.is_authenticated:
+            # Utilizza il db importato globalmente
+            unread_notifications_count = Notification.query.filter_by(
+                recipient_id=current_user.id, read=False
+            ).count()
+        return dict(
+            now=datetime.utcnow(),
+            user_city=current_user.city if current_user.is_authenticated else None,
+            unread_notifications_count=unread_notifications_count
+        )
+    # --- FINE CONTEXT PROCESSOR ---
+    
+    # --- REGISTRAZIONE BLUEPRINTS ---
     from .main.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
@@ -77,138 +117,71 @@ def create_app():
     from .api.routes import api as api_blueprint
     app.register_blueprint(api_blueprint, url_prefix='/api')
 
-    from .mobile.routes import mobile as mobile_blueprint
-    app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
-
-    # --- IMPORTA MODELLI ---
-    from .models import User, Activity, Route, Challenge, Notification, Comment, Like, ActivityLike, RouteRecord, Badge, UserBadge, ChallengeInvitation
-
-    # Configura il gestore degli utenti per Flask-Login
-    @login_manager.user_loader
-    def load_user(user_id):
-        from .models import User
-        return User.query.get(int(user_id))
-
-    # Aggiunge variabili globali accessibili nei template Jinja2
-    @app.context_processor
-    def inject_global_variables():
-        unread_notifications_count = 0
-        if current_user.is_authenticated:
-            from .models import Notification
-            unread_notifications_count = Notification.query.filter_by(
-                recipient_id=current_user.id, read=False
-            ).count()
-        return dict(
-            now=datetime.utcnow(),
-            user_city=current_user.city if current_user.is_authenticated and hasattr(current_user, 'city') else None,
-            unread_notifications_count=unread_notifications_count
-        )
+    # --- INIZIALIZZAZIONE FLASK-ADMIN ---
+    # Inizializza Flask-Admin con l'app e il db
+    admin.init_app(app)
     
-    # --- ADMIN PANEL ---
-    print("DEBUG: create_app: Inizio inizializzazione Admin Panel.", file=sys.stderr)
-    sys.stderr.flush()
-    try:
-        from flask_admin import Admin 
-        from .admin import SecureAdminIndexView, setup_admin_views 
+    # Aggiunge le viste dei modelli all'istanza admin
+    # Usiamo un blocco app_context per assicurarci che 'current_app' sia disponibile
+    with app.app_context():
+        # Importiamo i modelli necessari QUI, DOPO aver importato db e admin
+        from .models import User, Route, Activity, Challenge, ChallengeInvitation, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ActivityLike
+        from wtforms import fields # Necessario per i campi personalizzati
         
-        admin_instance_local = Admin( 
-            app, 
-            name='StreetSport Admin',
-            template_mode='bootstrap4',
-            index_view=SecureAdminIndexView(),
-            endpoint='admin',
-            url='/admin' 
-        )
-        print("DEBUG: create_app: Flask-Admin istanza creata e inizializzata con l'app.", file=sys.stderr)
-        sys.stderr.flush()
+        # --- Configurazione delle Viste Admin ---
+        
+        # Vista Utenti
+        UserAdminView = type('UserAdminView', (SecureModelView,), {
+            'column_list': ['id', 'username', 'email', 'city', 'is_admin', 'created_at'],
+            'column_exclude_list': ['password_hash'],
+            'form_excluded_columns': ['password_hash'],
+            'column_searchable_list': ['username', 'email'],
+            'column_filters': ['city', 'is_admin', 'created_at'],
+            'can_create': False,
+            'column_editable_list': ['is_admin'],
+            'column_default_sort': ('created_at', True)
+        })
+        admin.add_view(UserAdminView(User, db.session, name='Utenti', endpoint='admin_users'))
 
-        with app.app_context():
-            print("DEBUG: create_app: Entrato nel contesto dell'app per setup_admin_views.", file=sys.stderr)
-            sys.stderr.flush()
-            try: 
-                # CORREZIONE QUI: PASSA ANCHE 'admin_instance_local'
-                setup_admin_views(admin_instance_local, db) # <--- MODIFICATO!
-                print("DEBUG: create_app: setup_admin_views completato.", file=sys.stderr)
-                sys.stderr.flush()
-            except Exception as e:
-                print(f"❌ CRITICAL ERROR: create_app: Errore durante setup_admin_views: {e}", file=sys.stderr)
-                import traceback
-                traceback.print_exc(file=sys.stderr)
-                sys.stderr.flush()
-        print("✅ Admin panel caricato con successo", file=sys.stderr)
-        sys.stderr.flush()
-    except Exception as e: 
-        print(f"❌ CRITICAL ERROR: create_app: L'inizializzazione dell'Admin Panel è fallita: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        sys.stderr.flush()
-    
-    # --- CREA LE TABELLE DEL DATABASE ---
-    with app.app_context():
-        try:
-            db.create_all() 
-            print("✅ Tabelle database verificate/create", file=sys.stderr)
-            sys.stderr.flush()
-        except Exception as e:
-            print(f"⚠️  Errore durante la creazione delle tabelle: {e}", file=sys.stderr)
-            sys.stderr.flush()
-    
-    # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
-    with app.app_context():
-        try:
-            from .models import close_expired_challenges
-            closed_count = close_expired_challenges()
-            if closed_count > 0:
-                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute", file=sys.stderr)
-            else:
-                print("✅ All'avvio: Nessuna sfida da chiudere", file=sys.stderr)
-            sys.stderr.flush()
-        except Exception as e:
-            print(f"⚠️  Errore chiusura sfide all'avvio: {e}", file=sys.stderr)
-            sys.stderr.flush()
+        # Vista Percorsi
+        RouteAdminView = type('RouteAdminView', (SecureModelView,), {
+            'column_list': ['id', 'name', 'creator', 'activity_type', 'is_featured', 'is_classic', 'classic_city', 'distance_km', 'created_at'],
+            'column_searchable_list': ['name', 'description', 'classic_city', 'start_location'],
+            'column_filters': ['is_featured', 'is_classic', 'is_active', 'activity_type', 'difficulty', 'classic_city', 'created_at'],
+            'column_editable_list': ['is_featured', 'is_classic', 'is_active'],
+            'form_columns': [
+                'name', 'description', 'activity_type', 'coordinates', 'created_by',
+                'distance_km', 'is_featured', 'featured_image', 'is_active', 'is_classic',
+                'classic_city', 'start_location', 'end_location', 'elevation_gain',
+                'difficulty', 'estimated_time', 'landmarks'
+            ],
+            'form_extra_fields': {
+                'featured_image': ImageUploadField(
+                    'Immagine in Evidenza',
+                    base_path=os.path.join(current_app.root_path, 'static/featured_routes'),
+                    url_relative_path='static/featured_routes/',
+                    thumbnail_size=(150, 150, True)
+                ),
+                'coordinates': fields.TextAreaField('Coordinates (GeoJSON)'),
+                'landmarks': fields.TextAreaField('Punti di Riferimento (JSON)')
+            },
+            'form_edit_rules': ('name', 'description', 'activity_type', 'coordinates', 'created_by', 'distance_km', 'is_featured', 'featured_image', 'is_active', 'is_classic', 'classic_city', 'start_location', 'end_location', 'elevation_gain', 'difficulty', 'estimated_time', 'landmarks')
+        })
+        admin.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
 
-    # --- SCHEDULER PER CHIUSURA GIORNALIERA ---
-    try:
-        if not scheduler.running:
-            from .models import close_expired_challenges
-            
-            @scheduler.scheduled_job('cron', hour=0, minute=0)  # Mezzanotte ogni giorno
-            def close_daily_expired_challenges():
-                with app.app_context():
-                    try:
-                        closed_count = close_expired_challenges()
-                        if closed_count > 0:
-                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute", file=sys.stderr)
-                        else:
-                            print("⏰ Scheduler: nessuna sfida da chiudere", file=sys.stderr)
-                        sys.stderr.flush()
-                    except Exception as e:
-                        print(f"❌ Errore scheduler: {e}", file=sys.stderr)
-                        sys.stderr.flush()
-            
-            scheduler.start()
-            print("✅ Scheduler avviato - chiusura automatica sfide attiva", file=sys.stderr)
-            sys.stderr.flush()
-        else:
-            print("✅ Scheduler già attivo", file=sys.stderr)
-            sys.stderr.flush()
-            
-    except Exception as e:
-        print(f"⚠️  Errore nell'avvio dello scheduler: {e}", file=sys.stderr)
-        sys.stderr.flush()
+        # Aggiungi le altre viste qui sotto in modo simile
+        admin.add_view(ModelView(Activity, db.session, name='Attività', endpoint='admin_activities'))
+        admin.add_view(ModelView(Challenge, db.session, name='Sfide', endpoint='admin_challenges'))
+        admin.add_view(ModelView(ChallengeInvitation, db.session, name='Inviti Sfide', endpoint='admin_challenge_invitations'))
+        admin.add_view(ModelView(Comment, db.session, name='Commenti', endpoint='admin_comments'))
+        admin.add_view(ModelView(Like, db.session, name='Like Commenti', endpoint='admin_likes'))
+        admin.add_view(ModelView(ActivityLike, db.session, name='Like Attività', endpoint='admin_activity_likes'))
+        admin.add_view(ModelView(RouteRecord, db.session, name='Record Percorsi', endpoint='admin_route_records'))
+        admin.add_view(ModelView(Badge, db.session, name='Badge', endpoint='admin_badges'))
+        admin.add_view(ModelView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
+        admin.add_view(ModelView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
 
-    app.jinja_env.globals.update(
-        datetime=datetime,
-        timedelta=timedelta,
-        today_minus_1day=datetime.utcnow() - timedelta(days=1)
-    )
-    
+        print("✅ Setup viste Admin completato con successo.", file=sys.stderr)
+        sys.stderr.flush()
+        
     return app
-
-# Funzione per fermare lo scheduler (utile per testing)
-def stop_scheduler():
-    """Ferma lo scheduler (per testing)"""
-    if scheduler.running:
-        scheduler.shutdown()
-        print("⏹️  Scheduler fermato", file=sys.stderr)
-        sys.stderr.flush()
