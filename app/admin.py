@@ -164,7 +164,7 @@ admin = Admin(
     endpoint='admin'
 )
 
-def setup_admin_views(db):
+def setup_admin_views(admin_instance, db): # <-- AGGIUNTO db
     """Importa i modelli SOLO quando viene chiamata questa funzione"""
     from app.models import (User, Route, Activity, Challenge, ChallengeInvitation,
                           Comment, Like, Badge, UserBadge, Notification,
