@@ -1,10 +1,6 @@
 # worker.py (ora nella radice del progetto)
 import os
 import time
-# Se esegui dalla radice, Python deve sapere dove trovare la cartella 'app'
-# Solitamente basta che la cartella 'app' sia nella stessa directory
-# ma per sicurezza, o se ci fossero problemi, si potrebbe modificare l'import:
-# from app.app import create_app, scheduler # Se il tuo __init__.py fosse app/app.py
 from app import create_app, scheduler # <--- Questa dovrebbe funzionare se 'app' è una cartella Python Module
 from app.models import close_expired_challenges 
 

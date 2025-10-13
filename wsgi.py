@@ -1,7 +1,11 @@
 # wsgi.py
-# Questo file serve a Gunicorn per avviare la tua applicazione Flask.
 import os
-from app import create_app # Importa la tua factory function dalla cartella 'app'
+from app import create_app 
 
-# Chiama la tua factory function per ottenere l'oggetto applicazione Flask.
-app = create_app() # L'oggetto applicazione Flask deve essere chiamato 'app'
+# Aggiungiamo esplicitamente la directory corrente al PYTHONPATH
+# per assicurarci che 'app' sia trovato, dato che il worker si avvia con 'python worker.py'
+import sys
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
+
+app = create_app()
