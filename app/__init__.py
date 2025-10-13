@@ -94,24 +94,21 @@ def create_app():
         )
     
     # --- ADMIN PANEL ---
+    print("DEBUG: Tentativo di inizializzare l'Admin Panel...") # <--- NUOVO LOG
     try:
         from .admin import admin, setup_admin_views
+        print("DEBUG: Flask-Admin moduli importati.") # <--- NUOVO LOG
         admin.init_app(app)
+        print("DEBUG: Flask-Admin istanza inizializzata con l'app.") # <--- NUOVO LOG
         with app.app_context():
+            print("DEBUG: Entrato nel contesto dell'app per setup_admin_views.") # <--- NUOVO LOG
             setup_admin_views(db)
+            print("DEBUG: setup_admin_views completato.") # <--- NUOVO LOG
         print("✅ Admin panel caricato con successo")
     except ImportError as e:
-        print(f"⚠️  Admin panel non trovato: {e}. Ignorato.")
+        print(f"❌ ERRORE CRITICO: Admin panel non trovato all'import: {e}") # <--- LOG MIGLIORATO
     except Exception as e:
-        print(f"⚠️  Errore durante il caricamento dell'Admin Panel: {e}. Ignorato.")
-    
-    # --- CREA LE TABELLE DEL DATABASE ---
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Tabelle database verificate/creato")
-        except Exception as e:
-            print(f"⚠️  Errore durante la creazione delle tabelle: {e}")
+        print(f"❌ ERRORE CRITICO: Errore durante l'inizializzazione dell'Admin Panel: {e}") # <--- LOG MIGLIORATO
     
     # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
     with app.app_context():
