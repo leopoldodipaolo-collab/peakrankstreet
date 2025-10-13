@@ -1,5 +1,5 @@
 # app/admin.py
-
+import os # <-- AGGIUNGI QUESTA RIGA!
 # Importazioni necessarie
 from flask import redirect, url_for, request, current_app # current_app è utile per i percorsi base
 from flask_admin import Admin, AdminIndexView, expose
