@@ -1,23 +1,18 @@
 from flask import redirect, url_for, request
-from flask_admin import Admin, AdminIndexView, expose
+# from flask_admin import Admin, AdminIndexView, expose # Rimosso Admin, lo importiamo in __init__.py
+from flask_admin import AdminIndexView, expose # Solo AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from wtforms import fields, validators
-import sys # <--- IMPORTANTE: Importa sys qui per sys.stderr e sys.stderr.flush()
-import traceback # <--- IMPORTANTE: Importa traceback per stampare stack trace
+import sys 
+import traceback 
 
-print("DEBUG: app/admin.py caricato.", file=sys.stderr) # <--- NUOVO LOG
-sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
+print("DEBUG: app/admin.py caricato.", file=sys.stderr)
+sys.stderr.flush()
 
 # --- Vista Indice Personalizzata e Protetta ---
 class SecureAdminIndexView(AdminIndexView):
     def is_accessible(self):
-        # Aggiungiamo un log per vedere se l'accesso viene tentato e se l'utente è admin
-        # NOTA: current_user è disponibile solo all'interno di una richiesta
-        # Questo log apparirà solo se Flask-Admin tenta di accedere a questa vista
-        # e non all'avvio dell'applicazione.
-        # print(f"DEBUG Admin: Accesso a AdminIndexView. Autenticato: {current_user.is_authenticated}, Admin: {current_user.is_admin}", file=sys.stderr)
-        # sys.stderr.flush()
         return current_user.is_authenticated and current_user.is_admin
     
     def inaccessible_callback(self, name, **kwargs):
@@ -28,8 +23,6 @@ class SecureAdminIndexView(AdminIndexView):
 # --- Viste Personalizzate e Protette per i Modelli ---
 class SecureModelView(ModelView):
     def is_accessible(self):
-        # print(f"DEBUG Admin: Accesso a SecureModelView. Autenticato: {current_user.is_authenticated}, Admin: {current_user.is_admin}", file=sys.stderr)
-        # sys.stderr.flush()
         return current_user.is_authenticated and current_user.is_admin
     
     def inaccessible_callback(self, name, **kwargs):
@@ -79,7 +72,7 @@ class RouteAdminView(SecureModelView):
         'created_by', 'distance_km', 'is_featured', 'featured_image',
         'is_active', 'is_classic', 'classic_city', 'start_location',
         'end_location', 'elevation_gain', 'difficulty', 'estimated_time',
-        'landmarks'#, 'created_at' # 'created_at' è di sola lettura, quindi non modificabile via form
+        'landmarks'
     )
 
 class ActivityAdminView(SecureModelView):
@@ -168,47 +161,41 @@ class NotificationAdminView(SecureModelView):
     column_default_sort = ('timestamp', True)
 
 # --- Creazione dell'Istanza Admin ---
-admin = Admin(
-    name='StreetSport Admin',
-    template_mode='bootstrap4',
-    index_view=SecureAdminIndexView(),
-    endpoint='admin'
-)
-print("DEBUG: Flask-Admin istanza creata.", file=sys.stderr) # <--- NUOVO LOG
-sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
+# Rimosso `admin = Admin(...)` qui. Verrà creato direttamente in create_app()
+print("DEBUG: Flask-Admin istanza admin NON creata qui, la creerà create_app().", file=sys.stderr)
+sys.stderr.flush()
 
-def setup_admin_views(db):
-    """Importa i modelli SOLO quando viene chiamata questa funzione"""
-    print("DEBUG: Inizio esecuzione setup_admin_views...", file=sys.stderr) # <--- NUOVO LOG
-    sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
+def setup_admin_views(admin_instance, db): # <--- MODIFICATO: ora riceve 'admin_instance' come argomento
+    """Configura le viste dell'Admin Panel."""
+    print("DEBUG: Inizio esecuzione setup_admin_views...", file=sys.stderr)
+    sys.stderr.flush()
     from app.models import (User, Route, Activity, Challenge, ChallengeInvitation,
                           Comment, Like, Badge, UserBadge, Notification,
                           RouteRecord, ActivityLike)
-    print("DEBUG: Modelli Flask-Admin importati per setup_admin_views.", file=sys.stderr) # <--- NUOVO LOG
-    sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
+    print("DEBUG: Modelli Flask-Admin importati per setup_admin_views.", file=sys.stderr)
+    sys.stderr.flush()
     
     try:
         # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI ===
-        admin.add_view(UserAdminView(User, db.session, name='Utenti', endpoint='admin_users'))
-        admin.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
-        admin.add_view(ActivityAdminView(Activity, db.session, name='Attività', endpoint='admin_activities'))
-        admin.add_view(ChallengeAdminView(Challenge, db.session, name='Sfide', endpoint='admin_challenges'))
-        admin.add_view(ChallengeInvitationAdminView(ChallengeInvitation, db.session, name='Inviti Sfide', endpoint='admin_challenge_invitations'))
-        admin.add_view(CommentAdminView(Comment, db.session, name='Commenti', endpoint='admin_comments'))
-        admin.add_view(LikeAdminView(Like, db.session, name='Like Commenti', endpoint='admin_likes'))
-        admin.add_view(ActivityLikeAdminView(ActivityLike, db.session, name='Like Attività', endpoint='admin_activity_likes'))
-        admin.add_view(RouteRecordAdminView(RouteRecord, db.session, name='Record Percorsi', endpoint='admin_route_records'))
-        admin.add_view(BadgeAdminView(Badge, db.session, name='Badge', endpoint='admin_badges'))
-        admin.add_view(UserBadgeAdminView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
-        admin.add_view(NotificationAdminView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
+        admin_instance.add_view(UserAdminView(User, db.session, name='Utenti', endpoint='admin_users'))
+        admin_instance.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
+        admin_instance.add_view(ActivityAdminView(Activity, db.session, name='Attività', endpoint='admin_activities'))
+        admin_instance.add_view(ChallengeAdminView(Challenge, db.session, name='Sfide', endpoint='admin_challenges'))
+        admin_instance.add_view(ChallengeInvitationAdminView(ChallengeInvitation, db.session, name='Inviti Sfide', endpoint='admin_challenge_invitations'))
+        admin_instance.add_view(CommentAdminView(Comment, db.session, name='Commenti', endpoint='admin_comments'))
+        admin_instance.add_view(LikeAdminView(Like, db.session, name='Like Commenti', endpoint='admin_likes'))
+        admin_instance.add_view(ActivityLikeAdminView(ActivityLike, db.session, name='Like Attività', endpoint='admin_activity_likes'))
+        admin_instance.add_view(RouteRecordAdminView(RouteRecord, db.session, name='Record Percorsi', endpoint='admin_route_records'))
+        admin_instance.add_view(BadgeAdminView(Badge, db.session, name='Badge', endpoint='admin_badges'))
+        admin_instance.add_view(UserBadgeAdminView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
+        admin_instance.add_view(NotificationAdminView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
 
-        print("✅ Admin panel COMPLETO configurato con successo!", file=sys.stderr) # <--- NUOVO LOG
-        sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
+        print("✅ Admin panel COMPLETO configurato con successo!", file=sys.stderr)
+        sys.stderr.flush()
         
     except Exception as e:
-        # Stampa l'intera traceback per un debug migliore
         print(f"❌ ERRORE DURANTE setup_admin_views: {e}", file=sys.stderr) 
         import traceback
         traceback.print_exc(file=sys.stderr) 
         sys.stderr.flush()
-        raise # <--- Rilancia l'eccezione per farla catturare dal try/except in __init__.py
+        raise # Rilancia l'eccezione
