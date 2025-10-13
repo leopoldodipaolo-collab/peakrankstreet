@@ -1,17 +1,19 @@
+# app/__init__.py
+
 # --- IMPORT NECESSARIE ---
 import os
-from flask import Flask
+from flask import Flask, redirect, url_for, request, current_app # Aggiunti redirect, url_for, request, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
 from datetime import datetime
 from dotenv import load_dotenv
 import sys # Necessario per i messaggi di debug su stderr
-from flask_apscheduler import APScheduler # <--- AGGIUNGI QUESTA LINEA
+from flask_apscheduler import APScheduler
 
 # 1. Inizializza le estensioni a livello globale
 db = SQLAlchemy()
 login_manager = LoginManager()
-scheduler = APScheduler() # <--- AGGIUNGI QUESTA LINEA
+scheduler = APScheduler()
 
 # 2. Configura Flask-Login
 login_manager.login_view = 'auth.login' # Route per il login
@@ -36,6 +38,12 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from wtforms import fields
 import traceback # Per il debug
+
+# --- IMPORT NECESSARIE PER LE VISTE ADMIN DINAMICHE ---
+# Queste classi sono definite in app/admin.py, ma ricreate qui dinamicamente
+# Quindi dobbiamo importare SecureModelView
+from .admin import SecureModelView # <-- AGGIUNTA QUESTA LINEA
+from flask_admin.form.upload import ImageUploadField # <-- AGGIUNTA QUESTA LINEA, poiché ImageUploadField è usato in RouteAdminView
 
 # Vista indice admin protetta
 class SecureAdminIndexView(AdminIndexView):
@@ -88,6 +96,12 @@ def create_app():
 
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+    
+    # Crea la cartella per le immagini in evidenza dei percorsi se non esiste
+    featured_routes_folder = os.path.join(app.root_path, 'static/featured_routes')
+    if not os.path.exists(featured_routes_folder):
+        os.makedirs(featured_routes_folder)
+
 
     app.jinja_env.add_extension('jinja2.ext.do')
     # --- FINE CONFIGURAZIONE ---
@@ -95,7 +109,7 @@ def create_app():
     # Inizializza le estensioni con l'app
     db.init_app(app)
     login_manager.init_app(app)
-    scheduler.init_app(app) # <--- AGGIUNGI QUESTA LINEA
+    scheduler.init_app(app)
 
     # --- BLOCCO PER GLI IMPORT NECESSARI E IL USER_LOADER ---
     # Importiamo i modelli QUI dentro per evitare ImportError dovuti a dipendenze circolari
@@ -141,7 +155,7 @@ def create_app():
     with app.app_context():
         # Importiamo i modelli necessari QUI, DOPO aver importato db e admin
         from .models import User, Route, Activity, Challenge, ChallengeInvitation, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ActivityLike
-        from wtforms import fields # Necessario per i campi personalizzati
+        # from wtforms import fields # Necessario per i campi personalizzati (già importato a livello globale)
 
         # --- Configurazione delle Viste Admin ---
 
@@ -185,16 +199,18 @@ def create_app():
         admin.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
 
         # Aggiungi le altre viste qui sotto in modo simile
-        admin.add_view(ModelView(Activity, db.session, name='Attività', endpoint='admin_activities'))
-        admin.add_view(ModelView(Challenge, db.session, name='Sfide', endpoint='admin_challenges'))
-        admin.add_view(ModelView(ChallengeInvitation, db.session, name='Inviti Sfide', endpoint='admin_challenge_invitations'))
-        admin.add_view(ModelView(Comment, db.session, name='Commenti', endpoint='admin_comments'))
-        admin.add_view(ModelView(Like, db.session, name='Like Commenti', endpoint='admin_likes'))
-        admin.add_view(ModelView(ActivityLike, db.session, name='Like Attività', endpoint='admin_activity_likes'))
-        admin.add_view(ModelView(RouteRecord, db.session, name='Record Percorsi', endpoint='admin_route_records'))
-        admin.add_view(ModelView(Badge, db.session, name='Badge', endpoint='admin_badges'))
-        admin.add_view(ModelView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
-        admin.add_view(ModelView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
+        # Per queste viste, usi ModelView, che non richiede SecureModelView.
+        # Se anche queste dovessero essere protette, dovresti usare SecureModelView al posto di ModelView
+        admin.add_view(SecureModelView(Activity, db.session, name='Attività', endpoint='admin_activities')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(Challenge, db.session, name='Sfide', endpoint='admin_challenges')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(ChallengeInvitation, db.session, name='Inviti Sfide', endpoint='admin_challenge_invitations')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(Comment, db.session, name='Commenti', endpoint='admin_comments')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(Like, db.session, name='Like Commenti', endpoint='admin_likes')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(ActivityLike, db.session, name='Like Attività', endpoint='admin_activity_likes')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(RouteRecord, db.session, name='Record Percorsi', endpoint='admin_route_records')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(Badge, db.session, name='Badge', endpoint='admin_badges')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges')) # Modificato per usare SecureModelView
+        admin.add_view(SecureModelView(Notification, db.session, name='Notifiche', endpoint='admin_notifications')) # Modificato per usare SecureModelView
 
         print("✅ Setup viste Admin completato con successo.", file=sys.stderr)
         sys.stderr.flush()
