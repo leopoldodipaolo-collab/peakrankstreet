@@ -1,5 +1,5 @@
 import os
-import sys # <--- NUOVO IMPORT PER sys.stderr
+import sys # <--- IMPORTANTE: Importa sys qui per sys.stderr e sys.stderr.flush()
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
@@ -35,17 +35,29 @@ setup_admin_func = None
 # === INIZIALIZZAZIONE PRECOCE ADMIN PANEL (PER DEBUG) ===
 # Questa parte tenta di importare i moduli Flask-Admin il prima possibile.
 # Se c'è un errore nell'import, verrà catturato qui.
-print("DEBUG: Caricamento app/__init__.py - Inizio tentativo di setup Admin Panel.") 
+print("DEBUG: Caricamento app/__init__.py - Inizio tentativo di setup Admin Panel.", file=sys.stderr)
+sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
 try:
     from .admin import admin as imported_admin_instance, setup_admin_views as imported_setup_admin_func
     # Assegna le istanze importate alle variabili globali
     admin_instance = imported_admin_instance
     setup_admin_func = imported_setup_admin_func
-    print("DEBUG: Admin: Moduli Flask-Admin importati con successo.")
+    print("DEBUG: Admin: Moduli Flask-Admin importati con successo.", file=sys.stderr)
+    sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
 except ImportError as e:
     print(f"❌ CRITICAL ERROR: Admin: Impossibile importare moduli Flask-Admin: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr) # Stampa traceback completa
+    sys.stderr.flush()
+    admin_instance = None 
+    setup_admin_func = None
 except Exception as e:
     print(f"❌ CRITICAL ERROR: Admin: Errore generico durante l'import di Flask-Admin: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr) # Stampa traceback completa
+    sys.stderr.flush()
+    admin_instance = None
+    setup_admin_func = None
 # === FINE INIZIALIZZAZIONE PRECOCE ADMIN PANEL ===
 
 
@@ -120,28 +132,36 @@ def create_app():
             unread_notifications_count=unread_notifications_count
         )
     
-    # --- ADMIN PANEL --- (La configurazione reale avviene qui, ma l'import è già stato tentato)
+    # --- ADMIN PANEL --- (La configurazione reale avviene qui)
     if admin_instance and setup_admin_func: # Solo se l'import è riuscito nella fase precoce
-        print("DEBUG: create_app: Inizializzazione Flask-Admin con l'app.") 
+        print("DEBUG: create_app: Inizializzazione Flask-Admin con l'app.", file=sys.stderr) 
+        sys.stderr.flush()
         try:
             admin_instance.init_app(app) # Inizializza con l'istanza dell'app
-            print("DEBUG: create_app: Flask-Admin istanza inizializzata con l'app.")
+            print("DEBUG: create_app: Flask-Admin istanza inizializzata con l'app.", file=sys.stderr)
+            sys.stderr.flush()
             with app.app_context():
-                print("DEBUG: create_app: Entrato nel contesto dell'app per setup_admin_views.")
+                print("DEBUG: create_app: Entrato nel contesto dell'app per setup_admin_views.", file=sys.stderr)
+                sys.stderr.flush()
                 try: # Aggiungiamo un try/except qui per catturare errori specifici di setup_admin_views
                     setup_admin_func(db) # Chiama la funzione per configurare le viste
-                    print("DEBUG: create_app: setup_admin_views completato.")
+                    print("DEBUG: create_app: setup_admin_views completato.", file=sys.stderr)
+                    sys.stderr.flush()
                 except Exception as e:
                     print(f"❌ CRITICAL ERROR: create_app: Errore durante setup_admin_views: {e}", file=sys.stderr)
-                    import traceback # Assicurati che sia importato all'inizio del file, o qui.
+                    import traceback
                     traceback.print_exc(file=sys.stderr)
-            print("✅ Admin panel caricato con successo")
+                    sys.stderr.flush()
+            print("✅ Admin panel caricato con successo", file=sys.stderr) # <--- Forza anche questo su stderr
+            sys.stderr.flush()
         except Exception as e: # Cattura errori durante admin_instance.init_app(app)
             print(f"❌ CRITICAL ERROR: create_app: Errore durante admin_instance.init_app(app): {e}", file=sys.stderr)
             import traceback
             traceback.print_exc(file=sys.stderr)
+            sys.stderr.flush()
     else:
-        print("⚠️ Admin panel inizializzazione saltata perché i moduli non sono stati importati.")
+        print("⚠️ Admin panel inizializzazione saltata perché i moduli non sono stati importati o admin è None.", file=sys.stderr)
+        sys.stderr.flush()
 
     # --- CREA LE TABELLE DEL DATABASE ---
     # Questa sezione viene eseguita solo una volta durante il primo deploy o se il DB è vuoto
@@ -149,9 +169,11 @@ def create_app():
     with app.app_context():
         try:
             db.create_all() 
-            print("✅ Tabelle database verificate/create")
+            print("✅ Tabelle database verificate/create", file=sys.stderr) # <--- Forza anche questo su stderr
+            sys.stderr.flush()
         except Exception as e:
-            print(f"⚠️  Errore durante la creazione delle tabelle: {e}")
+            print(f"⚠️  Errore durante la creazione delle tabelle: {e}", file=sys.stderr)
+            sys.stderr.flush()
     
     # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
     with app.app_context():
@@ -159,9 +181,13 @@ def create_app():
             from .models import close_expired_challenges
             closed_count = close_expired_challenges()
             if closed_count > 0:
-                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute")
+                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute", file=sys.stderr)
+            else:
+                print("✅ All'avvio: Nessuna sfida da chiudere", file=sys.stderr)
+            sys.stderr.flush()
         except Exception as e:
-            print(f"⚠️  Errore chiusura sfide all'avvio: {e}")
+            print(f"⚠️  Errore chiusura sfide all'avvio: {e}", file=sys.stderr)
+            sys.stderr.flush()
 
     # --- SCHEDULER PER CHIUSURA GIORNALIERA ---
     try:
@@ -175,19 +201,24 @@ def create_app():
                     try:
                         closed_count = close_expired_challenges()
                         if closed_count > 0:
-                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute")
+                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute", file=sys.stderr)
                         else:
-                            print("⏰ Scheduler: nessuna sfida da chiudere")
+                            print("⏰ Scheduler: nessuna sfida da chiudere", file=sys.stderr)
+                        sys.stderr.flush()
                     except Exception as e:
-                        print(f"❌ Errore scheduler: {e}")
+                        print(f"❌ Errore scheduler: {e}", file=sys.stderr)
+                        sys.stderr.flush()
             
             scheduler.start()
-            print("✅ Scheduler avviato - chiusura automatica sfide attiva")
+            print("✅ Scheduler avviato - chiusura automatica sfide attiva", file=sys.stderr)
+            sys.stderr.flush()
         else:
-            print("✅ Scheduler già attivo")
+            print("✅ Scheduler già attivo", file=sys.stderr)
+            sys.stderr.flush()
             
     except Exception as e:
-        print(f"⚠️  Errore nell'avvio dello scheduler: {e}")
+        print(f"⚠️  Errore nell'avvio dello scheduler: {e}", file=sys.stderr)
+        sys.stderr.flush()
 
     app.jinja_env.globals.update(
         datetime=datetime,
@@ -202,4 +233,5 @@ def stop_scheduler():
     """Ferma lo scheduler (per testing)"""
     if scheduler.running:
         scheduler.shutdown()
-        print("⏹️  Scheduler fermato")
+        print("⏹️  Scheduler fermato", file=sys.stderr)
+        sys.stderr.flush()

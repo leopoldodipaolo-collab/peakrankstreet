@@ -3,21 +3,38 @@ from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from wtforms import fields, validators
+import sys # <--- IMPORTANTE: Importa sys qui per sys.stderr e sys.stderr.flush()
+import traceback # <--- IMPORTANTE: Importa traceback per stampare stack trace
+
+print("DEBUG: app/admin.py caricato.", file=sys.stderr) # <--- NUOVO LOG
+sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
 
 # --- Vista Indice Personalizzata e Protetta ---
 class SecureAdminIndexView(AdminIndexView):
     def is_accessible(self):
+        # Aggiungiamo un log per vedere se l'accesso viene tentato e se l'utente è admin
+        # NOTA: current_user è disponibile solo all'interno di una richiesta
+        # Questo log apparirà solo se Flask-Admin tenta di accedere a questa vista
+        # e non all'avvio dell'applicazione.
+        # print(f"DEBUG Admin: Accesso a AdminIndexView. Autenticato: {current_user.is_authenticated}, Admin: {current_user.is_admin}", file=sys.stderr)
+        # sys.stderr.flush()
         return current_user.is_authenticated and current_user.is_admin
     
     def inaccessible_callback(self, name, **kwargs):
+        print(f"DEBUG Admin: Accesso negato a AdminIndexView. Reindirizzo al login.", file=sys.stderr)
+        sys.stderr.flush()
         return redirect(url_for('auth.login', next=request.url))
 
 # --- Viste Personalizzate e Protette per i Modelli ---
 class SecureModelView(ModelView):
     def is_accessible(self):
+        # print(f"DEBUG Admin: Accesso a SecureModelView. Autenticato: {current_user.is_authenticated}, Admin: {current_user.is_admin}", file=sys.stderr)
+        # sys.stderr.flush()
         return current_user.is_authenticated and current_user.is_admin
     
     def inaccessible_callback(self, name, **kwargs):
+        print(f"DEBUG Admin: Accesso negato a SecureModelView. Reindirizzo al login.", file=sys.stderr)
+        sys.stderr.flush()
         return redirect(url_for('auth.login', next=request.url))
 
 class UserAdminView(SecureModelView):
@@ -31,7 +48,6 @@ class UserAdminView(SecureModelView):
     column_default_sort = ('created_at', True)
 
 class RouteAdminView(SecureModelView):
-    # RISOLTO: Usa 'created_by' invece di 'creator' per evitare problemi di relazione
     column_list = [
         'id', 'name', 'created_by', 'activity_type', 
         'is_featured', 'is_classic', 'classic_city',
@@ -44,7 +60,6 @@ class RouteAdminView(SecureModelView):
     ]
     column_editable_list = ['is_featured', 'is_classic', 'is_active']
     
-    # RISOLTO: Definisci esplicitamente le colonne del form
     form_columns = [
         'name', 'description', 'activity_type', 'coordinates',
         'created_by', 'distance_km', 'is_featured', 'featured_image',
@@ -59,17 +74,15 @@ class RouteAdminView(SecureModelView):
         'landmarks': fields.TextAreaField('Punti di Riferimento')
     }
     
-    # RISOLTO: Aggiungi created_at alle regole del form
     form_edit_rules = (
         'name', 'description', 'activity_type', 'coordinates',
         'created_by', 'distance_km', 'is_featured', 'featured_image',
         'is_active', 'is_classic', 'classic_city', 'start_location',
         'end_location', 'elevation_gain', 'difficulty', 'estimated_time',
-        'landmarks'#, 'created_at'
+        'landmarks'#, 'created_at' # 'created_at' è di sola lettura, quindi non modificabile via form
     )
 
 class ActivityAdminView(SecureModelView):
-    # RISOLTO: Usa ID invece di relazioni complesse
     column_list = [
         'id', 'user_id', 'route_id', 'activity_type', 
         'duration', 'distance', 'avg_speed', 'created_at'
@@ -84,7 +97,6 @@ class ActivityAdminView(SecureModelView):
     ]
 
 class ChallengeAdminView(SecureModelView):
-    # RISOLTO: Usa ID invece di relazioni
     column_list = [
         'id', 'name', 'route_id', 'created_by', 
         'challenge_type', 'bet_type', 'bet_value',
@@ -162,15 +174,18 @@ admin = Admin(
     index_view=SecureAdminIndexView(),
     endpoint='admin'
 )
-print("DEBUG: Flask-Admin istanza creata.") # <--- NUOVO LOG
+print("DEBUG: Flask-Admin istanza creata.", file=sys.stderr) # <--- NUOVO LOG
+sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
 
 def setup_admin_views(db):
     """Importa i modelli SOLO quando viene chiamata questa funzione"""
-    print("DEBUG: Inizio esecuzione setup_admin_views...") # <--- NUOVO LOG
+    print("DEBUG: Inizio esecuzione setup_admin_views...", file=sys.stderr) # <--- NUOVO LOG
+    sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
     from app.models import (User, Route, Activity, Challenge, ChallengeInvitation,
                           Comment, Like, Badge, UserBadge, Notification,
                           RouteRecord, ActivityLike)
-    print("DEBUG: Modelli Flask-Admin importati per setup_admin_views.") # <--- NUOVO LOG
+    print("DEBUG: Modelli Flask-Admin importati per setup_admin_views.", file=sys.stderr) # <--- NUOVO LOG
+    sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
     
     try:
         # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI ===
@@ -187,12 +202,13 @@ def setup_admin_views(db):
         admin.add_view(UserBadgeAdminView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
         admin.add_view(NotificationAdminView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
 
-        print("✅ Admin panel COMPLETO configurato con successo!")
+        print("✅ Admin panel COMPLETO configurato con successo!", file=sys.stderr) # <--- NUOVO LOG
+        sys.stderr.flush() # <--- FORZA LA STAMPA IMMEDIATA
         
     except Exception as e:
         # Stampa l'intera traceback per un debug migliore
-        print(f"❌ ERRORE DURANTE setup_admin_views: {e}", file=sys.stderr) # <--- NUOVO: Stampa su stderr
+        print(f"❌ ERRORE DURANTE setup_admin_views: {e}", file=sys.stderr) 
         import traceback
-        traceback.print_exc(file=sys.stderr) # <--- NUOVO: Stampa l'intera traceback
-        # Riepiloga l'errore per il log finale
+        traceback.print_exc(file=sys.stderr) 
+        sys.stderr.flush()
         raise # <--- Rilancia l'eccezione per farla catturare dal try/except in __init__.py
