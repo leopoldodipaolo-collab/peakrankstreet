@@ -94,24 +94,20 @@ def create_app():
     
     # --- ADMIN PANEL ---
     try:
-        from .admin import admin, setup_admin_views
+        from .admin import admin
         admin.init_app(app)
-        with app.app_context():
-            setup_admin_views(db)
-        print("✅ Admin panel caricato con successo")
-    except ImportError as e:
-        print(f"⚠️  Admin panel non trovato: {e}. Ignorato.")
+        print("✅ Admin panel inizializzato")
     except Exception as e:
-        print(f"⚠️  Errore durante il caricamento dell'Admin Panel: {e}. Ignorato.")
-    
-    # --- CREA LE TABELLE DEL DATABASE ---
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Tabelle database verificate/creato")
-        except Exception as e:
-            print(f"⚠️  Errore durante la creazione delle tabelle: {e}")
-    
+        print(f"⚠️  Errore durante l'inizializzazione dell'Admin Panel: {e}")
+        
+        # --- CREA LE TABELLE DEL DATABASE ---
+        with app.app_context():
+            try:
+                db.create_all()
+                print("✅ Tabelle database verificate/creato")
+            except Exception as e:
+                print(f"⚠️  Errore durante la creazione delle tabelle: {e}")
+        
     # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
     with app.app_context():
         try:
@@ -153,6 +149,8 @@ def create_app():
         timedelta=timedelta,
         today_minus_1day=datetime.utcnow() - timedelta(days=1)
     )
+
+    
     
     return app
 
@@ -162,3 +160,14 @@ def stop_scheduler():
     if scheduler.running:
         scheduler.shutdown()
         print("⏹️  Scheduler fermato")
+
+
+def init_admin_views(app):
+    """Initialize admin views after app context is available"""
+    with app.app_context():
+        try:
+            from .admin import setup_admin_views
+            setup_admin_views(db)
+            print("✅ Admin views configurati con successo!")
+        except Exception as e:
+            print(f"❌ Errore nella configurazione delle admin views: {e}")
