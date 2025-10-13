@@ -37,19 +37,24 @@ def create_app():
     app = Flask(__name__)
 
     # --- CARICA CONFIGURAZIONE DA VARIABILI D'AMBIENTE E FILE .env ---
+   # --- CONFIGURAZIONE ROBUSTA DEL DATABASE ---
     basedir = os.path.abspath(os.path.dirname(__file__)) 
-    load_dotenv(os.path.join(basedir, '..', '.env')) # Carica variabili da .env
-
+    
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'site.db') # Fallback a SQLite locale
+    
+    # Ottieni il percorso assoluto della directory 'app'
+    app_dir = os.path.abspath(os.path.dirname(__file__))
+    
+    # Costruisci il percorso assoluto al database 'site.db'
+    # Questo dovrebbe puntare sempre a /StreetSportApp/app/site.db
+    db_path = os.path.join(app_dir, 'site.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # Percorso per le immagini del profilo (relativo alla directory principale dell'app)
+    # Percorsi per le immagini
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics') 
-    
-    # Percorso per le immagini dei percorsi in evidenza (relativo alla directory principale dell'app)
     app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/featured_routes')
 
     # Crea le cartelle se non esistono
@@ -57,16 +62,15 @@ def create_app():
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
         os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
-    
-    # Estensioni Jinja
-    app.jinja_env.add_extension('jinja2.ext.do')
     # --- FINE CONFIGURAZIONE ---
 
-    # Inizializza le estensioni con l'app
+    app.jinja_env.add_extension('jinja2.ext.do')
+
+    # Inizializza le estensioni
     db.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app) # Abilita CORS per le API (utile per il mobile, forse non necessario per web)
+    CORS(app)
 
     # --- IMPORT MODELLI E DEFINIZIONE USER_LOADER ---
     # Importa i modelli qui dentro per risolvere le dipendenze circolari
