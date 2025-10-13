@@ -1,88 +1,89 @@
+# app/__init__.py
+
 import os
-from flask import Flask
+from flask import Flask, redirect, url_for, request # Importa Flask e alcune funzioni utili
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from datetime import datetime
-from dotenv import load_dotenv
-from apscheduler.schedulers.background import BackgroundScheduler
+from flask_cors import CORS # Necessario se esponi API
+from flask_jwt_extended import JWTManager # Necessario per JWT
 from datetime import datetime, timedelta
+from dotenv import load_dotenv # Per caricare le variabili d'ambiente
+from apscheduler.schedulers.background import BackgroundScheduler # Per lo scheduler
+import sys # Per stampare messaggi di debug su stderr
+import traceback # Per stampare traceback
 
-# Carica le variabili d'ambiente dal file .env nella cartella principale
-basedir = os.path.abspath(os.path.dirname(__file__))
-load_dotenv(os.path.join(basedir, '..', '.env'))
-
-# Inizializza le estensioni globalmente
+# --- Inizializza le estensioni globalmente ---
+# Queste verranno poi inizializzate con l'app nella factory create_app()
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
-login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
-login_manager.login_message_category = "info"
 jwt = JWTManager()
-
-# Crea lo scheduler globalmente ma non avviarlo ancora
 scheduler = BackgroundScheduler()
 
+# --- Configurazione Flask-Login ---
+login_manager.login_view = 'auth.login' # Route di login quando l'utente non è autenticato
+login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
+login_manager.login_message_category = "info"
+
+# --- Gestione Admin (Flask-Admin) ---
+# Importa l'istanza admin e la funzione di setup dal modulo admin
+# Assicurati che questi file esistano in app/admin/ e siano importabili
+from .admin import admin, setup_admin_views 
+
+# --- Factory Function dell'Applicazione ---
 def create_app():
-    """Factory function per creare l'istanza dell'app Flask."""
+    """
+    Factory function per creare e configurare l'istanza dell'applicazione Flask.
+    """
     app = Flask(__name__)
 
-    # --- CONFIGURAZIONE ROBUSTA ---
+    # --- CARICA CONFIGURAZIONE DA VARIABILI D'AMBIENTE E FILE .env ---
     basedir = os.path.abspath(os.path.dirname(__file__)) 
-    
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-per-sicurezza'
+    load_dotenv(os.path.join(basedir, '..', '.env')) # Carica variabili da .env
+
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    
-    # COSTRUISCE IL PERCORSO ASSOLUTO AL DATABASE
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'site.db')
-    
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'site.db') # Fallback a SQLite locale
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    # Percorso per le immagini del profilo, relativo alla directory 'app'
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics') 
-    # --- FINE SEZIONE ---
     
-    # Crea la cartella per le immagini se non esiste
+    # Percorso per le immagini del profilo (relativo alla directory principale dell'app)
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics') 
+    
+    # Percorso per le immagini dei percorsi in evidenza (relativo alla directory principale dell'app)
+    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/featured_routes')
+
+    # Crea le cartelle se non esistono
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+    if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
+        os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
     
-    # Aggiunge estensioni a Jinja2 se necessario
+    # Estensioni Jinja
     app.jinja_env.add_extension('jinja2.ext.do')
+    # --- FINE CONFIGURAZIONE ---
 
     # Inizializza le estensioni con l'app
     db.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app)
+    CORS(app) # Abilita CORS per le API (utile per il mobile, forse non necessario per web)
 
-    # --- IMPORTA E REGISTRA BLUEPRINTS ---
-    from .main.routes import main as main_blueprint
-    app.register_blueprint(main_blueprint)
+    # --- IMPORT MODELLI E DEFINIZIONE USER_LOADER ---
+    # Importa i modelli qui dentro per risolvere le dipendenze circolari
+    # e per assicurarsi che siano disponibili quando il context processor ne ha bisogno.
+    from .models import User, Notification
 
-    from .auth.routes import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
-
-    from .api.routes import api as api_blueprint
-    app.register_blueprint(api_blueprint, url_prefix='/api')
-
-    from .mobile.routes import mobile as mobile_blueprint
-    app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
-
-    # --- IMPORTA MODELLI ---
-    from .models import User, Activity, Route, Challenge, Notification, Comment, Like, ActivityLike, RouteRecord, Badge, UserBadge, ChallengeInvitation
-
-    # Configura il gestore degli utenti per Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from .models import User
         return User.query.get(int(user_id))
-
-    # Aggiunge variabili globali accessibili nei template Jinja2
+    
+    # --- CONTEXT PROCESSOR GLOBALE ---
+    # Rende variabili come 'current_user', 'now', 'user_city' disponibili in tutti i template
     @app.context_processor
     def inject_global_variables():
         unread_notifications_count = 0
         if current_user.is_authenticated:
-            from .models import Notification
+            # Conta le notifiche non lette per l'utente corrente
             unread_notifications_count = Notification.query.filter_by(
                 recipient_id=current_user.id, read=False
             ).count()
@@ -92,62 +93,77 @@ def create_app():
             unread_notifications_count=unread_notifications_count
         )
     
-    # --- ADMIN PANEL ---
-    try:
-        from .admin import admin, setup_admin_views
-        admin.init_app(app)
-        with app.app_context():
-            setup_admin_views(db)
-        print("✅ Admin panel caricato con successo")
-    except ImportError as e:
-        print(f"⚠️  Admin panel non trovato: {e}. Ignorato.")
-    except Exception as e:
-        print(f"⚠️  Errore durante il caricamento dell'Admin Panel: {e}. Ignorato.")
+    # --- IMPORTA E REGISTRA BLUEPRINTS ---
+    from .main.routes import main as main_blueprint
+    app.register_blueprint(main_blueprint)
+
+    from .auth.routes import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint) # Nessun url_prefix necessario se le route sono già definite con il blueprint (es. 'auth.login')
+
+    from .api.routes import api as api_blueprint
+    app.register_blueprint(api_blueprint, url_prefix='/api')
+
+    from .mobile.routes import mobile as mobile_blueprint
+    app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
+
+    # --- CONFIGURAZIONE E SETUP FLASK-ADMIN ---
+    # Importa l'istanza admin e la funzione di setup dal modulo admin
+    # Queste importazioni avvengono qui, nel contesto della factory, per evitare problemi
+    from .admin import admin, setup_admin_views 
     
-    # --- CREA LE TABELLE DEL DATABASE ---
+    # Inizializza l'istanza di Flask-Admin con l'app
+    admin.init_app(app)
+    
+    # Registra le viste admin nell'istanza admin, ma nel contesto dell'app
+    with app.app_context():
+        setup_admin_views(admin, db) 
+    print("✅ Admin panel configurato e inizializzato.")
+    
+    # --- CREAZIONE TABELLE DATABASE ---
     with app.app_context():
         try:
             db.create_all()
-            print("✅ Tabelle database verificate/creato")
+            print("✅ Tabelle database verificate/create con successo.")
         except Exception as e:
-            print(f"⚠️  Errore durante la creazione delle tabelle: {e}")
+            print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
     
-    # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
+    # --- CHIUSURA SFIDE SCADUTE (all'avvio e in background) ---
     with app.app_context():
         try:
+            # Importa la funzione qui, così è disponibile nel contesto dell'app
             from .models import close_expired_challenges
             closed_count = close_expired_challenges()
             if closed_count > 0:
-                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute")
+                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute.")
         except Exception as e:
-            print(f"⚠️  Errore chiusura sfide all'avvio: {e}")
+            print(f"⚠️ Errore chiusura sfide all'avvio: {e}")
 
-    # --- SCHEDULER PER CHIUSURA GIORNALIERA ---
+    # --- SCHEDULER PER AZIONI PERIODICHE ---
     try:
-        # Configura lo scheduler solo se non è già running
         if not scheduler.running:
-            from .models import close_expired_challenges
+            from .models import close_expired_challenges # Importa la funzione necessaria
             
             @scheduler.scheduled_job('cron', hour=0, minute=0)  # Mezzanotte ogni giorno
-            def close_daily_expired_challenges():
-                with app.app_context():
+            def close_daily_expired_challenges_job():
+                with app.app_context(): # Necessario per accedere al DB
                     try:
                         closed_count = close_expired_challenges()
                         if closed_count > 0:
-                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute")
+                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute.")
                         else:
-                            print("⏰ Scheduler: nessuna sfida da chiudere")
+                            print("⏰ Scheduler: nessuna sfida da chiudere.")
                     except Exception as e:
                         print(f"❌ Errore scheduler: {e}")
             
             scheduler.start()
-            print("✅ Scheduler avviato - chiusura automatica sfide attiva")
+            print("✅ Scheduler avviato - chiusura automatica sfide attiva.")
         else:
-            print("✅ Scheduler già attivo")
+            print("✅ Scheduler già attivo.")
             
     except Exception as e:
-        print(f"⚠️  Errore nell'avvio dello scheduler: {e}")
+        print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
 
+    # Aggiunge funzioni globali a Jinja2 (es. per date)
     app.jinja_env.globals.update(
         datetime=datetime,
         timedelta=timedelta,
@@ -156,9 +172,9 @@ def create_app():
     
     return app
 
-# Funzione per fermare lo scheduler (utile per testing)
+# Funzione per fermare lo scheduler (utile per testing o shutdown)
 def stop_scheduler():
-    """Ferma lo scheduler (per testing)"""
+    """Ferma lo scheduler."""
     if scheduler.running:
         scheduler.shutdown()
-        print("⏹️  Scheduler fermato")
+        print("⏹️  Scheduler fermato.")
