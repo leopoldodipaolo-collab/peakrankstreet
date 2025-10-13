@@ -162,12 +162,15 @@ admin = Admin(
     index_view=SecureAdminIndexView(),
     endpoint='admin'
 )
+print("DEBUG: Flask-Admin istanza creata.") # <--- NUOVO LOG
 
 def setup_admin_views(db):
     """Importa i modelli SOLO quando viene chiamata questa funzione"""
+    print("DEBUG: Inizio esecuzione setup_admin_views...") # <--- NUOVO LOG
     from app.models import (User, Route, Activity, Challenge, ChallengeInvitation,
                           Comment, Like, Badge, UserBadge, Notification,
                           RouteRecord, ActivityLike)
+    print("DEBUG: Modelli Flask-Admin importati per setup_admin_views.") # <--- NUOVO LOG
     
     try:
         # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI ===
@@ -187,4 +190,9 @@ def setup_admin_views(db):
         print("✅ Admin panel COMPLETO configurato con successo!")
         
     except Exception as e:
-        print(f"❌ Errore durante la configurazione dell'Admin Panel: {e}")
+        # Stampa l'intera traceback per un debug migliore
+        print(f"❌ ERRORE DURANTE setup_admin_views: {e}", file=sys.stderr) # <--- NUOVO: Stampa su stderr
+        import traceback
+        traceback.print_exc(file=sys.stderr) # <--- NUOVO: Stampa l'intera traceback
+        # Riepiloga l'errore per il log finale
+        raise # <--- Rilancia l'eccezione per farla catturare dal try/except in __init__.py

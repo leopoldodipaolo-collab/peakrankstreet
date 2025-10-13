@@ -94,21 +94,21 @@ def create_app():
         )
     
     # --- ADMIN PANEL ---
-    print("DEBUG: Tentativo di inizializzare l'Admin Panel...") # <--- NUOVO LOG
+    print("DEBUG: Tentativo di inizializzare l'Admin Panel...")
     try:
         from .admin import admin, setup_admin_views
-        print("DEBUG: Flask-Admin moduli importati.") # <--- NUOVO LOG
+        print("DEBUG: Flask-Admin moduli importati.")
         admin.init_app(app)
-        print("DEBUG: Flask-Admin istanza inizializzata con l'app.") # <--- NUOVO LOG
+        print("DEBUG: Flask-Admin istanza inizializzata con l'app.")
         with app.app_context():
-            print("DEBUG: Entrato nel contesto dell'app per setup_admin_views.") # <--- NUOVO LOG
-            setup_admin_views(db)
-            print("DEBUG: setup_admin_views completato.") # <--- NUOVO LOG
+            print("DEBUG: Entrato nel contesto dell'app per setup_admin_views.")
+            setup_admin_views(db) # Questa ora rilancerà
+            print("DEBUG: setup_admin_views completato.")
         print("✅ Admin panel caricato con successo")
-    except ImportError as e:
-        print(f"❌ ERRORE CRITICO: Admin panel non trovato all'import: {e}") # <--- LOG MIGLIORATO
-    except Exception as e:
-        print(f"❌ ERRORE CRITICO: Errore durante l'inizializzazione dell'Admin Panel: {e}") # <--- LOG MIGLIORATO
+    except Exception as e: # <--- Questo except ora catturerà l'errore rilanciato
+        print(f"❌ ERRORE CRITICO: L'inizializzazione dell'Admin Panel è fallita: {e}")
+        import traceback
+        traceback.print_exc(file=sys.stderr) # Stampa l'intera traceback anche qui
     
     # --- CHIUSURA AUTOMATICA SFIDE SCADUTE ---
     with app.app_context():
