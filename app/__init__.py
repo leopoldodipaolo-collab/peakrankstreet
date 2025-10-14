@@ -65,8 +65,8 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join('/data', 'profile_pics') # <-- PERCORSO PER UPLOADS
     app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join('/data', 'featured_routes') # <-- PERCORSO PER FEATURED_ROUTES
 
-    # IMPORTANT: Le chiamate os.makedirs sono state rimosse da qui e spostate in @app.before_first_request
-    # per evitare l'errore "Read-only file system" durante il build.
+    # IMPORTANT: Le chiamate os.makedirs sono state rimosse da qui.
+    # Le directory sul Persistent Disk verranno create dal Build Command di Render.
     # --- FINE: CONFIGURAZIONE DATABASE E UPLOAD PER PERSISTENT DISK ---
 
     app.jinja_env.add_extension('jinja2.ext.do')
@@ -176,16 +176,8 @@ def create_app():
     except Exception as e:
         print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
 
-    # --- FUNZIONE PER CREARE LE DIRECTORY SUL DISCO PERSISTENTE (ESECUTO UNA VOLTA A RUNTIME) ---
-    @app.before_first_request
-    def create_persistent_dirs():
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-            print(f"✅ Directory di upload '{app.config['UPLOAD_FOLDER']}' creata.")
-        if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
-            os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
-            print(f"✅ Directory featured routes '{app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']}' creata.")
-    # --- FINE FUNZIONE DIRECTORY PERSISTENTI ---
+    # Le chiamate a os.makedirs per le directory persistenti sono state rimosse da qui.
+    # Verranno gestite dal Build Command di Render.
 
     # Aggiunge funzioni globali a Jinja2 (es. per date)
     app.jinja_env.globals.update(
