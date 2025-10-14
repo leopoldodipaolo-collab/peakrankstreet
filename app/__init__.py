@@ -58,8 +58,12 @@ def create_app():
     else:
         base_data_path = '/data'
 
-    # Crea le cartelle in locale se non esistono
-    os.makedirs(base_data_path, exist_ok=True)
+    # Crea le cartelle solo se possibile (evita errori su Render build)
+    try:
+        os.makedirs(base_data_path, exist_ok=True)
+    except OSError as e:
+        print(f"⚠️ Impossibile creare {base_data_path} (probabilmente filesystem di sola lettura): {e}")
+
 
     # Percorso database
     db_path = os.path.join(base_data_path, 'site.db')
@@ -71,7 +75,11 @@ def create_app():
     app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(base_data_path, 'featured_routes')
 
     # Crea anche le cartelle di upload in locale
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'], exist_ok=True)
+    except OSError as e:
+        print(f"⚠️ Impossibile creare directory upload: {e}")
     os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'], exist_ok=True)
 
     # --- Estensioni Flask ---
