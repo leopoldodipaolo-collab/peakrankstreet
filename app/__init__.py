@@ -11,7 +11,7 @@ from dotenv import load_dotenv # Per caricare le variabili d'ambiente
 from apscheduler.schedulers.background import BackgroundScheduler # Per lo scheduler
 import sys # Per stampare messaggi di debug su stderr
 import traceback # Per stampare traceback
-from flask_migrate import Migrate # <-- AGGIUNGI QUESTA IMPORTAZIONE
+from flask_migrate import Migrate
 
 # --- Inizializza le estensioni globalmente ---
 # Queste verranno poi inizializzate con l'app nella factory create_app()
@@ -29,34 +29,38 @@ migrate = Migrate() # <-- INIZIALIZZA MIGRATE QUI (fuori da create_app)
 # --- Gestione Admin (Flask-Admin) ---
 # Importa l'istanza admin e la funzione di setup dal modulo admin
 # Assicurati che questi file esistano in app/admin/ e siano importabili
-from .admin import admin, setup_admin_views 
+from .admin import admin, setup_admin_views
 
 # --- Factory Function dell'Applicazione ---
 def create_app():
     """
     Factory function per creare e configurare l'istanza dell'applicazione Flask.
     """
-    app = Flask(__name__)
-
-    # --- CARICA CONFIGURAZIONE DA VARIABILI D'AMBIENTE E FILE .env ---
-   # --- CONFIGURAZIONE ROBUSTA DEL DATABASE ---
-    basedir = os.path.abspath(os.path.dirname(__file__)) 
-    
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
-    
     # Ottieni il percorso assoluto della directory 'app'
     app_dir = os.path.abspath(os.path.dirname(__file__))
-    
+
+    # --- INIZIALIZZAZIONE FLASK CON CONFIGURAZIONE ESPLICITA PER I FILE STATICI ---
+    app = Flask(__name__,
+                static_folder=os.path.join(app_dir, 'static'), # Specifica la cartella dove si trovano i tuoi statici
+                static_url_path='/static') # L'URL base da cui saranno serviti i statici
+    # --- FINE INIZIALIZZAZIONE FLASK ---
+
+    # --- CARICA CONFIGURAZIONE DA VARIABILI D'AMBIENTE E FILE .env ---
+    # --- CONFIGURAZIONE ROBUSTA DEL DATABASE ---
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+
     # Costruisci il percorso assoluto al database 'site.db'
     # Questo dovrebbe puntare sempre a /StreetSportApp/app/site.db
     db_path = os.path.join(app_dir, 'site.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Percorsi per le immagini
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics') 
+
+    # Percorsi per le immagini (app.root_path sarà equivalente a app_dir qui)
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics')
     app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/featured_routes')
 
     # Crea le cartelle se non esistono
@@ -72,8 +76,8 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     # --- COLLEGA MIGRATE ALL'APP ---
-    # Inizializza Migrate con l'app e l'istanza db
-    migrate.init_app(app, db) 
+    # Inizializza Migrate con l'app e l'istanza db, specificando la directory
+    migrate.init_app(app, db, directory=os.path.join(app_dir, 'migrations'))
     # --- FINE ---
     jwt.init_app(app)
     CORS(app)
@@ -86,7 +90,7 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-    
+
     # --- CONTEXT PROCESSOR GLOBALE ---
     # Rende variabili come 'current_user', 'now', 'user_city' disponibili in tutti i template
     @app.context_processor
@@ -102,7 +106,7 @@ def create_app():
             user_city=current_user.city if current_user.is_authenticated else None,
             unread_notifications_count=unread_notifications_count
         )
-    
+
     # --- IMPORTA E REGISTRA BLUEPRINTS ---
     from .main.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
@@ -119,16 +123,16 @@ def create_app():
     # --- CONFIGURAZIONE E SETUP FLASK-ADMIN ---
     # Importa l'istanza admin e la funzione di setup dal modulo admin
     # Queste importazioni avvengono qui, nel contesto della factory, per evitare problemi
-    from .admin import admin, setup_admin_views 
-    
+    from .admin import admin, setup_admin_views
+
     # Inizializza l'istanza di Flask-Admin con l'app
     admin.init_app(app)
-    
+
     # Registra le viste admin nell'istanza admin, ma nel contesto dell'app
     with app.app_context():
-        setup_admin_views(admin, db) 
+        setup_admin_views(admin, db)
     print("✅ Admin panel configurato e inizializzato.")
-    
+
     # --- CREAZIONE TABELLE DATABASE ---
     with app.app_context():
         try:
@@ -136,7 +140,7 @@ def create_app():
             print("✅ Tabelle database verificate/create con successo.")
         except Exception as e:
             print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
-    
+
     # --- CHIUSURA SFIDE SCADUTE (all'avvio e in background) ---
     with app.app_context():
         try:
@@ -152,7 +156,7 @@ def create_app():
     try:
         if not scheduler.running:
             from .models import close_expired_challenges # Importa la funzione necessaria
-            
+
             @scheduler.scheduled_job('cron', hour=0, minute=0)  # Mezzanotte ogni giorno
             def close_daily_expired_challenges_job():
                 with app.app_context(): # Necessario per accedere al DB
@@ -164,12 +168,12 @@ def create_app():
                             print("⏰ Scheduler: nessuna sfida da chiudere.")
                     except Exception as e:
                         print(f"❌ Errore scheduler: {e}")
-            
+
             scheduler.start()
             print("✅ Scheduler avviato - chiusura automatica sfide attiva.")
         else:
             print("✅ Scheduler già attivo.")
-            
+
     except Exception as e:
         print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
 
@@ -179,7 +183,7 @@ def create_app():
         timedelta=timedelta,
         today_minus_1day=datetime.utcnow() - timedelta(days=1)
     )
-    
+
     return app
 
 # Funzione per fermare lo scheduler (utile per testing o shutdown)
