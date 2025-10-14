@@ -3,7 +3,6 @@
 import click
 from app import create_app, db
 from app.models import User, Route, Activity,ActivityLike
-from app import create_app, init_admin_views
 
 
 app = create_app()

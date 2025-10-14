@@ -100,6 +100,9 @@ class Route(db.Model):
     comments = db.relationship('Comment', backref='route_commented', lazy=True)
     records = db.relationship('RouteRecord', backref='recorded_route', lazy=True)
 
+    is_featured = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    featured_image = db.Column(db.String(120), nullable=True) # Nome del file immagine
+
     def __repr__(self):
         return f'<Route {self.name}>'
 

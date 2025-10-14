@@ -11,6 +11,7 @@ from dotenv import load_dotenv # Per caricare le variabili d'ambiente
 from apscheduler.schedulers.background import BackgroundScheduler # Per lo scheduler
 import sys # Per stampare messaggi di debug su stderr
 import traceback # Per stampare traceback
+from flask_migrate import Migrate # <-- AGGIUNGI QUESTA IMPORTAZIONE
 
 # --- Inizializza le estensioni globalmente ---
 # Queste verranno poi inizializzate con l'app nella factory create_app()
@@ -23,6 +24,7 @@ scheduler = BackgroundScheduler()
 login_manager.login_view = 'auth.login' # Route di login quando l'utente non è autenticato
 login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
 login_manager.login_message_category = "info"
+migrate = Migrate() # <-- INIZIALIZZA MIGRATE QUI (fuori da create_app)
 
 # --- Gestione Admin (Flask-Admin) ---
 # Importa l'istanza admin e la funzione di setup dal modulo admin
@@ -69,6 +71,10 @@ def create_app():
     # Inizializza le estensioni
     db.init_app(app)
     login_manager.init_app(app)
+    # --- COLLEGA MIGRATE ALL'APP ---
+    # Inizializza Migrate con l'app e l'istanza db
+    migrate.init_app(app, db) 
+    # --- FINE ---
     jwt.init_app(app)
     CORS(app)
 
