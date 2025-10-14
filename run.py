@@ -58,9 +58,49 @@ def init_db_command():
     click.echo("Database inizializzato.")
 # =======================================================
 
+# =======================================================
+# Comando CLI: update-route-field (ORIGINALE - MANCANTE!) # Comando SINGOLO 
+# =======================================================
+@app.cli.command("update-route-field")
+@click.argument("route_id", type=int)
+@click.argument("field")
+@click.argument("value")
+def update_route_field(route_id, field, value):
+    """
+    Aggiorna un campo specifico di una rotta.
+    Esempio:
+    flask update-route-field 1 city Milano
+    """
+    from app.models import Route
+
+    route = Route.query.get(route_id)
+    if not route:
+        click.echo(f"❌ Route con id={route_id} non trovata.")
+        return
+
+    if not hasattr(route, field):
+        click.echo(f"❌ Campo '{field}' non esiste sul modello Route.")
+        return
+
+    # Conversione automatica per Boolean e numerici
+    column_type = type(getattr(Route, field).type)
+    if column_type.__name__ == "Boolean":
+        value = value.lower() in ("1", "true", "yes")
+    elif column_type.__name__ in ("Integer", "Float"):
+        try:
+            value = int(value) if column_type.__name__ == "Integer" else float(value)
+        except ValueError:
+            click.echo(f"❌ Valore '{value}' non valido per il campo {field}.")
+            return
+
+    setattr(route, field, value)
+    db.session.commit()
+    click.echo(f"✅ Campo '{field}' della Route id={route_id} aggiornato a '{value}'.")
+
+
 
 # =======================================================
-# Comando CLI: update-route-fields (AGGIUNGI QUESTO)
+# Comando CLI: update-route-fields (AGGIUNGI QUESTO) # Comando MULTIPLO 
 # =======================================================
 @app.cli.command("update-route-fields")
 @click.argument("route_id", type=int)
