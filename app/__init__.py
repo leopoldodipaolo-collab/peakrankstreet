@@ -46,6 +46,7 @@ def create_app():
     # --- FINE INIZIALIZZAZIONE FLASK ---
 
     # --- AGGIUNGI QUESTE RIGHE PER DISABILITARE LA CACHE DI JINJA2 (PER DEBUG) ---
+    # Rimuovi o commenta queste righe in produzione se non strettamente necessarie
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.cache = None
     # --- FINE AGGIUNTA ---
@@ -64,11 +65,8 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join('/data', 'profile_pics') # <-- PERCORSO PER UPLOADS
     app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join('/data', 'featured_routes') # <-- PERCORSO PER FEATURED_ROUTES
 
-    # Crea le cartelle se non esistono (questo le creerà all'interno di /data)
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
-        os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
+    # IMPORTANT: Le chiamate os.makedirs sono state rimosse da qui e spostate in @app.before_first_request
+    # per evitare l'errore "Read-only file system" durante il build.
     # --- FINE: CONFIGURAZIONE DATABASE E UPLOAD PER PERSISTENT DISK ---
 
     app.jinja_env.add_extension('jinja2.ext.do')
@@ -137,7 +135,7 @@ def create_app():
         try:
             # db.create_all() verrà eseguito se il database non esiste o le tabelle sono mancanti.
             # Questo è un fallback, ma le migrazioni dovrebbero gestire l'aggiornamento dello schema.
-            db.create_all() 
+            db.create_all()
             print("✅ Tabelle database verificate/create con successo.")
         except Exception as e:
             print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
@@ -177,6 +175,17 @@ def create_app():
 
     except Exception as e:
         print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
+
+    # --- FUNZIONE PER CREARE LE DIRECTORY SUL DISCO PERSISTENTE (ESECUTO UNA VOLTA A RUNTIME) ---
+    @app.before_first_request
+    def create_persistent_dirs():
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+            print(f"✅ Directory di upload '{app.config['UPLOAD_FOLDER']}' creata.")
+        if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
+            os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
+            print(f"✅ Directory featured routes '{app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']}' creata.")
+    # --- FINE FUNZIONE DIRECTORY PERSISTENTI ---
 
     # Aggiunge funzioni globali a Jinja2 (es. per date)
     app.jinja_env.globals.update(
