@@ -1,0 +1,12 @@
+# Bytecode files
+*.pyc
+__pycache__/
+
+# Environment
+.env
+venv/
+.flaskenv
+
+# Database
+*.sqlite
+*.db
