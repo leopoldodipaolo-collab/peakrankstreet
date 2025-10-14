@@ -1,69 +1,82 @@
 # app/__init__.py
 
 import os
-from flask import Flask, current_app
+from flask import Flask, redirect, url_for, request # Importa Flask e alcune funzioni utili
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
-from apscheduler.schedulers.background import BackgroundScheduler
+from flask_cors import CORS # Necessario se esponi API
+from flask_jwt_extended import JWTManager # Necessario per JWT
 from datetime import datetime, timedelta
+from dotenv import load_dotenv # Per caricare le variabili d'ambiente
+from apscheduler.schedulers.background import BackgroundScheduler # Per lo scheduler
+import sys # Per stampare messaggi di debug su stderr
+import traceback # Per stampare traceback
+from flask_migrate import Migrate
 
-# --- Estensioni globali ---
+# --- Inizializza le estensioni globalmente ---
+# Queste verranno poi inizializzate con l'app nella factory create_app()
 db = SQLAlchemy()
 login_manager = LoginManager()
 jwt = JWTManager()
-migrate = Migrate()
 scheduler = BackgroundScheduler()
 
 # --- Configurazione Flask-Login ---
-login_manager.login_view = 'auth.login'
+login_manager.login_view = 'auth.login' # Route di login quando l'utente non è autenticato
 login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
 login_manager.login_message_category = "info"
+migrate = Migrate() # <-- INIZIALIZZA MIGRATE QUI (fuori da create_app)
 
-# --- Gestione Admin ---
+# --- Gestione Admin (Flask-Admin) ---
+# Importa l'istanza admin e la funzione di setup dal modulo admin
+# Assicurati che questi file esistano in app/admin/ e siano importabili
 from .admin import admin, setup_admin_views
 
-# --- Factory function ---
+# --- Factory Function dell'Applicazione ---
 def create_app():
-    app = Flask(__name__)
+    """
+    Factory function per creare e configurare l'istanza dell'applicazione Flask.
+    """
+    app_dir = os.path.abspath(os.path.dirname(__file__))
 
-    # --- Configurazioni ---
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key-change-in-prod')
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key-change-in-prod')
+    app = Flask(__name__,
+                static_folder=os.path.join(app_dir, 'static'),
+                static_url_path='/static')
 
-    # --- DATABASE POSTGRESQL ---
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-        'DATABASE_URL',
-        'postgresql://peakrankstreet_db_user:2Ih7mXJUYaaVwKUeMFpOgqQbgRosQGE3@dpg-d3jper6mcj7s73fbkbr0-a.frankfurt-postgres.render.com/peakrankstreet_db'
-    )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # --- Percorsi upload locali (opzionali) ---
-    app.config['UPLOAD_FOLDER'] = None
-    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = None
-
-    # --- Disabilita cache Jinja2 (debug) ---
+    # --- AGGIUNGI QUESTE RIGHE PER DISABILITARE LA CACHE DI JINJA2 (PER DEBUG) ---
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.cache = None
+    # --- FINE AGGIUNTA ---
+
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+
+    db_path = os.path.join(app_dir, 'site.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics')
+    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/featured_routes')
+
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    if not os.path.exists(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER']):
+        os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'])
+
     app.jinja_env.add_extension('jinja2.ext.do')
 
-    # --- Inizializza estensioni ---
     db.init_app(app)
     login_manager.init_app(app)
+    migrate.init_app(app, db, directory=os.path.join(app_dir, 'migrations'))
     jwt.init_app(app)
-    migrate.init_app(app, db)
     CORS(app)
 
-    # --- Importa modelli e definisci user_loader ---
     from .models import User, Notification
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # --- Context processor globale ---
     @app.context_processor
     def inject_global_variables():
         unread_notifications_count = 0
@@ -77,7 +90,6 @@ def create_app():
             unread_notifications_count=unread_notifications_count
         )
 
-    # --- Blueprints ---
     from .main.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
@@ -90,31 +102,54 @@ def create_app():
     from .mobile.routes import mobile as mobile_blueprint
     app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
 
-    # --- Admin setup ---
+    from .admin import admin, setup_admin_views
+
     admin.init_app(app)
+
     with app.app_context():
         setup_admin_views(admin, db)
-        print("✅ Admin panel configurato e inizializzato.")
+    print("✅ Admin panel configurato e inizializzato.")
 
-    # --- Scheduler per chiusura sfide scadute ---
-    from .models import close_expired_challenges
+    with app.app_context():
+        try:
+            db.create_all()
+            print("✅ Tabelle database verificate/create con successo.")
+        except Exception as e:
+            print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
+
+    with app.app_context():
+        try:
+            from .models import close_expired_challenges
+            closed_count = close_expired_challenges()
+            if closed_count > 0:
+                print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute.")
+        except Exception as e:
+            print(f"⚠️ Errore chiusura sfide all'avvio: {e}")
 
     try:
         if not scheduler.running:
-            @scheduler.scheduled_job('cron', hour=0, minute=0)  # ogni mezzanotte
+            from .models import close_expired_challenges
+
+            @scheduler.scheduled_job('cron', hour=0, minute=0)
             def close_daily_expired_challenges_job():
                 with app.app_context():
-                    closed_count = close_expired_challenges()
-                    if closed_count > 0:
-                        print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute.")
-                    else:
-                        print("⏰ Scheduler: nessuna sfida da chiudere.")
+                    try:
+                        closed_count = close_expired_challenges()
+                        if closed_count > 0:
+                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute.")
+                        else:
+                            print("⏰ Scheduler: nessuna sfida da chiudere.")
+                    except Exception as e:
+                        print(f"❌ Errore scheduler: {e}")
+
             scheduler.start()
             print("✅ Scheduler avviato - chiusura automatica sfide attiva.")
+        else:
+            print("✅ Scheduler già attivo.")
+
     except Exception as e:
         print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
 
-    # --- Jinja globals ---
     app.jinja_env.globals.update(
         datetime=datetime,
         timedelta=timedelta,
@@ -123,8 +158,8 @@ def create_app():
 
     return app
 
-# --- Funzione di stop scheduler ---
 def stop_scheduler():
+    """Ferma lo scheduler."""
     if scheduler.running:
         scheduler.shutdown()
-        print("⏹️ Scheduler fermato.")
+        print("⏹️  Scheduler fermato.")
