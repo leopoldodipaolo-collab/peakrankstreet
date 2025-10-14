@@ -1,100 +1,98 @@
 # app/__init__.py
 
 import os
-from flask import Flask, redirect, url_for, request # Importa Flask e alcune funzioni utili
+import sys
+import traceback
+from datetime import datetime, timedelta
+from flask import Flask, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
-from flask_cors import CORS # Necessario se esponi API
-from flask_jwt_extended import JWTManager # Necessario per JWT
-from datetime import datetime, timedelta
-from dotenv import load_dotenv # Per caricare le variabili d'ambiente
-from apscheduler.schedulers.background import BackgroundScheduler # Per lo scheduler
-import sys # Per stampare messaggi di debug su stderr
-import traceback # Per stampare traceback
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
 
-# --- Inizializza le estensioni globalmente ---
-# Queste verranno poi inizializzate con l'app nella factory create_app()
+# --- Inizializza le estensioni globali ---
 db = SQLAlchemy()
 login_manager = LoginManager()
 jwt = JWTManager()
 scheduler = BackgroundScheduler()
+migrate = Migrate()
 
 # --- Configurazione Flask-Login ---
-login_manager.login_view = 'auth.login' # Route di login quando l'utente non è autenticato
+login_manager.login_view = 'auth.login'
 login_manager.login_message = "Per favore, effettua il login per accedere a questa pagina."
 login_manager.login_message_category = "info"
-migrate = Migrate() # <-- INIZIALIZZA MIGRATE QUI (fuori da create_app)
 
-# --- Gestione Admin (Flask-Admin) ---
-# Importa l'istanza admin e la funzione di setup dal modulo admin
-# Assicurati che questi file esistano in app/admin/ e siano importabili
+# --- Gestione Admin ---
 from .admin import admin, setup_admin_views
 
-# --- Factory Function dell'Applicazione ---
+
 def create_app():
     """
-    Factory function per creare e configurare l'istanza dell'applicazione Flask.
+    Factory function per creare e configurare l'app Flask.
     """
-    # Ottieni il percorso assoluto della directory 'app'
+    # Directory base del progetto
     app_dir = os.path.abspath(os.path.dirname(__file__))
 
-    # --- INIZIALIZZAZIONE FLASK CON CONFIGURAZIONE ESPLICITA PER I FILE STATICI ---
-    app = Flask(__name__,
-                static_folder=os.path.join(app_dir, 'static'), # Specifica la cartella dove si trovano i tuoi statici
-                static_url_path='/static') # L'URL base da cui saranno serviti i statici
-    # --- FINE INIZIALIZZAZIONE FLASK ---
+    # --- Inizializzazione Flask ---
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(app_dir, 'static'),
+        static_url_path='/static'
+    )
 
-    # --- AGGIUNGI QUESTE RIGHE PER DISABILITARE LA CACHE DI JINJA2 (PER DEBUG) ---
-    # Rimuovi o commenta queste righe in produzione se non strettamente necessarie
+    # Debug Jinja2 (disabilita cache durante lo sviluppo)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.cache = None
-    # --- FINE AGGIUNTA ---
 
+    # --- Chiavi di sicurezza ---
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
 
-    # --- INIZIO: CONFIGURAZIONE DATABASE E UPLOAD PER PERSISTENT DISK (/data) ---
-    # Costruisci il percorso assoluto al database 'site.db' sul Persistent Disk
-    db_path = os.path.join('/data', 'site.db') # <-- PERCORSO PER IL DISCO PERSISTENTE
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    # --- CONFIGURAZIONE DATABASE E CARTELLE PERSISTENTI ---
+    # Usa /data in Linux/Render, oppure ./data in Windows
+    if os.name == "nt":  # Windows
+        base_data_path = os.path.join(os.path.dirname(app_dir), 'data')
+    else:
+        base_data_path = '/data'
 
+    # Crea le cartelle in locale se non esistono
+    os.makedirs(base_data_path, exist_ok=True)
+
+    # Percorso database
+    db_path = os.path.join(base_data_path, 'site.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Percorsi per le immagini di upload sul Persistent Disk
-    app.config['UPLOAD_FOLDER'] = os.path.join('/data', 'profile_pics') # <-- PERCORSO PER UPLOADS
-    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join('/data', 'featured_routes') # <-- PERCORSO PER FEATURED_ROUTES
+    # Cartelle di upload
+    app.config['UPLOAD_FOLDER'] = os.path.join(base_data_path, 'profile_pics')
+    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(base_data_path, 'featured_routes')
 
-    # IMPORTANT: Le chiamate os.makedirs sono state rimosse da qui.
-    # Le directory sul Persistent Disk verranno create dal Build Command di Render.
-    # --- FINE: CONFIGURAZIONE DATABASE E UPLOAD PER PERSISTENT DISK ---
+    # Crea anche le cartelle di upload in locale
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'], exist_ok=True)
 
-    app.jinja_env.add_extension('jinja2.ext.do')
-
-    # Inizializza le estensioni
+    # --- Estensioni Flask ---
     db.init_app(app)
     login_manager.init_app(app)
-    # Collega Migrate all'app e l'istanza db, specificando la directory
     migrate.init_app(app, db, directory=os.path.join(app_dir, 'migrations'))
     jwt.init_app(app)
     CORS(app)
 
-    # --- IMPORT MODELLI E DEFINIZIONE USER_LOADER ---
-    # Importa i modelli qui dentro per risolvere le dipendenze circolari
-    # e per assicurarsi che siano disponibili quando il context processor ne ha bisogno.
+    # --- Importa modelli ---
     from .models import User, Notification
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # --- CONTEXT PROCESSOR GLOBALE ---
-    # Rende variabili come 'current_user', 'now', 'user_city' disponibili in tutti i template
+    # --- Context processor globale ---
     @app.context_processor
     def inject_global_variables():
         unread_notifications_count = 0
         if current_user.is_authenticated:
-            # Conta le notifiche non lette per l'utente corrente
             unread_notifications_count = Notification.query.filter_by(
                 recipient_id=current_user.id, read=False
             ).count()
@@ -104,46 +102,34 @@ def create_app():
             unread_notifications_count=unread_notifications_count
         )
 
-    # --- IMPORTA E REGISTRA BLUEPRINTS ---
+    # --- Blueprints ---
     from .main.routes import main as main_blueprint
-    app.register_blueprint(main_blueprint)
-
     from .auth.routes import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint) # Nessun url_prefix necessario se le route sono già definite con il blueprint (es. 'auth.login')
-
     from .api.routes import api as api_blueprint
-    app.register_blueprint(api_blueprint, url_prefix='/api')
-
     from .mobile.routes import mobile as mobile_blueprint
+
+    app.register_blueprint(main_blueprint)
+    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(api_blueprint, url_prefix='/api')
     app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
 
-    # --- CONFIGURAZIONE E SETUP FLASK-ADMIN ---
-    # Importa l'istanza admin e la funzione di setup dal modulo admin
-    # Queste importazioni avvengono qui, nel contesto della factory, per evitare problemi
-    from .admin import admin, setup_admin_views
-
-    # Inizializza l'istanza di Flask-Admin con l'app
+    # --- Flask-Admin ---
     admin.init_app(app)
-
-    # Registra le viste admin nell'istanza admin, ma nel contesto dell'app
     with app.app_context():
         setup_admin_views(admin, db)
     print("✅ Admin panel configurato e inizializzato.")
 
-    # --- CREAZIONE TABELLE DATABASE ---
+    # --- Creazione tabelle DB ---
     with app.app_context():
         try:
-            # db.create_all() verrà eseguito se il database non esiste o le tabelle sono mancanti.
-            # Questo è un fallback, ma le migrazioni dovrebbero gestire l'aggiornamento dello schema.
             db.create_all()
             print("✅ Tabelle database verificate/create con successo.")
         except Exception as e:
             print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
 
-    # --- CHIUSURA SFIDE SCADUTE (all'avvio e in background) ---
+    # --- Chiusura sfide scadute all'avvio ---
     with app.app_context():
         try:
-            # Importa la funzione qui, così è disponibile nel contesto dell'app
             from .models import close_expired_challenges
             closed_count = close_expired_challenges()
             if closed_count > 0:
@@ -151,14 +137,14 @@ def create_app():
         except Exception as e:
             print(f"⚠️ Errore chiusura sfide all'avvio: {e}")
 
-    # --- SCHEDULER PER AZIONI PERIODICHE ---
+    # --- Scheduler per chiusura giornaliera ---
     try:
         if not scheduler.running:
-            from .models import close_expired_challenges # Importa la funzione necessaria
+            from .models import close_expired_challenges
 
-            @scheduler.scheduled_job('cron', hour=0, minute=0)  # Mezzanotte ogni giorno
+            @scheduler.scheduled_job('cron', hour=0, minute=0)
             def close_daily_expired_challenges_job():
-                with app.app_context(): # Necessario per accedere al DB
+                with app.app_context():
                     try:
                         closed_count = close_expired_challenges()
                         if closed_count > 0:
@@ -172,14 +158,11 @@ def create_app():
             print("✅ Scheduler avviato - chiusura automatica sfide attiva.")
         else:
             print("✅ Scheduler già attivo.")
-
     except Exception as e:
         print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
 
-    # Le chiamate a os.makedirs per le directory persistenti sono state rimosse da qui.
-    # Verranno gestite dal Build Command di Render.
-
-    # Aggiunge funzioni globali a Jinja2 (es. per date)
+    # --- Aggiunge funzioni globali a Jinja2 ---
+    app.jinja_env.add_extension('jinja2.ext.do')
     app.jinja_env.globals.update(
         datetime=datetime,
         timedelta=timedelta,
@@ -188,7 +171,8 @@ def create_app():
 
     return app
 
-# Funzione per fermare lo scheduler (utile per testing o shutdown)
+
+# --- Ferma lo scheduler ---
 def stop_scheduler():
     """Ferma lo scheduler."""
     if scheduler.running:
