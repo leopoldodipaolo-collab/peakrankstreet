@@ -59,6 +59,63 @@ def init_db_command():
 # =======================================================
 
 
+# =======================================================
+# Comando CLI: update-route-fields (AGGIUNGI QUESTO)
+# =======================================================
+@app.cli.command("update-route-fields")
+@click.argument("route_id", type=int)
+@click.argument("json_fields")
+def update_route_fields(route_id, json_fields):
+    """
+    Aggiorna più campi di una rotta contemporaneamente tramite JSON.
+    Esempio:
+    flask update-route-fields 1 '{"classic_city": "Milano", "is_classic": true, "distance": 5.2}'
+    """
+    from app.models import Route
+    import json
+
+    route = Route.query.get(route_id)
+    if not route:
+        click.echo(f"❌ Route con id={route_id} non trovata.")
+        return
+
+    try:
+        fields_dict = json.loads(json_fields)
+    except json.JSONDecodeError:
+        click.echo("❌ JSON non valido. Usa il formato: '{\"campo1\": \"valore1\", \"campo2\": valore2}'")
+        return
+
+    updated_fields = []
+    
+    for field, value in fields_dict.items():
+        if not hasattr(route, field):
+            click.echo(f"⚠️  Campo '{field}' non esiste, saltato.")
+            continue
+
+        # Conversione automatica del tipo
+        column_type = type(getattr(Route, field).type)
+        try:
+            if column_type.__name__ == "Boolean":
+                value = value.lower() in ("1", "true", "yes") if isinstance(value, str) else bool(value)
+            elif column_type.__name__ == "Integer":
+                value = int(value)
+            elif column_type.__name__ == "Float":
+                value = float(value)
+        except (ValueError, TypeError) as e:
+            click.echo(f"⚠️  Valore '{value}' non valido per {field}, saltato. Errore: {e}")
+            continue
+
+        setattr(route, field, value)
+        updated_fields.append(f"{field}='{value}'")
+
+    if updated_fields:
+        db.session.commit()
+        click.echo(f"✅ Route id={route_id} aggiornata: {', '.join(updated_fields)}")
+    else:
+        click.echo("ℹ️  Nessun campo aggiornato.")
+
+
+
 if __name__ == '__main__':
     # Rimuoviamo db.create_all() da qui per gestire tutto tramite il comando init-db
     app.run(host='0.0.0.0', port=5000, debug=True)
