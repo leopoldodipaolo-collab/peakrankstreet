@@ -23,6 +23,9 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+     # --- AGGIUNGI QUESTA NUOVA RIGA ---
+    description = db.Column(db.Text, nullable=True) # Descrizione opzionale per la rotta
+    # --- FINE NUOVA RIGA ----
 
     # MODIFICATO: lazy='dynamic' permette di aggiungere filtri successivi alle query
     routes = db.relationship('Route', backref='creator', lazy='dynamic')
