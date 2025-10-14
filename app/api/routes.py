@@ -340,16 +340,43 @@ def get_classic_routes(city):
     from app.models import Route, RouteRecord, Activity, User
     from sqlalchemy import func
     
+    print(f"🔍 CLASSIC ROUTES API CALLED")
+    print(f"📌 City parameter: '{city}'")
+    print(f"📌 Request args: {request.args}")
+    
     include_top_times = request.args.get('include_top_times', 'false').lower() == 'true'
     
+    # DEBUG: Verifica tutte le route classiche
+    all_classic_routes = Route.query.filter_by(is_classic=True).all()
+    print(f"📊 Tutte le route classiche nel DB: {len(all_classic_routes)}")
+    for route in all_classic_routes:
+        print(f"   - ID: {route.id}, Name: '{route.name}', City: '{route.classic_city}', is_classic: {route.is_classic}")
+    
+    # DEBUG: Query originale
     classic_routes = Route.query.filter(
         Route.is_classic == True,
-        func.lower(Route.classic_city) == func.lower(city)
+        Route.classic_city == city
     ).order_by(Route.name).all()
+    
+    print(f"✅ Route trovate con filtro città '{city}': {len(classic_routes)}")
+    
+    # DEBUG: Prova query case-insensitive
+    classic_routes_ci = Route.query.filter(
+        Route.is_classic == True
+    ).filter(
+        Route.classic_city.ilike(f"%{city}%")
+    ).order_by(Route.name).all()
+    
+    print(f"🔍 Route trovate con ILIKE '%{city}%': {len(classic_routes_ci)}")
+    
+    # Usa i risultati della query case-insensitive per ora
+    classic_routes = classic_routes_ci
     
     routes_data = []
     for route in classic_routes:
-        # Trova il record holder per questo percorso
+        print(f"🎯 Processing route: {route.name}")
+        
+        # ... il resto del codice rimane uguale ...
         record = RouteRecord.query.filter_by(route_id=route.id).order_by(RouteRecord.duration.asc()).first()
         
         route_data = {
@@ -367,7 +394,7 @@ def get_classic_routes(city):
             'featured_image': route.featured_image,
             'total_activities': len(route.activities),
             'record_holder': None,
-            'top_5_times': []  # Inizializza come lista vuota
+            'top_5_times': []
         }
         
         if record:
@@ -375,45 +402,11 @@ def get_classic_routes(city):
                 'username': record.record_holder.username,
                 'duration': record.duration
             }
-        
-        # NUOVO: Aggiungi i top 5 tempi se richiesto
-        if include_top_times:
-            try:
-                # Prova diversi modi per accedere all'utente
-                top_activities = Activity.query\
-                    .filter(Activity.route_id == route.id)\
-                    .order_by(Activity.duration.asc())\
-                    .limit(5)\
-                    .all()
-                
-                top_times = []
-                for activity in top_activities:
-                    # Prova diversi modi per accedere all'username
-                    username = None
-                    if hasattr(activity, 'user') and activity.user:
-                        username = activity.user.username
-                    elif hasattr(activity, 'athlete'):
-                        username = activity.athlete.username
-                    else:
-                        # Fallback: query diretta per l'utente
-                        user = User.query.get(activity.user_id)
-                        username = user.username if user else "Utente Sconosciuto"
-                    
-                    top_times.append({
-                        'username': username,
-                        'duration': activity.duration,
-                        'user_id': activity.user_id,
-                        'activity_id': activity.id
-                    })
-                
-                route_data['top_5_times'] = top_times
-                
-            except Exception as e:
-                print(f"Errore nel recupero top times per route {route.id}: {e}")
-                route_data['top_5_times'] = []
+            print(f"   🏆 Record holder: {record.record_holder.username}")
         
         routes_data.append(route_data)
     
+    print(f"🎉 Final response: {len(routes_data)} routes")
     return jsonify(routes_data)
 
 
