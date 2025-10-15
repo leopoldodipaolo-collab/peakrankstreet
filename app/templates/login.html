@@ -1,8 +1,9 @@
-{% extends "index.html" %}
+{% extends "index.html" %} {# Assicurati che sia index.html e non base.html se questo è il tuo layout principale #}
 
 {% block title %}Login - StreetSport App{% endblock %}
 
 {% block content %}
+<div class="container mt-5 pt-5"> {# Aggiunto pt-5 per dare spazio sotto la navbar fissa #}
     <div class="row justify-content-center my-4">
         <div class="col-md-6">
             <div class="card shadow-sm">
@@ -10,8 +11,12 @@
                     <h2 class="mb-0 text-center">Accedi</h2>
                 </div>
                 <div class="card-body">
-                    <!-- Il tag <form> non ha un 'action', quindi invia alla stessa URL (corretto) -->
+                    {# Il tag <form> non ha un 'action', quindi invia alla stessa URL (corretto) #}
                     <form method="POST" class="needs-validation" novalidate id="loginForm">
+                        {# --- AGGIUNGI QUESTO TOKEN CSRF QUI --- #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+                        {# Assicurati che csrf_token() funzioni correttamente #}
+
                         <div class="mb-3">
                             <label for="username" class="form-label">Username:</label>
                             <input type="text" id="username" name="username" class="form-control" required>
@@ -28,10 +33,11 @@
                         </div>
                         <button type="submit" class="btn btn-success w-100">Login</button>
                     </form>
-                    <!-- MODIFICATO: Aggiunto 'auth.' -->
+                    {# MODIFICATO: Aggiunto 'auth.' #}
                     <p class="text-center mt-3">Non hai un account? <a href="{{ url_for('auth.register') }}">Registrati ora</a>.</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

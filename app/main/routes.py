@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification,ChallengeInvitation, Bet
+from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike
 from app import db
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
@@ -14,7 +14,7 @@ import os
 from decimal import Decimal, InvalidOperation
 from shapely.geometry import LineString, Point
 from math import radians, sin, cos, sqrt, atan2
-
+from werkzeug.utils import secure_filename # Utile per gestire i nomi dei file
 
 main = Blueprint('main', __name__)
 
@@ -71,10 +71,32 @@ def allowed_file(filename):
 
 # --- Route Principali e Social ---
 
+# In app/main/routes.py
+
+# In app/main/routes.py (route index)
 @main.route('/')
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
-    return render_template("index.html", user_city=user_city, is_homepage=True)
+    
+    recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
+    active_challenges = Challenge.query.filter(Challenge.end_date >= datetime.utcnow(), Challenge.is_active == True).order_by(Challenge.start_date.asc()).limit(3).all()
+    
+    top_users_data = (
+        db.session.query(User, func.sum(Activity.distance).label('total_distance'))
+        .join(Activity).group_by(User).order_by(func.sum(Activity.distance).desc()).limit(5).all()
+    )
+    top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
+    
+    # Recupera gli ultimi 5 post dalla community
+    community_posts = Post.query.join(User).order_by(Post.created_at.desc()).limit(5).all() 
+    
+    return render_template("index.html", 
+                           user_city=user_city, 
+                           is_homepage=True, 
+                           recent_activities=recent_activities,
+                           active_challenges=active_challenges, 
+                           top_users=top_users,
+                           community_posts=community_posts) # Passa la nuova lista al template
 
 @main.route('/feed')
 @login_required
@@ -1435,6 +1457,152 @@ def privacy_policy():
     """
     print("Debug: Richiesta alla rotta privacy_policy ricevuta.") # Debug print
     return render_template('privacy.html')
+
+
+# In app/main/routes.py
+# --- Funzione helper per controllare il tipo di file ---
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@main.route('/posts/new', methods=['GET', 'POST'])
+@login_required
+def create_post():
+    # ✅ Imposta (o verifica) la cartella di upload
+    upload_dir = os.path.join(current_app.root_path, 'static', 'posts_images')
+    os.makedirs(upload_dir, exist_ok=True)  # crea se non esiste
+    current_app.config['UPLOAD_FOLDER'] = upload_dir
+
+    if request.method == 'POST':
+        content = request.form.get('content')
+        post_type = request.form.get('post_type', 'text')
+        image_file = request.files.get('image')
+        link = request.form.get('link')  # opzionale per i post tipo "link"
+
+        # --- VALIDAZIONE ---
+        if not content and not image_file and not link:
+            flash('Il post non può essere vuoto. Aggiungi testo, immagine o link.', 'warning')
+            return redirect(url_for('main.create_post'))
+
+        image_filename = None
+
+        # --- GESTIONE IMMAGINE ---
+        if image_file and image_file.filename != '':
+            if allowed_file(image_file.filename):
+                filename = secure_filename(image_file.filename)
+                unique_filename = f"{uuid.uuid4()}{os.path.splitext(filename)[1]}"
+                save_path = os.path.join(upload_dir, unique_filename)
+                try:
+                    image_file.save(save_path)
+                    image_filename = unique_filename
+                    post_type = 'image'
+                except Exception as e:
+                    flash(f"Errore nel salvataggio dell'immagine: {e}", 'danger')
+                    return redirect(url_for('main.create_post'))
+            else:
+                flash('Formato immagine non valido. Usa PNG, JPG, JPEG o GIF.', 'danger')
+                return redirect(url_for('main.create_post'))
+
+        # --- CREAZIONE DEL POST ---
+        new_post = Post(
+            user_id=current_user.id,
+            content=content,
+            image_url=image_filename,  # salva solo il nome del file
+            post_type=post_type,
+        )
+
+        # Se il post è un link, salvalo
+        if post_type == 'link' and link:
+            new_post.link = link
+
+        try:
+            db.session.add(new_post)
+            db.session.commit()
+            flash('Post creato con successo!', 'success')
+            return redirect(url_for('main.index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Errore durante la creazione del post: {e}", 'danger')
+            return redirect(url_for('main.create_post'))
+
+    # Metodo GET → mostra il form per creare un post
+    return render_template('create_post.html', is_homepage=False)
+
+
+# --- Assicurati che la funzione allowed_file sia definita (probabilmente in routes.py o una utility) ---
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# --- Aggiungi la route per visualizzare un singolo post (necessaria per i link) ---
+@main.route('/post/<int:post_id>')
+def post_detail(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    # Recupera i commenti per questo post
+    post_comments = PostComment.query.filter_by(post_id=post_id).join(User).order_by(PostComment.created_at.asc()).all()
+    
+    # Recupera i like per questo post
+    post_likes = PostLike.query.filter_by(post_id=post_id).join(User).all()
+    
+    # Verifica se l'utente corrente ha messo like a questo post
+    user_liked_post = False
+    if current_user.is_authenticated:
+        user_like = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+        if user_like:
+            user_liked_post = True
+
+    return render_template('post_detail.html', 
+                           post=post, 
+                           post_comments=post_comments, 
+                           post_likes=post_likes,
+                           user_liked_post=user_liked_post,
+                           is_homepage=False)
+
+# --- Esempi di route per commenti e like (da aggiungere) ---
+
+@main.route('/post/<int:post_id>/comment', methods=['POST'])
+@login_required
+def add_comment_to_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    content = request.form.get('content')
+    
+    if not content:
+        flash('Il commento non può essere vuoto.', 'warning')
+        return redirect(url_for('main.post_detail', post_id=post_id))
+        
+    new_comment = PostComment(
+        user_id=current_user.id,
+        post_id=post_id,
+        content=content
+    )
+    db.session.add(new_comment)
+    db.session.commit()
+    flash('Commento aggiunto!', 'success')
+    return redirect(url_for('main.post_detail', post_id=post_id))
+
+@main.route('/post/<int:post_id>/like', methods=['POST'])
+@login_required
+def toggle_post_like(post_id):
+    post = Post.query.get_or_404(post_id)
+    like = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
+    
+    if like:
+        # Rimuovi il like
+        db.session.delete(like)
+        action = 'unliked'
+    else:
+        # Aggiungi il like
+        new_like = PostLike(user_id=current_user.id, post_id=post_id)
+        db.session.add(new_like)
+        action = 'liked'
+        
+    db.session.commit()
+    
+    # Aggiorna il conteggio dei like e restituisci in formato JSON per aggiornamenti AJAX
+    # Questo è un esempio base; potresti voler restituire più dati
+    return jsonify({'status': 'success', 'action': action, 'new_like_count': len(post.likes)})
 
 # TEST #####################################################################################################################################
 

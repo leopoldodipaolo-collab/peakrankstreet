@@ -29,7 +29,108 @@
     <meta name="theme-color" content="#28a745">
 
     <style>
-        /* Questo blocco deve essere vuoto o rimosso dopo aver spostato gli stili in styles.css */
+        /* Stili professionali per la sezione news */
+        .news-feed-card {
+            border: none; /* Rimuove il bordo di default della card */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombra più pronunciata */
+            margin-bottom: 2rem; /* Spazio sotto la card */
+        }
+        .news-feed-card .card-header {
+            background-color: #ffffff; /* Sfondo bianco per l'header */
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0; /* Bordo sottile per separare */
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .news-feed-card .card-header h4 {
+            margin-bottom: 0;
+            font-weight: 600;
+            color: #333;
+        }
+        .news-feed-card .card-body {
+            padding: 1.5rem;
+            background-color: #ffffff; /* Sfondo bianco per il corpo */
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .news-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem; /* Spazio tra gli elementi di notizia */
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #f0f0f0; /* Bordo leggero tra le notizie */
+        }
+        .news-item:last-child {
+            border-bottom: none; /* Nessun bordo per l'ultima notizia */
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .news-item-avatar img {
+            width: 45px; /* Avatar leggermente più grande */
+            height: 45px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+            border: 2px solid #0d6efd; /* Bordo blu per l'avatar */
+        }
+        .news-item-content {
+            flex-grow: 1;
+        }
+        .news-item-content p {
+            margin-bottom: 0.5rem; /* Spazio sotto il testo della notizia */
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #555; /* Colore testo leggermente più scuro */
+        }
+        .news-item-content strong {
+            color: #212529; /* Colore più scuro per il nome */
+            font-size: 1rem;
+        }
+        .news-item-content a.text-primary {
+            font-weight: 500; /* Testo link leggermente in grassetto */
+        }
+        .news-item-content .text-muted.small {
+            font-size: 0.75rem; /* Dimensione più piccola per la data */
+            color: #888 !important; /* Colore data più tenue */
+        }
+        .news-action-icons {
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .news-action-icons a {
+            margin-right: 15px;
+            color: #6c757d;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        .news-action-icons a:hover {
+            color: #0d6efd;
+        }
+        .news-action-icons i {
+            margin-right: 5px;
+            font-size: 1.1rem; /* Icone leggermente più grandi */
+        }
+        .news-feed-card .card-footer {
+            background-color: #f8f9fa; /* Sfondo per il footer */
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            text-align: center;
+        }
+        .news-feed-card .card-footer .btn {
+            border-radius: 20px; /* Bottoni con angoli arrotondati */
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -324,6 +425,125 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- SEZIONE NEWS AGGIORNATA CON POST PERSONALIZZATI -->
+                            <div class="news-feed-card shadow-lg">
+                                <div class="card-header">
+                                    <h4><i class="bi bi-newspaper me-2"></i>Aggiornamenti dalla Community</h4>
+                                </div>
+                                <div class="card-body">
+                                    
+                                    {# --- Notizie da Attività Recenti --- #}
+                                    {% if recent_activities %}
+                                        {% for activity in recent_activities %}
+                                            <div class="news-item">
+                                                <div class="news-item-avatar">
+                                                    <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" alt="Avatar {{ activity.user_activity.username }}">
+                                                </div>
+                                                <div class="news-item-content">
+                                                    <p class="mb-1">
+                                                        <strong>{{ activity.user_activity.username }}</strong> ha appena completato un'attività:
+                                                        "{{ activity.activity_type }} di {{ "%.2f"|format(activity.distance) }} km su percorso '{{ activity.route_activity.name }}'."
+                                                        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="text-primary">Vedi Dettagli</a>
+                                                    </p>
+                                                    <div class="text-muted small">Pubblicato il {{ activity.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
+                                                    <div class="news-action-icons">
+                                                        {# Aggiungi qui logica per like/commenti se necessario per le attività #}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {# --- Notizie da Sfide Recenti --- #}
+                                    {% if active_challenges %}
+                                        {% for challenge in active_challenges %}
+                                            <div class="news-item">
+                                                {# Avatar del creatore omesso per ora #}
+                                                <div class="news-item-content">
+                                                    <p class="mb-1">
+                                                        È stata lanciata una nuova sfida:
+                                                        "<strong>{{ challenge.name }}</strong>" sul percorso '{{ challenge.route_info.name }}'. La sfida terminerà il {{ challenge.end_date.strftime('%d/%m/%Y') }}.
+                                                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="text-primary">Partecipa o Visualizza</a>
+                                                    </p>
+                                                    <div class="text-muted small">Creata il {{ challenge.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                    
+                                    {# --- NUOVI POST PERSONALIZZATI --- #}
+                                    {% if community_posts %}
+                                        {% for post in community_posts %}
+                                            <div class="news-item">
+                                                <div class="news-item-avatar">
+                                                    <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" alt="Avatar {{ post.user.username }}">
+                                                </div>
+                                                <div class="news-item-content">
+                                                    <p class="mb-1">
+                                                        <strong>{{ post.user.username }}</strong> ha pubblicato:
+                                                        {{ post.content | safe }} {# Usa |safe se il contenuto può contenere HTML #}
+                                                        {% if post.image_url %}
+                                                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mt-2" alt="Immagine Post">
+                                                        {% endif %}
+                                                        {% if post.post_type == 'link' and post.content %} {# Assumendo che il link sia nel content o in un campo separato #}
+                                                            <a href="{{ post.content }}" class="text-primary" target="_blank">Visita il Link</a>
+                                                        {% endif %}
+                                                    </p>
+                                                    <div class="text-muted small">Pubblicato il {{ post.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
+                                                    <div class="news-action-icons">
+                                                        {# Qui dovrai implementare la logica per like/commenti sui post #}
+                                                        <a href="{{ url_for('main.toggle_post_like', post_id=post.id) }}" class="like-post-link" data-post-id="{{ post.id }}">
+                                                            <i class="bi {% if post.id in user_liked_post_ids %}bi-hand-thumbs-up-fill{% else %}bi-hand-thumbs-up{% endif %}"></i>
+                                                            <span class="like-count">{{ post.likes.count() }}</span> Likes
+                                                        </a>
+                                                        <a href="{{ url_for('main.post_detail', post_id=post.id) }}#comments">
+                                                            <i class="bi bi-chat-dots"></i> {{ post.comments.count() }}
+                                                        </a>
+
+                                                        <a href="#" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}"><i class="bi bi-share"></i> Condividi</a>
+                                                        
+                                                        {# Modale di Condivisione per ogni post #}
+                                                        <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                                                            <div class="modal-dialog">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Condividi questo post</h5>
+                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        <p>Copia il link per condividere:</p>
+                                                                        <input type="text" class="form-control mb-2" value="{{ url_for('main.post_detail', post_id=post.id, _external=True) }}" readonly>
+                                                                        {# Qui potresti aggiungere pulsanti per condividere sui social #}
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {# Messaggio se non ci sono notizie #}
+                                    {% if not recent_activities and not active_challenges and not community_posts %}
+                                        <p class="text-center text-muted">Nessun aggiornamento dalla community al momento.</p>
+                                    {% endif %}
+
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-primary btn-sm">Tutte le Attività</a>
+                                    <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-secondary btn-sm ms-2">Esplora le Sfide</a>
+                                    {# Pulsante per creare un nuovo post, visibile solo se l'utente è autenticato #}
+                                    {% if current_user.is_authenticated %} 
+                                        <a href="{{ url_for('main.create_post') }}" class="btn btn-outline-success btn-sm ms-2"><i class="bi bi-plus-circle me-1"></i>Crea Post</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab">
@@ -399,6 +619,51 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
 
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    {# Script per gestire i like dei post (AJAX) #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gestione Like per i Post
+            document.querySelectorAll('.like-post-link').forEach(link => {
+                link.addEventListener('click', async function(event) {
+                    event.preventDefault(); // Previene il comportamento predefinito del link
+                    const postId = this.dataset.postId;
+                    const url = this.href; // L'URL dalla route Flask
+                    const likeButton = this;
+                    const likeCountSpan = likeButton.querySelector('.like-count');
+                    
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                // Aggiungi header CSRF se necessario, es:
+                                // 'X-CSRFToken': '{{ csrf_token() }}' 
+                            }
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.status === 'success') {
+                            // Aggiorna l'icona e il conteggio
+                            likeButton.classList.toggle('text-primary');
+                            const likeIcon = likeButton.querySelector('i');
+                            likeIcon.classList.toggle('bi-hand-thumbs-up-fill');
+                            likeIcon.classList.toggle('bi-hand-thumbs-up');
+                            likeCountSpan.textContent = result.new_like_count;
+                        } else {
+                            alert('Errore nel processare il like.');
+                        }
+                    } catch (error) {
+                        console.error('Errore fetch:', error);
+                        alert('Errore di rete durante il processo di like.');
+                    }
+                });
+            });
+
+            // Altri script specifici della pagina se necessari...
+        });
+    </script>
+    {% endblock %}
 </body>
 </html>

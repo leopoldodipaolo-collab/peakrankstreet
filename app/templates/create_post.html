@@ -1,0 +1,79 @@
+{% extends "index.html" %} {# O index.html, assicurati che sia il tuo template principale #}
+{% block title %}Crea Nuovo Post{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary-custom text-white">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Crea un Nuovo Aggiornamento</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data">
+                        {# CSRF Token - assicurati che funzioni #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+
+                        <div class="mb-3">
+                            <label for="post_type" class="form-label">Tipo di Post</label>
+                            <select class="form-select" id="post_type" name="post_type" aria-label="Seleziona il tipo di post">
+                                <option value="text" selected>Testo</option>
+                                <option value="image">Immagine</option>
+                                <option value="link">Link</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Contenuto del Post</label>
+                            <textarea class="form-control" id="content" name="content" rows="6" placeholder="Scrivi qui il tuo aggiornamento..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Allega un'immagine (opzionale)</label>
+                            <input class="form-control" type="file" id="image" name="image" accept="image/*">
+                        </div>
+                        
+                        {# Campo per il Link (mostrato condizionalmente con JS) #}
+                        <div class="mb-3" id="link-field" style="display: none;">
+                            <label for="link" class="form-label">Link</label>
+                            <input type="url" class="form-control" id="link" name="link" placeholder="https://...">
+                        </div>
+
+                        <button type="submit" class="btn btn-success-custom btn-lg w-100">
+                            <i class="bi bi-send-fill me-2"></i> Pubblica Aggiornamento
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} {# <-- ASSICURATI CHE QUESTO SIA CHIUSO CORRETTAMENTE #}
+
+{% block scripts %}
+<script>
+    // Script per mostrare/nascondere il campo link in base al tipo di post selezionato
+    const postTypeSelect = document.getElementById('post_type');
+    const linkFieldDiv = document.getElementById('link-field'); 
+
+    if (postTypeSelect && linkFieldDiv) {
+        postTypeSelect.addEventListener('change', function() {
+            if (this.value === 'link') {
+                linkFieldDiv.style.display = 'block';
+            } else {
+                linkFieldDiv.style.display = 'none';
+            }
+        });
+
+        // Imposta lo stato iniziale al caricamento della pagina
+        if (postTypeSelect.value === 'link') {
+            linkFieldDiv.style.display = 'block';
+        } else {
+            linkFieldDiv.style.display = 'none';
+        }
+    }
+</script>
+{% endblock scripts %} 
+
+</body>
+</html>

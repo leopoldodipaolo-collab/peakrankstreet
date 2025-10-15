@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Dettaglio Post{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card post-detail-card shadow-lg mb-5">
+                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-chat-dots me-2"></i>Post di {{ post.user.username }}
+                        {# Se hai la relazione 'user', altrimenti usa post.user_id #}
+                    </div>
+                    <div class="text-muted small">Pubblicato il {{ post.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
+                </div>
+                <div class="card-body">
+                    {# Contenuto del Post #}
+                    <div class="post-content mb-3">
+                        {% if post.post_type == 'image' and post.image_url %}
+                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mb-3" alt="Post Image">
+                        {% elif post.post_type == 'link' %}
+                            {# Potresti voler mostrare un preview del link qui #}
+                            <p>{{ post.content | safe }}</p>
+                            <a href="{{ post.content }}" target="_blank" class="btn btn-outline-primary btn-sm">Visita il Link</a>
+                        {% else %} {# post_type == 'text' #}
+                            <p>{{ post.content | safe }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    {# Azioni sul Post (Like, Commenti) #}
+                    <div class="post-actions d-flex justify-content-between align-items-center">
+                        <div>
+                            {# Pulsante Like #}
+                            <form id="like-form-{{ post.id }}" method="POST" action="{{ url_for('main.toggle_post_like', post_id=post.id) }}" style="display: inline;">
+                                {{ form.csrf_token }} {# Se usi CSRF #}
+                                <button type="submit" class="btn btn-link btn-sm text-decoration-none {% if user_liked_post %}text-primary{% else %}text-muted{% endif %} like-button" data-post-id="{{ post.id }}">
+                                    <i class="bi {% if user_liked_post %}bi-hand-thumbs-up-fill{% else %}bi-hand-thumbs-up{% endif %}"></i>
+                                    <span class="like-count">{{ post.likes.count() }}</span> Likes
+                                </button>
+                            </form>
+                            
+                            {# Pulsante Commenti #}\
+                            <a href="#comments-section" class="btn btn-link btn-sm text-decoration-none text-muted">
+                                <i class="bi bi-chat-dots"></i> {{ post.comments | length }} Commenti
+                            </a>
+                        </div>
+                        <div>
+                            {# Pulsante Condividi #}
+                            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
+                                <i class="bi bi-share"></i> Condividi
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {# Modale di Condivisione #}
+                    <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Condividi questo post</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Copia il link per condividere:</p>
+                                    <input type="text" class="form-control mb-2" value="{{ url_for('main.post_detail', post_id=post.id, _external=True) }}" readonly>
+                                    {# Aggiungi qui pulsanti per social media se necessario #}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                {# Sezione Commenti #}
+                <div class="card-footer" id="comments-section">
+                    <h5 class="mb-3">Commenti</h5>
+                    
+                    {# Form per aggiungere un nuovo commento #}
+                    {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('main.add_comment_to_post', post_id=post.id) }}" class="mb-4">
+                            {{ form.csrf_token }} {# Se usi CSRF #}
+                            <div class="d-flex">
+                                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-3 comment-avatar" alt="Il tuo Avatar">
+                                <textarea class="form-control me-2" name="content" rows="2" placeholder="Aggiungi un commento..."></textarea>
+                                <button type="submit" class="btn btn-primary btn-sm align-self-start"><i class="bi bi-send-fill"></i></button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="text-muted text-center">Accedi per commentare.</p>
+                    {% endif %}
+                    
+                    {# Lista dei commenti esistenti #}
+                    {% if post_comments %}
+                        {% for comment in post_comments %}
+                            <div class="comment mb-3 d-flex align-items-start">
+                                <img src="{{ url_for('static', filename='profile_pics/' + comment.user.profile_image) }}" class="rounded-circle me-3 comment-avatar" alt="Avatar {{ comment.user.username }}">
+                                <div class="flex-grow-1">
+                                    <div class="comment-header mb-1">
+                                        <strong class="me-2">{{ comment.user.username }}</strong>
+                                        <span class="text-muted small">{{ comment.created_at.strftime('%d/%m/%Y alle %H:%M') }}</span>
+                                    </div>
+                                    <p class="comment-content mb-1">{{ comment.content | safe }}</p>
+                                    {# Qui potresti aggiungere la logica per mettere like ai commenti #}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">Non ci sono ancora commenti.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Script per gestire i like (probabilmente con AJAX)
+    document.querySelectorAll('.like-button').forEach(button => {
+        button.addEventListener('click', async function(event) {
+            event.preventDefault(); // Previene l'invio del form standard
+            const postId = this.dataset.postId;
+            const url = this.href; // O l'URL dal form action
+            const likeButton = this;
+            const likeCountSpan = likeButton.querySelector('.like-count');
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Aggiungi header CSRF se necessario
+                },
+                // body: JSON.stringify({ _csrf_token: '{{ csrf_token() }}' }) // Esempio CSRF
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                likeButton.classList.toggle('text-primary'); // Cambia colore se likato/unlikato
+                likeButton.querySelector('i').classList.toggle('bi-hand-thumbs-up-fill');
+                likeButton.querySelector('i').classList.toggle('bi-hand-thumbs-up');
+                likeCountSpan.textContent = result.new_like_count; // Aggiorna il conteggio
+            } else {
+                alert('Errore nel processo di like.');
+            }
+        });
+    });
+</script>
+{% endblock %}

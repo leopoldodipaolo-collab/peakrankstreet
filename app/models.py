@@ -259,7 +259,52 @@ class Notification(db.Model):
 
     def __repr__(self):
         return f'<Notification {self.action} for User {self.recipient_id}>'
+
+# In app/models.py
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(120), nullable=True) # Per allegare immagini
+    post_type = db.Column(db.String(50), default='text', index=True) # 'text', 'image', 'link'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     
+    # Relazioni
+    user = db.relationship('User', backref='posts')
+    comments = db.relationship('PostComment', backref='post_comment', lazy='dynamic', cascade="all, delete-orphan")
+    likes = db.relationship('PostLike', backref='post_like', lazy='dynamic', cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Post {self.id} by {self.user.username}>'
+
+class PostComment(db.Model):
+    __tablename__ = 'post_comments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User', backref='post_comments')
+    
+    def __repr__(self):
+        return f'<PostComment {self.id} on Post {self.post_id}>'
+
+class PostLike(db.Model):
+    __tablename__ = 'post_likes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='_user_post_like_uc'),)
+    
+    user = db.relationship('User', backref='post_likes')
+    
+    def __repr__(self):
+        return f'<PostLike {self.id} User:{self.user_id} Post:{self.post_id}>'    
 
 # Aggiungi in fondo a app/models.py
 def close_expired_challenges():
