@@ -37,21 +37,33 @@ def create_app():
     Factory function per creare e configurare l'istanza dell'applicazione Flask.
     """
     app_dir = os.path.abspath(os.path.dirname(__file__))
-
+    
     app = Flask(__name__,
                 static_folder=os.path.join(app_dir, 'static'),
                 static_url_path='/static')
 
-    # --- AGGIUNGI QUESTE RIGHE PER DISABILITARE LA CACHE DI JINJA2 (PER DEBUG) ---
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.jinja_env.cache = None
-    # --- FINE AGGIUNTA ---
-
+    # Configurazioni
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-    db_path = os.path.join(app_dir, 'site.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    # --- CONFIGURAZIONE DATABASE CORRETTA ---
+    database_url = os.environ.get('DATABASE_URL')
+
+    if database_url:
+        # Correggi l'URL se necessario
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        print("✅ Utilizzo database PostgreSQL da DATABASE_URL")
+    else:
+        # Fallback per sviluppo locale
+        db_path = os.path.join(app_dir, 'site.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+        print("⚠️  Utilizzo SQLite per sviluppo locale (DATABASE_URL non trovato)")
+    # --- FINE CONFIGURAZIONE DATABASE ---
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
