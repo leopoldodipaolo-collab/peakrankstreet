@@ -81,6 +81,7 @@ class Route(db.Model):
     distance_km = db.Column(db.Float, nullable=True)
     is_featured = db.Column(db.Boolean, default=False, nullable=False, index=True)
     featured_image = db.Column(db.String(120), nullable=True)
+    testleo = db.Column(db.Integer)
     
     # === NUOVI CAMPI PER PERCORSI CLASSICI ===
     is_active = db.Column(db.Boolean, default=True)  # ← NUOVA COLONNA
