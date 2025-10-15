@@ -27,111 +27,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#28a745">
-
-    <style>
-        /* Stili professionali per la sezione news */
-        .news-feed-card {
-            border: none; /* Rimuove il bordo di default della card */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombra più pronunciata */
-            margin-bottom: 2rem; /* Spazio sotto la card */
-        }
-        .news-feed-card .card-header {
-            background-color: #ffffff; /* Sfondo bianco per l'header */
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e0e0e0; /* Bordo sottile per separare */
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .news-feed-card .card-header h4 {
-            margin-bottom: 0;
-            font-weight: 600;
-            color: #333;
-        }
-        .news-feed-card .card-body {
-            padding: 1.5rem;
-            background-color: #ffffff; /* Sfondo bianco per il corpo */
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-        .news-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 1.5rem; /* Spazio tra gli elementi di notizia */
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #f0f0f0; /* Bordo leggero tra le notizie */
-        }
-        .news-item:last-child {
-            border-bottom: none; /* Nessun bordo per l'ultima notizia */
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .news-item-avatar img {
-            width: 45px; /* Avatar leggermente più grande */
-            height: 45px;
-            border-radius: 50%;
-            margin-right: 15px;
-            object-fit: cover;
-            border: 2px solid #0d6efd; /* Bordo blu per l'avatar */
-        }
-        .news-item-content {
-            flex-grow: 1;
-        }
-        .news-item-content p {
-            margin-bottom: 0.5rem; /* Spazio sotto il testo della notizia */
-            font-size: 0.95rem;
-            line-height: 1.5;
-            color: #555; /* Colore testo leggermente più scuro */
-        }
-        .news-item-content strong {
-            color: #212529; /* Colore più scuro per il nome */
-            font-size: 1rem;
-        }
-        .news-item-content a.text-primary {
-            font-weight: 500; /* Testo link leggermente in grassetto */
-        }
-        .news-item-content .text-muted.small {
-            font-size: 0.75rem; /* Dimensione più piccola per la data */
-            color: #888 !important; /* Colore data più tenue */
-        }
-        .news-action-icons {
-            margin-top: 0.75rem;
-            display: flex;
-            align-items: center;
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-        .news-action-icons a {
-            margin-right: 15px;
-            color: #6c757d;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-        }
-        .news-action-icons a:hover {
-            color: #0d6efd;
-        }
-        .news-action-icons i {
-            margin-right: 5px;
-            font-size: 1.1rem; /* Icone leggermente più grandi */
-        }
-        .news-feed-card .card-footer {
-            background-color: #f8f9fa; /* Sfondo per il footer */
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e0e0e0;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-            text-align: center;
-        }
-        .news-feed-card .card-footer .btn {
-            border-radius: 20px; /* Bottoni con angoli arrotondati */
-            padding: 0.5rem 1.2rem;
-            font-weight: 500;
-        }
-    </style>
+    
 </head>
 <body>
     <div class="main-wrapper"> 
@@ -140,7 +36,7 @@
                 <div class="container">
                     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
                         <img src="{{ url_for('static', filename='icons/logoSS_X.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
-                        <span class="fw-bold">PeakRankStreet Leo</span>
+                        <span class="fw-bold">PeakRankStreet</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
