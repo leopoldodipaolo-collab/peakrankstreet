@@ -24,16 +24,25 @@ def upgrade():
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.add_column(sa.Column('registered_on', sa.DateTime(), nullable=True))
 
-    # Passo 2: Aggiorna tutte le righe esistenti con un valore di default non nullo
-    #          (usa la funzione DATETIME('now') specifica per SQLite)
-    op.execute("UPDATE user SET registered_on = DATETIME('now') WHERE registered_on IS NULL")
+    # Passo 2: Aggiorna tutte le righe esistenti con un valore di default
+    # ✅ CORREZIONE: Usa sqlalchemy text() per gestire differenze tra database
+    from sqlalchemy import text
+    
+    # Ottieni la connessione per eseguire SQL raw
+    conn = op.get_bind()
+    
+    # Determina il tipo di database e usa la sintassi appropriata
+    if conn.engine.name == 'sqlite':
+        conn.execute(text('UPDATE user SET registered_on = DATETIME("now") WHERE registered_on IS NULL'))
+    else:  # PostgreSQL
+        conn.execute(text('UPDATE "user" SET registered_on = NOW() WHERE registered_on IS NULL'))
 
     # Passo 3: Altera la colonna per renderla NOT NULL
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.alter_column('registered_on',
                    existing_type=sa.DateTime(),
-                   nullable=False, # Ora puoi impostarlo a False
-                   existing_nullable=True) # Indica che prima era nullable=True
+                   nullable=False,
+                   existing_nullable=True)
 
     # ### comandi di Alembic fine ###
 
