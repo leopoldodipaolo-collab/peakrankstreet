@@ -192,48 +192,59 @@
                             <div class="map-overlay-instructions p-3 bg-light text-muted" id="map-instructions">
                                 <i class="bi bi-info-circle me-2"></i>Usa la barra di ricerca per esplorare nuove aree o clicca su un percorso sulla mappa per vederne i dettagli.
                             </div>
-                            
-                            <!-- Route Details Overlay - Mostrato sopra la mappa su desktop, como modale su mobile -->
-                            <div id="selected-route-details" class="route-details-modal modal fade" tabindex="-1" aria-labelledby="routeDetailsModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-success-custom text-white">
-                                            <h5 class="modal-title" id="routeDetailsModalLabel">Dettagli Percorso</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <h5 class="card-title text-success-custom fw-bold" id="detail-route-name"></h5>
-                                            <p class="card-text text-muted" id="detail-route-description"></p>
-                                            <p class="card-text"><small class="text-muted" id="detail-route-meta"></small></p>
-                                            
-                                            <div id="detail-king-queen" class="king-queen-highlight mt-3" role="alert" style="display:none;">
-                                                <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Re/Regina del Percorso!</h5>
-                                                <p class="mb-1">Detenuto da: <strong id="kq-username"></strong> - <strong id="kq-duration"></strong>
-                                                    <a href="#" id="kq-activity-link" class="btn btn-sm btn-link p-0 ms-1 text-dark" style="font-size:0.8em; vertical-align: baseline;">(Attività)</a>
-                                                </p>
-                                                <small class="text-muted" id="kq-created-at"></small>
-                                            </div>
+                        </div>
+                    </div>
 
-                                            <div id="detail-top-5-times" class="mt-4" style="display:none;">
-                                                <h6 class="border-bottom pb-2">Top 5 Tempi</h6>
-                                                <ul class="list-group list-group-flush list-group-small" id="top-5-list"></ul>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <a href="#" id="detail-route-link" class="btn btn-sm btn-outline-success-custom">Vedi Dettagli Completi del Percorso</a>
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-                                        </div>
+                    <!-- DETTAGLI PERCORSO - SOTTO LA MAPPA -->
+                    <div id="selected-route-details" class="card shadow-lg mb-5 route-details-card" style="display: none;">
+                        <div class="card-header bg-success-custom text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>Dettagli Percorso Selezionato</h4>
+                            <button type="button" class="btn btn-sm btn-light" onclick="hideRouteDetails()">
+                                <i class="bi bi-x-lg"></i> Chiudi
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title text-success-custom fw-bold" id="detail-route-name"></h5>
+                                    <p class="card-text text-muted" id="detail-route-description"></p>
+                                    <p class="card-text"><small class="text-muted" id="detail-route-meta"></small></p>
+                                    
+                                    <div id="detail-king-queen" class="king-queen-highlight mt-3 p-3 bg-warning bg-opacity-10 rounded" role="alert" style="display:none;">
+                                        <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Re/Regina del Percorso!</h5>
+                                        <p class="mb-1">Detenuto da: <strong id="kq-username"></strong> - <strong id="kq-duration"></strong>
+                                            <a href="#" id="kq-activity-link" class="btn btn-sm btn-link p-0 ms-1 text-dark" style="font-size:0.8em; vertical-align: baseline;">(Attività)</a>
+                                        </p>
+                                        <small class="text-muted" id="kq-created-at"></small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="detail-top-5-times" class="mt-3" style="display:none;">
+                                        <h6 class="border-bottom pb-2"><i class="bi bi-trophy me-2"></i>Top 5 Tempi</h6>
+                                        <ul class="list-group list-group-flush list-group-small" id="top-5-list"></ul>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <!-- Elementi nascosti per passare dati a JavaScript -->
-                        <div id="user-profile-url-base" style="display:none;">{{ url_for('main.user_profile', user_id=12345) }}</div> 
+                            
+                            <div class="mt-4 pt-3 border-top">
+                                <a href="#" id="detail-route-link" class="btn btn-success-custom me-2">
+                                    <i class="bi bi-eye me-1"></i>Vedi Dettagli Completi
+                                </a>
+                                <a href="#" id="record-activity-link" class="btn btn-outline-success-custom me-2">
+                                    <i class="bi bi-stopwatch me-1"></i>Registra Tempo
+                                </a>
+                                <a href="#" id="create-challenge-link" class="btn btn-outline-warning">
+                                    <i class="bi bi-trophy me-1"></i>Crea Sfida
+                                </a>
+                            </div>
+
+                                <div id="user-profile-url-base" style="display:none;">{{ url_for('main.user_profile', user_id=12345) }}</div> 
                         <div id="route-detail-url-base" style="display:none;">{{ url_for('main.route_detail', route_id=12345) }}</div>
                         <div id="activity-detail-url-base" style="display:none;">{{ url_for('main.activity_detail', activity_id=12345) }}</div>
                         <div id="map-data-api-url" style="display:none;">{{ url_for('api.get_map_data') }}</div>
                         <div id="user-initial-city" style="display:none;">{{ user_city if user_city else '' }}</div> 
                         <div id="profile-pics-base-url" style="display:none;">{{ url_for('static', filename='profile_pics/') }}</div>
+                        </div>
                     </div>
 
                     <!-- TABBED CONTENT SECTIONS FOR MOBILE (d-lg-none) -->
@@ -251,7 +262,7 @@
                     </ul>
 
                     <div class="tab-content d-lg-block"> <!-- d-lg-block mantiene le sezioni visibili su desktop -->
-                        <div class="tab-pane fade d-lg-block" id="leaderboards-pane" role="tabpanel" aria-labelledby="leaderboards-tab">
+                        <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel" aria-labelledby="leaderboards-tab">
                             <!-- Sezione Classifiche Locali -->
                             <div class="row my-4">
                                 <div class="col-md-6 mb-4">
@@ -387,169 +398,6 @@
     <script>var is_homepage_js = {{ is_homepage | default(false) | tojson }};</script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
-
-    <!-- AUTO-LOAD CLASSIC ROUTES - SISTEMA DEFINITIVO -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Auto-loading classic routes...');
-        
-        // Attiva la tab Sfide dopo un breve delay
-        setTimeout(() => {
-            const challengesTab = document.getElementById('challenges-tab');
-            if (challengesTab) {
-                challengesTab.click();
-                console.log('✅ Tab Sfide attivata');
-            }
-            loadClassicRoutesAuto();
-        }, 1000);
-    });
-
-    function loadClassicRoutesAuto() {
-        const cityElement = document.getElementById('classic-routes-city');
-        const container = document.getElementById('classic-routes-container');
-        const noRoutes = document.getElementById('no-classic-routes');
-        
-        if (!cityElement || !container) {
-            console.log('❌ Elementi HTML non trovati');
-            return;
-        }
-        
-        let city = cityElement.textContent.trim();
-        if (!city) {
-            city = "L'Aquila"; // Default
-            cityElement.textContent = city;
-        }
-        
-        console.log(`🎯 Caricamento percorsi classici per: ${city}`);
-        
-        fetch(`/api/classic-routes/${encodeURIComponent(city)}?include_top_times=true`)
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                console.log(`✅ Trovate ${data.length} route classiche`);
-                renderClassicRoutes(data, container, noRoutes);
-            })
-            .catch(error => {
-                console.error('❌ Errore nel caricamento:', error);
-                if (noRoutes) {
-                    noRoutes.innerHTML = `
-                        <p class="text-danger mb-1">Errore nel caricamento dei percorsi classici</p>
-                        <p class="text-muted"><small>Ricarica la pagina o riprova più tardi</small></p>
-                    `;
-                    noRoutes.style.display = 'block';
-                }
-            });
-    }
-
-    function renderClassicRoutes(routes, container, noRoutes) {
-        console.log('🎨 Dati ricevuti per rendering:', routes);
-        
-        if (!routes || routes.length === 0) {
-            if (noRoutes) {
-                noRoutes.style.display = 'block';
-                noRoutes.innerHTML = `
-                    <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
-                    <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
-                `;
-            }
-            container.innerHTML = '';
-            return;
-        }
-        
-        if (noRoutes) noRoutes.style.display = 'none';
-        
-        // VERSIONE SICURA - usa valori di fallback per tutto
-        container.innerHTML = routes.map(route => {
-            const name = route.name || 'Percorso senza nome';
-            const description = route.description || 'Percorso classico riconosciuto dalla community.';
-            const city = route.classic_city || 'Città sconosciuta';
-            const activityType = route.activity_type || 'Generico';
-            const distance = route.distance_km ? route.distance_km.toFixed(1) : '0.0';
-            const activitiesCount = route.total_activities || 0;
-            
-            console.log(`🎯 Creando card per: ${name}`);
-            
-            return `
-            <div class="col">
-                <div class="card classic-route-card h-100 shadow-lg" style="border-left: 4px solid #28a745; min-height: 300px;">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">${name}</h5>
-                            <small class="opacity-75">
-                                <i class="bi bi-geo-alt-fill me-1"></i>${city}
-                            </small>
-                        </div>
-                        <span class="badge bg-light text-success">Classico</span>
-                    </div>
-                    
-                    <div class="card-body">
-                        <p class="card-text">${description}</p>
-                        
-                        <div class="route-meta mb-3">
-                            <span class="badge bg-primary me-1">
-                                <i class="bi bi-activity me-1"></i>${activityType}
-                            </span>
-                            <span class="badge bg-secondary me-1">
-                                <i class="bi bi-arrow-right-circle me-1"></i>${distance} km
-                            </span>
-                            <span class="badge bg-info">
-                                <i class="bi bi-people me-1"></i>${activitiesCount}
-                            </span>
-                        </div>
-                        
-                        ${route.elevation_gain ? `
-                        <div class="elevation-info mb-2">
-                            <small class="text-muted">
-                                <i class="bi bi-mountains me-1"></i>Dislivello: ${route.elevation_gain} m
-                            </small>
-                        </div>
-                        ` : ''}
-                        
-                        ${route.record_holder ? `
-                        <div class="record-section p-2 bg-warning bg-opacity-25 rounded border border-warning">
-                            <h6 class="mb-1 text-dark">
-                                <i class="bi bi-trophy-fill me-1"></i>Record Attuale
-                            </h6>
-                            <p class="mb-0 text-dark">
-                                <strong>${route.record_holder.username || 'Utente'}</strong> - ${route.record_holder.duration || 'N/A'}
-                            </p>
-                        </div>
-                        ` : `
-                        <div class="record-section p-2 bg-light rounded border">
-                            <p class="mb-0 text-muted">
-                                <i class="bi bi-hourglass-split me-1"></i>Nessun record ancora registrato
-                            </p>
-                        </div>
-                        `}
-                    </div>
-                    
-                    <div class="card-footer bg-transparent">
-                        <div class="d-grid gap-2">
-                            <a href="/route/${route.id}" class="btn btn-success btn-sm">
-                                <i class="bi bi-eye-fill me-1"></i>Esplora percorso
-                            </a>
-                            <a href="#" class="btn btn-outline-secondary btn-sm" onclick="startActivityOnRoute(${route.id})">
-                                <i class="bi bi-play-fill me-1"></i>Inizia attività
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `;
-        }).join('');
-        
-        console.log('🎉 Percorsi classici caricati con successo!');
-    }
-
-    // Funzione helper per iniziare attività
-    function startActivityOnRoute(routeId) {
-        if (confirm('Vuoi iniziare un\'attività su questo percorso?')) {
-            window.location.href = `/track-activity?route=${routeId}`;
-        }
-    }
-    </script>
 
     {% block scripts %}{% endblock %}
 </body>

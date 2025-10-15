@@ -1426,6 +1426,15 @@ def bet_stats():
         is_homepage=False
     )
 
+@main.route('/privacy')
+def privacy_policy():
+    """
+    Renderizza la pagina della Privacy Policy.
+    Assicurati di avere un template chiamato 'privacy.html' nella tua cartella 'app/templates/'.
+    Se non hai un template separato, puoi modificare questa funzione per restituire direttamente HTML.
+    """
+    print("Debug: Richiesta alla rotta privacy_policy ricevuta.") # Debug print
+    return render_template('privacy.html')
 
 # TEST #####################################################################################################################################
 

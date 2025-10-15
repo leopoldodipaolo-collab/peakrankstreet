@@ -1,3 +1,131 @@
+// =======================================================
+// FUNZIONI GLOBALI
+// =======================================================
+
+// Funzione per visualizzare i dettagli del percorso SOTTO LA MAPPA
+function displayRouteDetails(routeProps) { 
+    console.log('Display details for:', routeProps.name);
+    
+    const detailsCard = document.getElementById('selected-route-details');
+    if (!detailsCard) {
+        console.error('Details card not found!');
+        return;
+    }
+    
+    // Popola i dettagli
+    document.getElementById('detail-route-name').textContent = routeProps.name;
+    document.getElementById('detail-route-description').textContent = routeProps.description || 'Nessuna descrizione.';
+    
+    let createdByHtml = `Creato il: ${routeProps.created_at} da <a href="${userProfileUrlBase.replace('12345', routeProps.created_by_id)}">${routeProps.created_by_username}</a>`;
+    document.getElementById('detail-route-meta').innerHTML = `${createdByHtml}<br>Distanza: ${routeProps.distance_km ? routeProps.distance_km.toFixed(2) + ' km' : 'N/D'}`;
+    
+    // Link ai dettagli completi
+    document.getElementById('detail-route-link').href = routeDetailUrlBase.replace('12345', routeProps.id);
+    document.getElementById('record-activity-link').href = `/activities/record?route_id=${routeProps.id}`;
+    document.getElementById('create-challenge-link').href = `/challenges/new?route_id=${routeProps.id}`;
+
+    // Gestione King/Queen
+    if (routeProps.king_queen && routeProps.king_queen.username) {
+        document.getElementById('kq-username').innerHTML = `<a href="${userProfileUrlBase.replace('12345', routeProps.king_queen.user_id)}" class="user-link text-dark">${routeProps.king_queen.username}</a>`;
+        document.getElementById('kq-duration').textContent = formatDuration(routeProps.king_queen.duration);
+        document.getElementById('kq-activity-link').href = activityDetailUrlBase.replace('12345', routeProps.king_queen.activity_id);
+        document.getElementById('kq-created-at').textContent = `Registrato il: ${routeProps.king_queen.created_at}`;
+        document.getElementById('detail-king-queen').style.display = 'block';
+    } else {
+        document.getElementById('detail-king-queen').style.display = 'none';
+    }
+
+    // Gestione Top 5 Times
+    const top5List = document.getElementById('top-5-list');
+    top5List.innerHTML = '';
+    if (routeProps.top_5_activities && routeProps.top_5_activities.length > 0) {
+        routeProps.top_5_activities.forEach((activity, index) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2';
+            li.innerHTML = `
+                <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
+                <img src="${profilePicsBaseUrl}${activity.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width: 24px; height: 24px;">
+                <a href="${userProfileUrlBase.replace('12345', activity.user_id)}" class="user-link text-primary flex-grow-1" style="font-size: 0.9em;">${activity.username}</a>
+                <span class="badge bg-info rounded-pill">${formatDuration(activity.duration)}</span>
+                <a href="${activityDetailUrlBase.replace('12345', activity.activity_id)}" class="btn btn-sm btn-link p-0 ms-2" style="font-size:0.7em;">(Dettagli)</a>`;
+            top5List.appendChild(li);
+        });
+        document.getElementById('detail-top-5-times').style.display = 'block';
+    } else {
+        document.getElementById('detail-top-5-times').style.display = 'none';
+    }
+
+    // Mostra la card dei dettagli
+    detailsCard.style.display = 'block';
+    
+    // Nascondi le istruzioni della mappa
+    const mapInstructions = document.getElementById('map-instructions');
+    if (mapInstructions) {
+        mapInstructions.style.display = 'none';
+    }
+    
+    // Scroll smooth ai dettagli
+    setTimeout(() => {
+        detailsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+// Funzione per nascondere i dettagli
+function hideRouteDetails() {
+    const detailsCard = document.getElementById('selected-route-details');
+    if (detailsCard) {
+        detailsCard.style.display = 'none';
+    }
+    
+    // Pulisci il percorso dalla mappa
+    if (selectedRouteLayer) {
+        selectedRouteLayer.clearLayers();
+    }
+    
+    // Mostra di nuovo le istruzioni
+    const mapInstructions = document.getElementById('map-instructions');
+    if (mapInstructions) {
+        mapInstructions.style.display = 'block';
+    }
+}
+
+// Funzione globale per mostrare i dettagli dal popup del marker
+window.showRouteDetailsFromMarker = function(routeId) {
+    console.log('Mostra dettagli per route:', routeId);
+    
+    try {
+        // Chiudi tutti i popup aperti
+        if (typeof mainMap !== 'undefined' && mainMap && typeof mainMap.closePopup === 'function') {
+            mainMap.closePopup();
+        }
+        
+        // CERCA IL PERCORSO NEI DATI GIA' CARICATI
+        let foundRoute = null;
+        
+        if (window.loadedRoutes && Array.isArray(window.loadedRoutes)) {
+            foundRoute = window.loadedRoutes.find(route => route.id == routeId);
+        }
+        
+        if (foundRoute) {
+            console.log('Percorso trovato in cache:', foundRoute.name);
+            
+            // Mostra il percorso sulla mappa
+            if (selectedRouteLayer) {
+                selectedRouteLayer.clearLayers();
+                selectedRouteLayer.addData(foundRoute.coordinates);
+            }
+            
+            // Mostra i dettagli SOTTO LA MAPPA
+            displayRouteDetails(foundRoute);
+        } else {
+            console.error('Percorso non trovato nei dati caricati:', routeId);
+        }
+        
+    } catch (error) {
+        console.error('Errore in showRouteDetailsFromMarker:', error);
+    }
+};
+
 // Funzione helper per formattare la durata da secondi a HH:MM:SS
 function formatDuration(seconds) {
     if (typeof seconds !== 'number' || isNaN(seconds)) return 'N/D';
@@ -9,23 +137,31 @@ function formatDuration(seconds) {
         .join(":");
 }
 
-// Variabili globali
+// Funzione helper per formattare la durata in modo compatto
+function formatDurationCompact(seconds) {
+    if (!seconds) return 'N/A';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`;
+}
+
+// =======================================================
+// VARIABILI GLOBALI
+// =======================================================
+
 let mainMap, markers, osmLayer, topoLayer;
 let userProfileUrlBase, routeDetailUrlBase, activityDetailUrlBase, profilePicsBaseUrl, mapDataApiUrl, userInitialCity;
-let selectedRouteDetailsDiv, detailRouteName, detailRouteDescription, detailRouteMeta, detailRouteLink, mapInstructions;
-let detailKingQueenDiv, kqUsername, kqDuration, kqActivityLink, kqCreatedAt;
-let detailTop5TimesDiv, top5List;
-let availableRoutesListDiv, recentChallengesListDiv, recentActivitiesListDiv;
-
+let selectedRouteLayer;
 
 // =======================================================
-// NUOVO: Definizione delle icone personalizzate per la mappa
+// DEFINIZIONE ICONE PERSONALIZZATE
 // =======================================================
+
 const L_Icon = L.Icon.extend({
     options: {
-        iconSize:     [32, 32], // Dimensioni dell'icona
-        iconAnchor:   [16, 32], // Punto dell'icona che corrisponderà alla posizione del marker
-        popupAnchor:  [0, -32]  // Punto da cui si aprirà il popup rispetto all'icona
+        iconSize:     [32, 32],
+        iconAnchor:   [16, 32],
+        popupAnchor:  [0, -32]
     }
 });
 
@@ -34,56 +170,287 @@ const bikeIcon = new L_Icon({iconUrl: '/static/icons/bicycle.png'});
 const hikeIcon = new L_Icon({iconUrl: '/static/icons/hiking.png'});
 const defaultIcon = new L_Icon({iconUrl: '/static/icons/default.png'});
 
-// Un oggetto per mappare facilmente il tipo di attività all'icona corrispondente
 const activityIcons = {
     'Corsa': runIcon,
     'Bici': bikeIcon,
     'Hike': hikeIcon
 };
+
+// =======================================================
+// FUNZIONI PRINCIPALI
 // =======================================================
 
-
-// Funzione per visualizzare i dettagli del percorso sotto la mappa
-function displayRouteDetails(routeProps) { 
-    selectedRouteDetailsDiv.style.display = 'block';
-    mapInstructions.style.display = 'none';
-    detailRouteName.textContent = routeProps.name;
-    detailRouteDescription.textContent = routeProps.description || 'Nessuna descrizione.';
-    let createdByHtml = `Creato il: ${routeProps.created_at} da <a href="${userProfileUrlBase.replace('12345', routeProps.created_by_id)}">${routeProps.created_by_username}</a>`;
-    detailRouteMeta.innerHTML = `${createdByHtml}<br>Distanza: ${routeProps.distance_km ? routeProps.distance_km.toFixed(2) + ' km' : 'N/D'}`;
-    detailRouteLink.href = routeDetailUrlBase.replace('12345', routeProps.id);
-
-    if (routeProps.king_queen && routeProps.king_queen.username) {
-        kqUsername.innerHTML = `<a href="${userProfileUrlBase.replace('12345', routeProps.king_queen.user_id)}" class="user-link text-dark">${routeProps.king_queen.username}</a>`;
-        kqDuration.textContent = formatDuration(routeProps.king_queen.duration);
-        kqActivityLink.href = activityDetailUrlBase.replace('12345', routeProps.king_queen.activity_id);
-        kqCreatedAt.textContent = `Registrato il: ${routeProps.king_queen.created_at}`;
-        detailKingQueenDiv.style.display = 'block';
-    } else {
-        detailKingQueenDiv.style.display = 'none';
-    }
-
-    top5List.innerHTML = '';
-    if (routeProps.top_5_activities && routeProps.top_5_activities.length > 0) {
-        routeProps.top_5_activities.forEach((activity, index) => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `
-                <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
-                <img src="${profilePicsBaseUrl}${activity.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
-                <a href="${userProfileUrlBase.replace('12345', activity.user_id)}" class="user-link text-primary flex-grow-1">${activity.username}</a>
-                <span class="badge bg-info rounded-pill">${formatDuration(activity.duration)}</span>
-                <a href="${activityDetailUrlBase.replace('12345', activity.activity_id)}" class="btn btn-sm btn-link p-0 ms-2" style="font-size:0.8em; vertical-align: baseline;">(Dettagli)</a>`;
-            top5List.appendChild(li);
+// Funzione di inizializzazione mappa
+function initializeMap() {
+    console.log('Inizializzazione mappa...');
+    
+    if (!mainMap) {
+        mainMap = L.map('mainMap', {
+            center: [42.3498, 13.3995],
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true,
+            preferCanvas: true,
+            fadeAnimation: false,
+            markerZoomAnimation: false
         });
-        detailTop5TimesDiv.style.display = 'block';
-    } else {
-        detailTop5TimesDiv.style.display = 'none';
+
+        // Aggiungi layer base
+        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '&copy; OpenStreetMap' 
+        }).addTo(mainMap);
+        
+        topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { 
+            attribution: '&copy; OpenTopoMap' 
+        });
+
+        // Inizializza cluster marker
+        markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            maxClusterRadius: 50,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: false
+        });
+        mainMap.addLayer(markers);
+
+        // Layer per il percorso selezionato
+        selectedRouteLayer = L.geoJSON(null, { 
+            style: { color: '#007bff', weight: 6, opacity: 1 },
+            interactive: false
+        }).addTo(mainMap);
+
+        // Controllo layer
+        L.control.layers(
+            { "Stradale": osmLayer, "Topografica": topoLayer }, 
+            { "Percorsi": markers }
+        ).addTo(mainMap);
+
+        // Gestione click sulla mappa (per deselezionare)
+        mainMap.on('click', function(e) {
+            console.log('Mappa cliccata - deseleziona');
+            mainMap.closePopup();
+            
+            // Nascondi i dettagli del percorso
+            hideRouteDetails();
+        });
+
+        setTimeout(() => {
+            if (mainMap) {
+                mainMap.invalidateSize();
+            }
+        }, 100);
     }
+    
+    return mainMap;
 }
 
-// Funzioni per popolare le liste
+// Funzione principale di caricamento dati
+// Funzione principale di caricamento dati
+window.loadMapAndData = function(lat, lon, zoom = 13, city = null) {
+    console.log('Caricamento mappa per:', lat, lon, city);
+    
+    // Assicurati che la mappa sia inizializzata
+    if (!mainMap) {
+        console.error('Mappa non inizializzata!');
+        return;
+    }
+    
+    mainMap.setView([lat, lon], zoom);
+    
+    // Pulisci i marker esistenti in modo sicuro
+    mainMap.eachLayer(layer => { 
+        if (layer.options && layer.options.isCitySearchMarker) {
+            mainMap.removeLayer(layer);
+        }
+    });
+    
+    // Aggiungi marker della città se specificata
+    if (city) {
+        L.marker([lat, lon], { isCitySearchMarker: true })
+            .addTo(mainMap)
+            .bindPopup(`<b>${city}</b>`)
+            .openPopup();
+    }
+
+    // Mostra stati di caricamento
+    const loadingMsg = `<p class="text-center text-muted p-3">Caricamento...</p>`;
+    const leaderboardLoadingMsg = `<li class="list-group-item text-center text-muted">Caricamento...</li>`;
+    
+    const availableRoutesListDiv = document.getElementById('available-routes-list');
+    const recentChallengesListDiv = document.getElementById('recent-challenges-list');
+    const recentActivitiesListDiv = document.getElementById('recent-activities-list');
+    
+    if (availableRoutesListDiv) availableRoutesListDiv.innerHTML = loadingMsg;
+    if (recentChallengesListDiv) recentChallengesListDiv.innerHTML = loadingMsg;
+    if (recentActivitiesListDiv) recentActivitiesListDiv.innerHTML = loadingMsg;
+    
+    const distanceList = document.querySelector('#top-distance-list');
+    const creatorsList = document.querySelector('#top-creators-list');
+    if (distanceList) distanceList.innerHTML = leaderboardLoadingMsg;
+    if (creatorsList) creatorsList.innerHTML = leaderboardLoadingMsg;
+
+    const activityTypeFilter = document.querySelector('#activityTypeFilter .btn.active');
+    const activityType = activityTypeFilter ? activityTypeFilter.dataset.type : 'all';
+
+    // URL dell'API con parametri
+    const apiUrl = `${mapDataApiUrl}?lat=${lat}&lon=${lon}&radius_km=50&activity_type=${activityType}`;
+    console.log('Chiamando API:', apiUrl);
+
+    fetch(apiUrl)
+        .then(response => {
+            // Controlla se la risposta è JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('La risposta non è JSON. Probabilmente un errore del server.');
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Errore HTTP: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Dati ricevuti:', data.routes ? data.routes.length : 0, 'percorsi');
+            
+            // SALVA I PERCORSI IN VARIABILE GLOBALE PER RIUTILIZZO
+            window.loadedRoutes = data.routes || [];
+            
+            // PULISCI I MARKER IN MODO SICURO
+            if (markers) {
+                markers.clearLayers();
+            }
+            
+            // Aggiungi i nuovi marker
+            if (data.routes && Array.isArray(data.routes)) {
+                data.routes.forEach(r => {
+                    if (!r.coordinates || !r.coordinates.geometry || !r.coordinates.geometry.coordinates[0]) {
+                        console.warn('Percorso senza coordinate valide:', r.id);
+                        return;
+                    }
+                    
+                    const startPoint = r.coordinates.geometry.coordinates[0];
+                    const selectedIcon = activityIcons[r.activity_type] || defaultIcon;
+
+                    // CREA UN SOLO MARKER
+                    const marker = L.marker([startPoint[1], startPoint[0]], { 
+                        icon: selectedIcon,
+                        title: r.name
+                    });
+                    
+                    // Contenuto del popup SEMPLICE
+                    let popupContent = `
+                        <div style="min-width: 200px; text-align: center;">
+                            <h6 style="margin-bottom: 8px; font-weight: bold;">${r.name}</h6>
+                            <p style="margin-bottom: 8px; font-size: 0.9em;">Distanza: ${r.distance_km ? r.distance_km.toFixed(2) + ' km' : 'N/D'}</p>
+                            ${r.king_queen ? `<span class="badge bg-warning text-dark" style="font-size: 0.8em;"><i class="bi bi-trophy-fill"></i> ${r.king_queen.username}</span><br><br>` : ''}
+                            <button class="btn btn-sm btn-success" onclick="window.showRouteDetailsFromMarker(${r.id})" style="width: 100%;">
+                                <i class="bi bi-info-circle"></i> Vedi Dettagli
+                            </button>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 300,
+                        className: 'route-popup'
+                    });
+
+                    // GESTIONE CLICK DIRETTO SUL MARKER
+                    marker.on('click', function(e) {
+                        console.log('Marker cliccato direttamente:', r.name);
+                        
+                        // IMPORTANTE: Ferma la propagazione per evitare conflitti
+                        L.DomEvent.stopPropagation(e);
+                        
+                        // Chiudi il popup se aperto
+                        this.closePopup();
+                        
+                        // Aspetta un millisecondo per evitare conflitti
+                        setTimeout(() => {
+                            // Mostra il percorso sulla mappa
+                            if (selectedRouteLayer) {
+                                selectedRouteLayer.clearLayers();
+                                selectedRouteLayer.addData(r.coordinates);
+                            }
+                            
+                            // Mostra i dettagli SOTTO LA MAPPA
+                            displayRouteDetails(r);
+                        }, 10);
+                    });
+
+                    // AGGIUNGI IL MARKER UNA VOLTA SOLA
+                    markers.addLayer(marker);
+                });
+            }
+
+            // Adatta la vista della mappa
+            if (markers.getLayers().length > 0) {
+                setTimeout(() => {
+                    mainMap.fitBounds(markers.getBounds(), { 
+                        padding: [50, 50],
+                        maxZoom: 15 
+                    });
+                }, 100);
+            }
+
+            // Popola le liste
+            if (data.routes) populateAvailableRoutes(data.routes);
+            if (data.challenges) populateRecentChallenges(data.challenges);
+            if (data.recent_activities) populateRecentActivities(data.recent_activities);
+            if (data.local_leaderboards) populateLocalLeaderboards(data.local_leaderboards);
+
+        })
+        .catch(error => {
+            console.error('Errore nel caricamento dati:', error);
+            const errorMsg = `
+                <div class="text-center p-4">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                    <h5 class="text-danger mt-2">Errore di caricamento</h5>
+                    <p class="text-muted">${error.message}</p>
+                    <small class="text-muted">Controlla la connessione e riprova.</small>
+                </div>
+            `;
+            
+            const availableRoutesListDiv = document.getElementById('available-routes-list');
+            const recentChallengesListDiv = document.getElementById('recent-challenges-list');
+            const recentActivitiesListDiv = document.getElementById('recent-activities-list');
+            
+            if (availableRoutesListDiv) availableRoutesListDiv.innerHTML = errorMsg;
+            if (recentChallengesListDiv) recentChallengesListDiv.innerHTML = errorMsg;
+            if (recentActivitiesListDiv) recentActivitiesListDiv.innerHTML = errorMsg;
+            
+            // Mostra anche nelle classifiche
+            const distanceList = document.querySelector('#top-distance-list');
+            const creatorsList = document.querySelector('#top-creators-list');
+            if (distanceList) distanceList.innerHTML = '<li class="list-group-item text-center text-muted">Errore di caricamento</li>';
+            if (creatorsList) creatorsList.innerHTML = '<li class="list-group-item text-center text-muted">Errore di caricamento</li>';
+        })
+        .finally(() => {
+            // Riabilita il pulsante di ricerca
+            const searchButton = document.getElementById('searchCityButton');
+            const searchSpinner = document.getElementById('citySearchSpinner');
+            if (searchButton) searchButton.disabled = false;
+            if (searchSpinner) searchSpinner.style.display = 'none';
+        });
+
+    // Carica percorsi classici solo se l'elemento esiste
+    const userInitialCityElement = document.getElementById('user-initial-city');
+    if (userInitialCityElement) {
+        setTimeout(() => {
+            const userCity = userInitialCityElement.textContent;
+            const defaultCity = "L'Aquila";
+            loadClassicRoutes(userCity || defaultCity);
+        }, 1500);
+    }
+};
+
+// =======================================================
+// FUNZIONI PER POPOLARE LE LISTE
+// =======================================================
+
 function populateAvailableRoutes(routes) {
+    const availableRoutesListDiv = document.getElementById('available-routes-list');
+    if (!availableRoutesListDiv) return;
+    
     availableRoutesListDiv.innerHTML = '';
     if (routes && routes.length > 0) {
         routes.forEach(route => {
@@ -110,10 +477,12 @@ function populateAvailableRoutes(routes) {
 }
 
 function populateRecentChallenges(challenges) {
+    const recentChallengesListDiv = document.getElementById('recent-challenges-list');
+    if (!recentChallengesListDiv) return;
+    
     recentChallengesListDiv.innerHTML = '';
     if (challenges && challenges.length > 0) {
         challenges.forEach(challenge => {
-            // CORREZIONE: Link corretto alla pagina per registrare l'attività e alla classifica
             const participateUrl = `/activities/record?challenge_id=${challenge.id}`;
             const leaderboardUrl = `/challenges/${challenge.id}/leaderboard`;
             recentChallengesListDiv.innerHTML += `
@@ -135,16 +504,16 @@ function populateRecentChallenges(challenges) {
 }
 
 function populateRecentActivities(activities) {
+    const recentActivitiesListDiv = document.getElementById('recent-activities-list');
+    if (!recentActivitiesListDiv) return;
+    
     recentActivitiesListDiv.innerHTML = '';
     if (activities && activities.length > 0) {
         activities.forEach(activity => {
-            // CORREZIONE: Link corretto all'attività
-            // --- NUOVA LOGICA PER IL PULSANTE LIKE ---
             const likeButtonClass = activity.user_has_liked ? 'btn-danger' : 'btn-outline-danger';
-            // L'attributo 'disabled' verrà aggiunto se l'utente non è loggato
             const isAuthenticated = document.querySelector('#navbarDropdownMenuLink') !== null;
             const disabledAttribute = isAuthenticated ? '' : 'disabled';
-            // --- FINE NUOVA LOGICA ---
+            
             const activityHtml = `
                 <div class="list-group-item list-group-item-action activity-feed-item">
                     <p class="mb-1">
@@ -158,7 +527,6 @@ function populateRecentActivities(activities) {
                         Tempo: <strong>${formatDuration(activity.duration)}</strong>
                     </p>
                     
-                    <!-- NUOVO BLOCCO: PULSANTI E LIKE -->
                     <div class="d-flex justify-content-between align-items-center mt-2">
                         <a href="${activityDetailUrlBase.replace('12345', activity.id)}" class="btn btn-sm btn-outline-primary">Dettagli</a>
                         
@@ -218,260 +586,9 @@ function populateLocalLeaderboards(leaderboards) {
     }
 }
 
-
-document.addEventListener('DOMContentLoaded', function() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/static/js/sw.js')
-            .then(function(registration) {
-                //console.log('Service Worker registrato con successo:', registration);
-            })
-            .catch(function(error) {
-                console.log('Registrazione Service Worker fallita:', error);
-            });
-    }
-
-    if (typeof is_homepage_js === 'undefined' || !is_homepage_js) return;
-
-    mainMap = L.map('mainMap');
-    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mainMap);
-    topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenTopoMap' });
-    
-    // Inizializzazione variabili globali
-    userProfileUrlBase = document.getElementById('user-profile-url-base').textContent;
-    routeDetailUrlBase = document.getElementById('route-detail-url-base').textContent;
-    activityDetailUrlBase = document.getElementById('activity-detail-url-base').textContent;
-    mapDataApiUrl = document.getElementById('map-data-api-url').textContent;
-    userInitialCity = document.getElementById('user-initial-city').textContent;
-    profilePicsBaseUrl = document.getElementById('profile-pics-base-url').textContent;
-    selectedRouteDetailsDiv = document.getElementById('selected-route-details');
-    detailRouteName = document.getElementById('detail-route-name');
-    detailRouteDescription = document.getElementById('detail-route-description');
-    detailRouteMeta = document.getElementById('detail-route-meta');
-    detailRouteLink = document.getElementById('detail-route-link');
-    mapInstructions = document.getElementById('map-instructions');
-    detailKingQueenDiv = document.getElementById('detail-king-queen');
-    kqUsername = document.getElementById('kq-username');
-    kqDuration = document.getElementById('kq-duration');
-    kqActivityLink = document.getElementById('kq-activity-link');
-    kqCreatedAt = document.getElementById('kq-created-at');
-    detailTop5TimesDiv = document.getElementById('detail-top-5-times');
-    top5List = document.getElementById('top-5-list');
-    availableRoutesListDiv = document.getElementById('available-routes-list');
-    recentChallengesListDiv = document.getElementById('recent-challenges-list');
-    recentActivitiesListDiv = document.getElementById('recent-activities-list');
-    
-    markers = L.markerClusterGroup();
-    mainMap.addLayer(markers);
-    let selectedRouteLayer = L.geoJSON(null, { style: { color: '#007bff', weight: 6, opacity: 1 } }).addTo(mainMap);
-    L.control.layers({ "Stradale": osmLayer, "Topografica": topoLayer }, { "Percorsi": markers }).addTo(mainMap);
-
-    // Funzione principale di caricamento dati
-    window.loadMapAndData = function(lat, lon, zoom = 13, city = null) {
-        mainMap.setView([lat, lon], zoom);
-        mainMap.eachLayer(layer => { if (layer.options.isCitySearchMarker) mainMap.removeLayer(layer); });
-        if (city) L.marker([lat, lon], { isCitySearchMarker: true }).addTo(mainMap).bindPopup(`<b>${city}</b>`).openPopup();
-
-        const loadingMsg = `<p class="text-center text-muted p-3">Caricamento...</p>`;
-        const leaderboardLoadingMsg = `<li class="list-group-item text-center text-muted">Caricamento...</li>`;
-        availableRoutesListDiv.innerHTML = loadingMsg;
-        recentChallengesListDiv.innerHTML = loadingMsg;
-        recentActivitiesListDiv.innerHTML = loadingMsg;
-        document.querySelector('#top-distance-list').innerHTML = leaderboardLoadingMsg;
-        document.querySelector('#top-creators-list').innerHTML = leaderboardLoadingMsg;
-
-        const activityTypeFilter = document.querySelector('#activityTypeFilter .btn.active').dataset.type;
-
-        fetch(`${mapDataApiUrl}?lat=${lat}&lon=${lon}&radius_km=50&activity_type=${activityTypeFilter}`)
-            .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
-            .then(data => {
-                markers.clearLayers();
-                data.routes.forEach(r => {
-                    if (!r.coordinates.geometry.coordinates[0]) return;
-                    // Per ogni percorso, aggiungi un MARKER (punto) al cluster
-                    if (!r.coordinates.geometry.coordinates[0]) return; // Sicurezza
-                    
-                    const startPoint = r.coordinates.geometry.coordinates[0];
-
-                    // NUOVO: Scegli l'icona giusta in base all'activity_type
-                    // Se il tipo non è nella nostra mappa `activityIcons`, usa quella di default
-                    const selectedIcon = activityIcons[r.activity_type] || defaultIcon;
-
-                    // MODIFICATO: Passa l'opzione {icon: ...} quando crei il marker
-                    const marker = L.marker([startPoint[1], startPoint[0]], { icon: selectedIcon });
-                    
-                    // Il resto del codice (popup, evento on click) rimane identico
-                    let popupContent = `<b>${r.name}</b><br>Distanza: ${r.distance_km ? r.distance_km.toFixed(2) + ' km' : 'N/D'}`;
-                    if (r.king_queen) {
-                        popupContent += `<br><span class="badge bg-warning text-dark"><i class="bi bi-trophy-fill"></i> ${r.king_queen.username}</span>`;
-                    }
-                    marker.bindPopup(popupContent);
-
-                    marker.on('click', function() {
-                        selectedRouteLayer.clearLayers().addData(r.coordinates);
-                        displayRouteDetails(r);
-                    });
-
-                    markers.addLayer(marker);
-                    marker.bindPopup(`<b>${r.name}</b><br>${r.distance_km ? r.distance_km.toFixed(2) + ' km' : ''}`);
-                    marker.on('click', () => {
-                        selectedRouteLayer.clearLayers().addData(r.coordinates);
-                        displayRouteDetails(r);
-                    });
-                    markers.addLayer(marker);
-                });
-
-                // =======================================================
-                // !! ECCO LA LOGICA RIPRISTINATA !!
-                // Se ci sono percorsi, adatta lo zoom. Altrimenti, usa lo zoom di default.
-                if (data.routes && data.routes.length > 0) {
-                    mainMap.fitBounds(markers.getBounds(), { padding: [50, 50] });
-                } else {
-                    mainMap.setView([lat, lon], zoom);
-                }
-                // =======================================================
-
-                populateAvailableRoutes(data.routes);
-                populateRecentChallenges(data.challenges);
-                populateRecentActivities(data.recent_activities);
-                populateLocalLeaderboards(data.local_leaderboards);
-
-                document.getElementById('searchCityButton').disabled = false;
-                document.getElementById('citySearchSpinner').style.display = 'none';
-            })
-            .catch(error => {
-                console.error('Errore nel caricamento dati:', error);
-                const errorMsg = `<p class="text-center text-danger p-3">Errore nel caricamento.</p>`;
-                availableRoutesListDiv.innerHTML = errorMsg;
-                recentChallengesListDiv.innerHTML = errorMsg;
-                recentActivitiesListDiv.innerHTML = errorMsg;
-            });
-
-            // ===== CARICAMENTO AUTOMATICO PERCORSI CLASSICI =====
-            setTimeout(() => {
-                // Usa la città dell'utente o L'Aquila come default
-                const userCity = document.getElementById('user-initial-city').textContent;
-                const defaultCity = "L'Aquila";
-                
-                if (userCity && userCity.trim() !== '') {
-                    loadClassicRoutes(userCity);
-                } else {
-                    loadClassicRoutes(defaultCity);
-                }
-            }, 1500); // Aspetta 1.5 secondi dopo il caricamento della pagina
-    }
-
-    // Gestori di eventi
-    const citySearchInput = document.getElementById('citySearchInput');
-    const citySearchButton = document.getElementById('searchCityButton');
-    const citySearchSpinner = document.getElementById('citySearchSpinner');
-
-    function searchCity(cityName) {
-        if (!cityName) return;
-        citySearchButton.disabled = true;
-        citySearchSpinner.style.display = 'inline-block';
-        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.length > 0) {
-                    loadMapAndData(parseFloat(data[0].lat), parseFloat(data[0].lon), 13, data[0].display_name);
-                } else {
-                    alert('Città non trovata.');
-                    citySearchButton.disabled = false;
-                    citySearchSpinner.style.display = 'none';
-                }
-            }).catch(err => {
-                alert('Errore di rete durante la ricerca.');
-                citySearchButton.disabled = false;
-                citySearchSpinner.style.display = 'none';
-            });
-    }
-
-    citySearchInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(citySearchInput.value); });
-    citySearchButton.addEventListener('click', () => searchCity(citySearchInput.value));
-    
-    document.querySelectorAll('#activityTypeFilter .btn').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelector('#activityTypeFilter .btn.active').classList.remove('active');
-            this.classList.add('active');
-            const center = mainMap.getCenter();
-            loadMapAndData(center.lat, center.lng, mainMap.getZoom());
-        });
-    });
-
-    // Caricamento iniziale
-    searchCity(userInitialCity || "Italia");
-});
-
-
-
-// In app/static/js/main.js
-
-// Aggiungi questo blocco alla fine del file.
-
-document.addEventListener('DOMContentLoaded', function() {
-    // ... (tutto il tuo codice esistente per la mappa, etc., rimane qui) ...
-
-    // =======================================================
-    // NUOVO: GESTIONE DINAMICA DEI LIKE SULLE ATTIVITÀ
-    // =======================================================
-    
-    // Usiamo la delegazione degli eventi per gestire i click su pulsanti
-    // che potrebbero essere aggiunti dinamicamente alla pagina.
-    document.body.addEventListener('click', function(event) {
-        
-        // Controlla se l'elemento cliccato (o un suo genitore) è un pulsante 'like'
-        const likeButton = event.target.closest('.like-activity-button');
-        
-        if (likeButton) {
-            event.preventDefault(); // Previene qualsiasi comportamento di default
-            
-            const activityId = likeButton.dataset.activityId;
-            const likeCountSpan = likeButton.querySelector('.like-count');
-            
-            // Chiama la nostra API in background
-            fetch(`/api/activity/${activityId}/like`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // In futuro, per la protezione CSRF, aggiungeresti un header qui
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Se la risposta non è 200 OK (es. utente non loggato, errore server)
-                    // lancia un errore per essere catturato dal .catch()
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // 1. Aggiorna il contatore dei like
-                    likeCountSpan.textContent = data.new_like_count;
-                    
-                    // 2. Cambia lo stile del pulsante in base all'azione
-                    if (data.action === 'liked') {
-                        likeButton.classList.remove('btn-outline-danger');
-                        likeButton.classList.add('btn-danger');
-                    } else { // 'unliked'
-                        likeButton.classList.remove('btn-danger');
-                        likeButton.classList.add('btn-outline-danger');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Errore durante l-operazione di like:', error);
-                // Potresti mostrare un messaggio di errore all'utente qui
-                // Ad esempio, reindirizzandolo alla pagina di login se l'errore è 401 Unauthorized
-                if (error.response && error.response.status === 401) {
-                    window.location.href = '/login'; 
-                }
-            });
-        }
-    });
-});
-
-// ===== PERCORSI CLASSICI =====
+// =======================================================
+// PERCORSI CLASSICI
+// =======================================================
 
 // Funzione per caricare e visualizzare i percorsi classici
 function loadClassicRoutes(city) {
@@ -602,7 +719,7 @@ function loadClassicRoutes(city) {
                                 </div>
                             </div>
                             
-                            <!-- NUOVA SEZIONE: Layout a due colonne per Top Times e Pulsanti -->
+                            <!-- Layout a due colonne per Top Times e Pulsanti -->
                             <div class="row mt-3 g-2">
                                 <!-- Colonna Top Times -->
                                 <div class="col-7">
@@ -654,283 +771,137 @@ function loadClassicRoutes(city) {
         });
 }
 
-// Funzione helper per formattare la durata in modo compatto
-function formatDurationCompact(seconds) {
-    if (!seconds) return 'N/A';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`;
-}
-// Funzioni helper
-function getActivityColor(activityType) {
-    const colors = {
-        'Corsa': 'primary',
-        'Ciclismo': 'success', 
-        'Escursionismo': 'warning',
-        'Mountain Bike': 'danger'
-    };
-    return colors[activityType] || 'secondary';
-}
+// =======================================================
+// GESTIONE LIKE ATTIVITÀ
+// =======================================================
 
-function getDifficultyColor(difficulty) {
-    const colors = {
-        'Easy': 'success',
-        'Medium': 'warning',
-        'Hard': 'danger'
-    };
-    return colors[difficulty] || 'secondary';
-}
-
-function formatDuration(seconds) {
-    if (!seconds) return 'N/A';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-// ===== INIZIALIZZAZIONE =====
-
-// ESEMPIO DI CORREZIONE:
 document.addEventListener('DOMContentLoaded', function() {
-    // CERCA LA RIGA 591 E AGGIUNGI CONTROLLI NULL:
-    const element = document.getElementById('some-element');
-    if (element) {  // ← IMPORTANTE!
-        //console.log(element.textContent);
-    }
-    
-    // Service Worker registration...
+    // Gestione dei like sulle attività
+    document.body.addEventListener('click', function(event) {
+        const likeButton = event.target.closest('.like-activity-button');
+        
+        if (likeButton) {
+            event.preventDefault();
+            
+            const activityId = likeButton.dataset.activityId;
+            const likeCountSpan = likeButton.querySelector('.like-count');
+            
+            fetch(`/api/activity/${activityId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    likeCountSpan.textContent = data.new_like_count;
+                    
+                    if (data.action === 'liked') {
+                        likeButton.classList.remove('btn-outline-danger');
+                        likeButton.classList.add('btn-danger');
+                    } else {
+                        likeButton.classList.remove('btn-danger');
+                        likeButton.classList.add('btn-outline-danger');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Errore durante l-operazione di like:', error);
+                if (error.response && error.response.status === 401) {
+                    window.location.href = '/login'; 
+                }
+            });
+        }
+    });
+});
+
+// =======================================================
+// INIZIALIZZAZIONE PRINCIPALE
+// =======================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Service Worker registration
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/js/sw.js')
             .then(function(registration) {
-                //console.log('SW registrato:', registration);
+                console.log('Service Worker registrato');
             })
             .catch(function(error) {
-                //console.log('SW registrazione fallita:', error);
+                console.log('Service Worker fallito:', error);
             });
     }
-});
 
-// ==============================================
-// ANIMAZIONI E INTERAZIONI AVANZATE PER SCOMMESSE
-// ==============================================
+    if (typeof is_homepage_js === 'undefined' || !is_homepage_js) return;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Inizializza le animazioni solo se siamo in una pagina con scommesse
-    if (document.querySelector('.bet-card') || document.querySelector('.stats-card')) {
-        initBetAnimations();
-        initStatsAnimations();
-    }
-    
-    // Inizializza animazioni notifiche se siamo in quella pagina
-    if (document.querySelector('.notification-item')) {
-        initNotificationAnimations();
-    }
-});
+    // INIZIALIZZA LE VARIABILI PRIMA
+    userProfileUrlBase = document.getElementById('user-profile-url-base')?.textContent || '';
+    routeDetailUrlBase = document.getElementById('route-detail-url-base')?.textContent || '';
+    activityDetailUrlBase = document.getElementById('activity-detail-url-base')?.textContent || '';
+    mapDataApiUrl = document.getElementById('map-data-api-url')?.textContent || '';
+    userInitialCity = document.getElementById('user-initial-city')?.textContent || '';
+    profilePicsBaseUrl = document.getElementById('profile-pics-base-url')?.textContent || '';
 
-function initBetAnimations() {
-    console.log('🎯 Inizializzando animazioni scommesse...');
-    
-    // Animazione per pagamento scommessa
-    const payButtons = document.querySelectorAll('form[action*="mark_bet_paid"] button');
-    payButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Aggiungi effetto loading
-            const originalText = this.innerHTML;
-            this.innerHTML = '<span class="loading-spinner me-2"></span> Elaborazione...';
-            this.disabled = true;
-            this.classList.add('btn-bet-action');
-            
-            // Aggiungi classe di transizione
-            const betCard = this.closest('.bet-card');
-            if (betCard) {
-                betCard.classList.add('status-transition', 'pending-to-paid');
-            }
-            
-            // Il form si invierà automaticamente
-            console.log('🔄 Pagamento scommessa in elaborazione...');
-        });
-    });
-    
-    // Effetto hover avanzato per card
-    const betCards = document.querySelectorAll('.bet-card');
-    betCards.forEach((card, index) => {
-        // Ritardo progressivo per animazioni
-        card.style.animationDelay = (index * 0.1) + 's';
+    // INIZIALIZZA LA MAPPA
+    initializeMap();
+
+    // GESTORI EVENTI
+    const citySearchInput = document.getElementById('citySearchInput');
+    const citySearchButton = document.getElementById('searchCityButton');
+    const citySearchSpinner = document.getElementById('citySearchSpinner');
+
+    function searchCity(cityName) {
+        if (!cityName) return;
+        if (citySearchButton) citySearchButton.disabled = true;
+        if (citySearchSpinner) citySearchSpinner.style.display = 'inline-block';
         
-        card.addEventListener('mouseenter', function() {
-            this.style.zIndex = '10';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.zIndex = '1';
-        });
-    });
-    
-    // Animazione per click su card (se non ha già link)
-    betCards.forEach(card => {
-        if (!card.querySelector('a') && !card.querySelector('button')) {
-            card.style.cursor = 'pointer';
-            card.addEventListener('click', function(e) {
-                this.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
-            });
-        }
-    });
-}
-
-function initStatsAnimations() {
-    console.log('📊 Inizializzando animazioni statistiche...');
-    
-    // Animazione counter per statistiche
-    const statsNumbers = document.querySelectorAll('.stats-number');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = entry.target;
-                const finalValue = parseInt(target.textContent.replace(/,/g, ''));
-                if (!target.classList.contains('animated')) {
-                    target.classList.add('animated');
-                    animateCounter(target, 0, finalValue, 2000);
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    loadMapAndData(parseFloat(data[0].lat), parseFloat(data[0].lon), 13, data[0].display_name);
+                } else {
+                    alert('Città non trovata.');
+                    if (citySearchButton) citySearchButton.disabled = false;
+                    if (citySearchSpinner) citySearchSpinner.style.display = 'none';
                 }
-                observer.unobserve(target);
-            }
-        });
-    }, { threshold: 0.3 });
-    
-    statsNumbers.forEach(number => observer.observe(number));
-}
+            }).catch(err => {
+                console.error('Errore ricerca città:', err);
+                alert('Errore di rete durante la ricerca.');
+                if (citySearchButton) citySearchButton.disabled = false;
+                if (citySearchSpinner) citySearchSpinner.style.display = 'none';
+            });
+    }
 
-function initNotificationAnimations() {
-    console.log('🔔 Inizializzando animazioni notifiche...');
-    
-    // Animazione per nuove notifiche
-    const newNotifications = document.querySelectorAll('.notification-unread');
-    newNotifications.forEach((notification, index) => {
-        notification.style.animationDelay = (index * 0.2) + 's';
-    });
-}
-
-// Funzione per animare counter
-function animateCounter(element, start, end, duration) {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const value = Math.floor(progress * (end - start) + start);
-        element.textContent = value.toLocaleString();
-        
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        }
-    };
-    window.requestAnimationFrame(step);
-}
-
-// Funzione per toast notifications (globale)
-function showBetToast(message, type = 'success') {
-    // Crea il toast solo se non esiste già
-    if (document.querySelector('.bet-toast')) return;
-    
-    const toast = document.createElement('div');
-    toast.className = `bet-toast alert alert-${type} alert-dismissible fade show position-fixed`;
-    toast.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        animation: slideInRight 0.5s ease-out;
-    `;
-    
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <span class="me-2">${type === 'success' ? '✅' : '❌'}</span>
-            <span>${message}</span>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-rimuovi dopo 5 secondi
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
-
-// Utility per debounce (per performance)
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Resize handler ottimizzato
-const handleResize = debounce(() => {
-    // Ricalcola animazioni su resize
-    if (document.querySelector('.bet-card')) {
-        document.querySelectorAll('.bet-card').forEach(card => {
-            card.style.animation = 'none';
-            setTimeout(() => {
-                card.style.animation = '';
-            }, 10);
+    if (citySearchInput) {
+        citySearchInput.addEventListener('keypress', e => { 
+            if (e.key === 'Enter') searchCity(citySearchInput.value); 
         });
     }
-}, 250);
-
-window.addEventListener('resize', handleResize);
-
-// Debug helper
-window.betAnimations = {
-    initBetAnimations,
-    initStatsAnimations,
-    initNotificationAnimations,
-    showBetToast,
-    animateCounter
-};
-
-console.log('🚀 Animazioni scommesse caricate!');
-
-
-// TEST FINALE - esegui questo
-function finalTest() {
-    console.log('=== TEST FINALE ===');
     
-    const section = document.getElementById('classic-routes-section');
-    const container = document.getElementById('classic-routes-container');
+    if (citySearchButton) {
+        citySearchButton.addEventListener('click', () => searchCity(citySearchInput?.value || ''));
+    }
     
-    // Pulisci e mostra una card semplice ma visibile
-    container.innerHTML = `
-        <div class="col-12">
-            <div class="card border-primary shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">✅ TEST FUNZIONANTE</h4>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">Questa è una card di test che dovrebbe essere VISIBILE.</p>
-                    <p class="card-text">Se la vedi, allora il problema è nel modo in cui generiamo le card dai dati.</p>
-                </div>
-                <div class="card-footer">
-                    <button class="btn btn-success" onclick="loadClassicRoutes('L\\'Aquila')">
-                        Carica percorsi reali
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    section.style.display = 'block';
-    console.log('✅ Card di test creata. Dovresti vederla sopra la mappa.');
-}
+    // Filtri attività
+    document.querySelectorAll('#activityTypeFilter .btn').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelector('#activityTypeFilter .btn.active').classList.remove('active');
+            this.classList.add('active');
+            const center = mainMap.getCenter();
+            loadMapAndData(center.lat, center.lng, mainMap.getZoom());
+        });
+    });
 
-// Esegui:
-// finalTest();
+    // CARICAMENTO INIZIALE
+    setTimeout(() => {
+        searchCity(userInitialCity || "Italia");
+    }, 500);
+});
+
+console.log('🚀 Main.js completamente caricato!');
