@@ -150,7 +150,11 @@ class Activity(db.Model):
     __tablename__ = 'Activities'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    route_id = db.Column(db.Integer, db.ForeignKey('Routes.id'), nullable=False, index=True)
+    
+    # --- MODIFICA QUI: Rendi route_id opzionale ---
+    route_id = db.Column(db.Integer, db.ForeignKey('Routes.id'), nullable=True, index=True) # Cambiato da False a True
+    # --- FINE MODIFICA ---
+    
     challenge_id = db.Column(db.Integer, db.ForeignKey('Challenges.id'), nullable=True, index=True)
     activity_type = db.Column(db.String(50), nullable=False, default='Corsa', index=True)
     gps_track = db.Column(db.Text, nullable=False)
@@ -159,10 +163,11 @@ class Activity(db.Model):
     distance = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
-    # --- CAMPI AGGIUNTI ---
+    # --- NOME E DESCRIZIONE (Opzionali, per ora) ---
+    # Se decidi di NON usare name/description per Activity, rimuovili da qui e dal codice di salvataggio
+    # Altrimenti, se li vuoi, assicurati che siano corretti come nell'ultima versione
     name = db.Column(db.String(100), nullable=True) 
     description = db.Column(db.String(500), nullable=True) 
-    # --- FINE CAMPI AGGIUNTI ---
 
     likes = db.relationship('ActivityLike', backref='activity', lazy='dynamic', cascade="all, delete-orphan")
 
