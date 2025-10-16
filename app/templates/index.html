@@ -35,7 +35,7 @@
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3"> 
                 <div class="container">
                     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                        <img src="{{ url_for('static', filename='icons/logoSS_X.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
+                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
                         <span class="fw-bold">PeakRankStreet</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,7 +143,6 @@
                     <div class="container">
                         <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
                         <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di StreetSport.</p>
-                        <p class="lead mb-4 animate__animated animate__fadeInUp">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, escursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>
                         {% if not current_user.is_authenticated %}
                             {# Pulsante primario: Registrazione #}
                             <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn">Inizia Ora!</a>
@@ -485,10 +484,15 @@
 
         <footer class="footer bg-dark-custom py-4 mt-auto border-top text-white-50">
             <div class="container text-center">
+                <!-- Logo centrato in alto, più grande -->
+                <div class="mb-4">
+                    <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="StreetSport Logo" style="max-height:120px;">
+                </div>
+
                 <div class="row g-2">
                     <div class="col-md-4">
-                        <h6 class="text-white">StreetSport</h6>
-                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                        <h6 class="text-white">PeakRankStreet</h6>
+                        <p class="small mb-0">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, escursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>
                     </div>
                     <div class="col-md-4">
                         <h6 class="text-white">Link Utili</h6>
@@ -509,9 +513,12 @@
                     </div>
                 </div>
                 <hr class="text-white-50 my-3">
-                <p class="mb-0 small">&copy; 2025 StreetSport App. Tutti i diritti riservati.</p>
+                <p class="mb-0 small">&copy; 2025 PeakRankStreet App. Tutti i diritti riservati.</p>
             </div>
         </footer>
+
+
+
     </div>
 
     <!-- Script JS -->
