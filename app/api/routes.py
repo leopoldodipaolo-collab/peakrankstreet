@@ -336,49 +336,23 @@ def toggle_activity_like(activity_id):
 # Aggiungi questa route al tuo file api/routes.py
 @api.route('/classic-routes/<city>')
 def get_classic_routes(city):
-    """Restituisce i percorsi classici per una città specifica"""
-    from app.models import Route, RouteRecord, Activity, User
+    """Restituisce i percorsi classici per una città specifica, con top 5 tempi opzionali"""
+    from app.models import Route, RouteRecord, Activity
     from sqlalchemy import func
-    
-    print(f"🔍 CLASSIC ROUTES API CALLED")
-    print(f"📌 City parameter: '{city}'")
-    print(f"📌 Request args: {request.args}")
-    
+
     include_top_times = request.args.get('include_top_times', 'false').lower() == 'true'
-    
-    # DEBUG: Verifica tutte le route classiche
-    all_classic_routes = Route.query.filter_by(is_classic=True).all()
-    print(f"📊 Tutte le route classiche nel DB: {len(all_classic_routes)}")
-    for route in all_classic_routes:
-        print(f"   - ID: {route.id}, Name: '{route.name}', City: '{route.classic_city}', is_classic: {route.is_classic}")
-    
-    # DEBUG: Query originale
+
+    # Recupera tutte le route classiche della città, case-insensitive
     classic_routes = Route.query.filter(
         Route.is_classic == True,
-        func.lower(Route.classic_city) == city.lower()
-    ).order_by(Route.name).all()
-    
-    print(f"✅ Route trovate con filtro città '{city}': {len(classic_routes)}")
-    
-    # DEBUG: Prova query case-insensitive
-    classic_routes_ci = Route.query.filter(
-        Route.is_classic == True
-    ).filter(
         Route.classic_city.ilike(f"%{city}%")
     ).order_by(Route.name).all()
-    
-    print(f"🔍 Route trovate con ILIKE '%{city}%': {len(classic_routes_ci)}")
-    
-    # Usa i risultati della query case-insensitive per ora
-    classic_routes = classic_routes_ci
-    
+
     routes_data = []
     for route in classic_routes:
-        print(f"🎯 Processing route: {route.name}")
-        
-        # ... il resto del codice rimane uguale ...
+        # Recupera il record holder (il migliore) per la route
         record = RouteRecord.query.filter_by(route_id=route.id).order_by(RouteRecord.duration.asc()).first()
-        
+
         route_data = {
             'id': route.id,
             'name': route.name,
@@ -396,18 +370,37 @@ def get_classic_routes(city):
             'record_holder': None,
             'top_5_times': []
         }
-        
-        if record:
+
+        if record and record.record_holder:
             route_data['record_holder'] = {
                 'username': record.record_holder.username,
                 'duration': record.duration
             }
-            print(f"   🏆 Record holder: {record.record_holder.username}")
-        
+
+        # --- LOGICA TOP 5 TEMPI ---
+        if include_top_times:
+            top_5_activities = Activity.query.options(
+                joinedload(Activity.user_activity)
+            ).filter_by(route_id=route.id).order_by(Activity.duration.asc()).limit(5).all()
+
+            top_5_activities_data = []
+            for activity in top_5_activities:
+                if activity.user_activity:
+                    top_5_activities_data.append({
+                        'username': activity.user_activity.username,
+                        'user_id': activity.user_activity.id,
+                        'profile_image': activity.user_activity.profile_image,
+                        'duration': activity.duration,
+                        'distance': activity.distance,
+                        'avg_speed': activity.avg_speed,
+                        'activity_id': activity.id
+                    })
+            route_data['top_5_times'] = top_5_activities_data
+
         routes_data.append(route_data)
-    
-    print(f"🎉 Final response: {len(routes_data)} routes")
+
     return jsonify(routes_data)
+
 
 
 # Aggiungi questa route dopo le altre route API

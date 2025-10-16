@@ -146,6 +146,7 @@ def user_profile(user_id):
                            is_homepage=False,
                            Route=Route)
 
+
 @main.route('/user/edit', methods=["GET", "POST"])
 @login_required
 def edit_profile():
@@ -159,7 +160,7 @@ def edit_profile():
             file = request.files['profile_image']
             if file and allowed_file(file.filename):
                 filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
-                filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                filepath = os.path.join(current_app.config['PROFILE_PICS_FOLDER'], filename)  # <-- cambio qui
                 file.save(filepath)
                 current_user.profile_image = filename
             else:

@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof is_homepage_js === 'undefined' || !is_homepage_js) return;
 
+
     // Inizializza variabili globali
     userProfileUrlBase = document.getElementById('user-profile-url-base')?.textContent || '';
     routeDetailUrlBase = document.getElementById('route-detail-url-base')?.textContent || '';
@@ -211,8 +212,38 @@ function addRouteMarker(route) {
 }
 
 // =======================================================
-// PERCORSI CLASSICI
+// FILTRO PER TIPO DI ATTIVITÀ
 // =======================================================
+document.querySelectorAll('#activityTypeFilter .btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Rimuove classe active da tutti i bottoni
+        document.querySelectorAll('#activityTypeFilter .btn').forEach(b => b.classList.remove('active'));
+        // Aggiunge classe active al bottone cliccato
+        btn.classList.add('active');
+
+        // Aggiorna i marker sulla mappa usando i dati già caricati
+        const selectedType = btn.dataset.type;
+
+        if (!loadedRoutes || loadedRoutes.length === 0) return;
+
+        // Pulisce i marker esistenti
+        markers.clearLayers();
+        selectedRouteLayer.clearLayers();
+
+        // Filtra i percorsi per tipo di attività
+        const filteredRoutes = selectedType === 'all'
+            ? loadedRoutes
+            : loadedRoutes.filter(r => r.activity_type === selectedType);
+
+        // Aggiunge i marker filtrati
+        filteredRoutes.forEach(r => addRouteMarker(r));
+
+        // Aggiorna bounds della mappa
+        if (markers.getLayers().length > 0) {
+            mainMap.fitBounds(markers.getBounds(), { padding: [50, 50], maxZoom: 15 });
+        }
+    });
+});
 // =======================================================
 // PERCORSI CLASSICI - VERSIONE REFACTOR
 // =======================================================
@@ -283,7 +314,14 @@ async function loadClassicRoutes(city) {
 // FUNZIONE HELPER: CREA CARD PERCORSO CLASSICO
 // =======================================================
 function createClassicRouteCard(route) {
-    const topTimesHtml = createTopTimesHtml(route.top_5_times);
+    // Trasforma automaticamente i dati in formato compatibile con createTopTimesHtml
+    const topTimes = (route.top_5_times || route.top_5_activities || []).map(t => ({
+        username: t.username,
+        profile_image: t.profile_image,
+        duration: t.duration
+    }));
+
+    const topTimesHtml = createTopTimesHtml(topTimes);
 
     const featuredImageHtml = route.featured_image
         ? `<img src="/static/featured_routes/${route.featured_image}" 
@@ -311,8 +349,11 @@ function createClassicRouteCard(route) {
                     ${createRouteDetailsHtml(route)}
                 </div>
 
+                <!-- Top 5 Tempi -->
+                ${topTimesHtml}
+
                 <div class="row mt-auto g-3">
-                    <div class="col-12 col-md-7">${topTimesHtml}</div>
+                    <div class="col-12 col-md-7"></div>
                     <div class="col-12 col-md-5">
                         <div class="action-buttons h-100 d-flex flex-column justify-content-between">
                             <a href="/activities/record?route_id=${route.id}" class="btn btn-success btn-sm w-100 mb-2 action-btn">
@@ -392,7 +433,7 @@ function createTopTimesHtml(topTimes) {
                     <div class="d-flex justify-content-between align-items-center py-1 border-bottom top-times-item">
                         <div class="d-flex align-items-center">
                             <span class="badge bg-secondary me-2" style="font-size:0.65rem; min-width:20px;">${index + 1}</span>
-                            <img src="${time.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width:24px; height:24px;">
+                            <img src="/static/profile_pics/${time.profile_image || 'default.png'}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width:24px; height:24px;">
                             <small class="text-truncate" style="max-width:80px;">${time.username}</small>
                         </div>
                         <small class="text-muted">${formatDurationCompact(time.duration)}</small>
@@ -402,6 +443,7 @@ function createTopTimesHtml(topTimes) {
         </div>
     `;
 }
+
 
 // =======================================================
 // DETTAGLI PERCORSO
