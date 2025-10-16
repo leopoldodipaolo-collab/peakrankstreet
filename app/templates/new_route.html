@@ -13,6 +13,9 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate id="createRouteForm">
+                        <!-- ✅ Campo CSRF corretto -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome del Percorso:</label>
                             <input type="text" id="name" name="name" class="form-control" required>

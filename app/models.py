@@ -74,7 +74,6 @@ class Route(db.Model):
     description = db.Column(db.String(500), nullable=True)
     coordinates = db.Column(db.Text, nullable=False)
     duration = db.Column(db.Integer)  # in secondi
-    distance = db.Column(db.Float)    # in km
     activity_type = db.Column(db.String(50), nullable=False, default='Corsa', index=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)

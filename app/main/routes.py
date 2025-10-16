@@ -1902,6 +1902,7 @@ def upload_gpx():
                         points = [{'lat': p.latitude, 'lon': p.longitude} for p in track_segment.points]
                         points_count = len(points)
                         
+                        distance_km = 0.0 # Default
                         try:
                             if gpx.length_3d():
                                 distance_km = gpx.length_3d() / 1000.0
@@ -1909,7 +1910,7 @@ def upload_gpx():
                                 distance_km = gpx.length_2d() / 1000.0
                         except Exception as dist_e:
                             print(f"Errore nel calcolo della distanza GPX: {dist_e}")
-                            distance_km = 0.0 
+                            distance_km = 0.0 # Fallback a 0 se c'è un problema
 
                         start_time = None
                         end_time = None
@@ -1964,81 +1965,97 @@ def upload_gpx():
 def save_gpx_item():
     """
     API endpoint per salvare un'attività o un percorso da dati GPX estratti.
-    Riceve dati JSON dal frontend e restituisce una risposta JSON.
     """
-    # --- VALIDAZIONE CSRF PER API ---
-    # Per le API, è comune ricevere il token CSRF nell'header 'X-CSRFToken'.
-    # Il frontend (JavaScript) dovrebbe inviarlo.
-    # Assicurati che il tuo frontend invii questo header, e che la tua app verifichi la sua validità.
-    # Esempio di recupero dall'header:
-    # csrf_token_header = request.headers.get('X-CSRFToken')
-    # if not csrf_token_header or not validate_csrf(csrf_token_header): # Se hai la validazione
-    #     return jsonify({"status": "error", "message": "Token CSRF non valido per API."}), 403
-
-    # Se il token CSRF viene inviato nel corpo JSON (come nel nostro form manuale):
+    # --- DEBUG: Stampa i dati ricevuti ---
+    print("=== SAVE GPX ITEM - DATI RICEVUTI ===")
+    
     if not request.is_json:
+        print("ERRORE: Richiesta non è JSON")
         return jsonify({"status": "error", "message": "Richiesta deve essere JSON."}), 400
     
     data = request.get_json()
     
-    # --- Estrazione e Validazione Dati Ricevuti ---
-    filename = data.get('filename') # Utile per contesto, non per salvataggio
+    # Stampa i dati per debug
+    print(f"Filename: {data.get('filename')}")
+    print(f"Name: {data.get('name')}")
+    print(f"Distance: {data.get('distance')} (Tipo: {type(data.get('distance'))})")
+    print(f"Duration: {data.get('duration')}")
+    print(f"Activity Type: {data.get('activity_type')}")
+    print(f"Item Type: {data.get('item_type')}")
+    print(f"Points JSON presente: {bool(data.get('points_json'))}")
+    print("=====================================")
+    
+    # --- Estrazione Dati ---
+    filename = data.get('filename')
     name = data.get('name')
     description = data.get('description')
     activity_type = data.get('activity_type')
     distance_str = data.get('distance')
     duration_str = data.get('duration')
     points_json = data.get('points_json')
-    item_type = data.get('item_type') # 'activity' o 'route'
-    route_id_for_activity = data.get('route_id') # ID del percorso, se si salva un'attività associata
+    item_type = data.get('item_type')
+    route_id_for_activity = data.get('route_id')
     
-    # Validazione dei campi essenziali ricevuti
-    if not all([name, activity_type, points_json, item_type]):
-        return jsonify({"status": "error", "message": "Dati essenziali mancanti (nome, tipo, punti)."}), 400
+    # --- Validazione Base ---
+    if not name:
+        return jsonify({"status": "error", "message": "Il nome è obbligatorio."}), 400
+    
+    if not activity_type:
+        return jsonify({"status": "error", "message": "Il tipo di attività è obbligatorio."}), 400
     
     if not points_json or points_json == '[]':
         return jsonify({"status": "error", "message": "Il tracciato non contiene punti validi."}), 400
+    
+    if not item_type or item_type not in ['activity', 'route']:
+        return jsonify({"status": "error", "message": "Tipo di elemento non valido."}), 400
 
     try:
-        # --- Conversione Dati ---
-        distance_km = float(distance_str) if distance_str and distance_str != 'N/D' else 0.0
-        duration_sec = 0
-        if duration_str and duration_str != 'N/D':
+        # --- Conversione Distanza ---
+        distance_km = 0.0
+        if distance_str and distance_str != 'N/D' and distance_str != '':
             try:
-                duration_sec = int(duration_str) # Assumendo che venga passato in secondi
-            except ValueError:
-                # Se la durata non è un numero valido, gestisci l'errore o lasciala a 0
-                pass 
-
-        # --- Creazione Oggetto (Activity o Route) ---
+                distance_clean = str(distance_str).strip()
+                distance_km = float(distance_clean)
+                print(f"Distanza convertita: {distance_km} km")
+            except (ValueError, TypeError) as e:
+                print(f"Errore conversione distanza '{distance_str}': {e}")
+                distance_km = 0.0
+        else:
+            print("Distanza non valida o vuota, uso 0.0")
+        
+        # --- Conversione Durata ---
+        duration_sec = 0
+        if duration_str and duration_str != 'N/D' and duration_str != '':
+            try:
+                duration_clean = str(duration_str).strip()
+                duration_sec = int(float(duration_clean))
+                print(f"Durata convertita: {duration_sec} secondi")
+            except (ValueError, TypeError) as e:
+                print(f"Errore conversione durata '{duration_str}': {e}")
+                duration_sec = 0
+        else:
+            print("Durata non valida o vuota, uso 0")
+        
+        # --- Creazione Oggetto ---
         user_id = current_user.id
         
         if item_type == 'activity':
             # Crea una nuova Attività
             new_activity = Activity(
                 user_id=user_id,
-                route_id=route_id_for_activity, # Potrebbe essere None se non associato
+                route_id=route_id_for_activity,
                 name=name,
-                description=description,
+                description=description or "",
                 activity_type=activity_type,
                 gps_track=points_json,
                 distance=distance_km,
                 duration=duration_sec,
-                # Calcola avg_speed in km/h (distanza_km / ore)
-                avg_speed= (distance_km / (duration_sec / 3600.0)) if duration_sec > 0 else 0.0 
+                avg_speed= (distance_km / (duration_sec / 3600.0)) if duration_sec > 0 else 0.0
             )
             db.session.add(new_activity)
             db.session.commit()
             
-            # --- Badge e Record ---
-            # Controlla se questa attività merita un badge "Prima Attività"
-            # Questa funzione dovrebbe essere importata o definita correttamente
-            # Esempio: award_badge_if_earned(current_user, "Prima Attività")
-            
-            # Controlla e aggiorna record per questo percorso/attività
-            # Dovrai implementare una funzione tipo check_and_update_route_record
-            # if route_id_for_activity and activity_type:
-            #     check_and_update_route_record(route_id=route_id_for_activity, activity_type=activity_type, activity_duration=duration_sec, activity_id=new_activity.id)
+            print(f"Attività salvata con ID: {new_activity.id}")
             
             return jsonify({
                 "status": "success", 
@@ -2051,19 +2068,20 @@ def save_gpx_item():
             # Crea un nuovo Percorso
             new_route = Route(
                 name=name,
-                description=description,
+                description=description or "",
                 coordinates=points_json,
-                distance=distance_km,
-                duration=duration_sec, # Durata media stimata dal GPX
+                distance_km=distance_km,  # ⚠️ ASSICURATI CHE SIA distance_km
+                duration=duration_sec,
                 activity_type=activity_type,
                 created_by=user_id
             )
             db.session.add(new_route)
             db.session.commit()
             
-            # Controlla se questa creazione merita un badge "Primo Percorso"
-            # Esempio: award_badge_if_earned(current_user, "Primo Percorso")
-
+            # DEBUG per verificare
+            print(f"✅ Percorso salvato con ID: {new_route.id}")
+            print(f"✅ Distance_km salvata: {new_route.distance_km} km")
+            
             return jsonify({
                 "status": "success", 
                 "message": "Percorso salvato con successo!", 
@@ -2072,9 +2090,11 @@ def save_gpx_item():
             })
             
         else:
+            # Questo caso dovrebbe essere già gestito dalla validazione sopra
             return jsonify({"status": "error", "message": "Tipo di elemento non valido."}), 400
 
     except Exception as e:
-        db.session.rollback() # Annulla le modifiche in caso di errore
-        print(f"Errore API save_gpx_item: {e}") # Logga l'errore sul server
-        return jsonify({"status": "error", "message": f"Errore interno del server: {e}"}), 500
+        db.session.rollback()
+        print(f"ERRORE CRITICO in save_gpx_item: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({"status": "error", "message": f"Errore interno del server: {str(e)}"}), 500
