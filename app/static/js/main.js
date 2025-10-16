@@ -204,12 +204,35 @@ function addRouteMarker(route) {
     const marker = L.marker([start[1], start[0]], { icon: L.icon({ iconUrl: icon, iconSize: [32,32], iconAnchor: [16,32] }) });
     marker.bindPopup(`<b>${route.name}</b><br>Distanza: ${route.distance_km?.toFixed(2) || 'N/D'} km`);
 
-    marker.on('mouseover', () => selectedRouteLayer.clearLayers() || selectedRouteLayer.addData(route.coordinates));
-    marker.on('mouseout', () => selectedRouteLayer.clearLayers());
-    marker.on('click', () => displayRouteDetails(route));
+    // Evidenzia al mouseover **solo se non è già selezionato**
+    marker.on('mouseover', () => {
+        if (!marker.isClicked) {
+            selectedRouteLayer.clearLayers();
+            selectedRouteLayer.addData(route.coordinates);
+        }
+    });
+
+    // Rimuove evidenziazione al mouseout solo se non è cliccato
+    marker.on('mouseout', () => {
+        if (!marker.isClicked) {
+            selectedRouteLayer.clearLayers();
+        }
+    });
+
+    // Al click, mantiene evidenziato
+    marker.on('click', () => {
+        // Pulisce tutti gli altri marker “cliccati”
+        markers.getLayers().forEach(m => m.isClicked = false);
+
+        marker.isClicked = true; // questo marker resta evidenziato
+        selectedRouteLayer.clearLayers();
+        selectedRouteLayer.addData(route.coordinates);
+        displayRouteDetails(route);
+    });
 
     markers.addLayer(marker);
 }
+
 
 // =======================================================
 // FILTRO PER TIPO DI ATTIVITÀ
@@ -507,6 +530,11 @@ function displayRouteDetails(routeProps) {
     const mapInstructions = document.getElementById('map-instructions');
     if (mapInstructions) {
         mapInstructions.style.display = 'none';
+    }
+    // Evidenzia percorso selezionato sulla mappa
+    if (routeProps.coordinates?.geometry?.coordinates?.length > 0 && selectedRouteLayer) {
+        selectedRouteLayer.clearLayers();
+        selectedRouteLayer.addData(routeProps.coordinates);
     }
     
     // Scroll smooth ai dettagli

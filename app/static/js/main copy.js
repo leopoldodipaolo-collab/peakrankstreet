@@ -91,40 +91,68 @@ function hideRouteDetails() {
 
 // Funzione globale per mostrare i dettagli dal popup del marker
 window.showRouteDetailsFromMarker = function(routeId) {
-    console.log('Mostra dettagli per route:', routeId);
-    
     try {
-        // Chiudi tutti i popup aperti
-        if (typeof mainMap !== 'undefined' && mainMap && typeof mainMap.closePopup === 'function') {
-            mainMap.closePopup();
-        }
-        
-        // CERCA IL PERCORSO NEI DATI GIA' CARICATI
-        let foundRoute = null;
-        
-        if (window.loadedRoutes && Array.isArray(window.loadedRoutes)) {
-            foundRoute = window.loadedRoutes.find(route => route.id == routeId);
-        }
-        
-        if (foundRoute) {
-            console.log('Percorso trovato in cache:', foundRoute.name);
-            
-            // Mostra il percorso sulla mappa
-            if (selectedRouteLayer) {
-                selectedRouteLayer.clearLayers();
-                selectedRouteLayer.addData(foundRoute.coordinates);
-            }
-            
-            // Mostra i dettagli SOTTO LA MAPPA
-            displayRouteDetails(foundRoute);
-        } else {
+        if (!loadedRoutes || !Array.isArray(loadedRoutes)) return;
+
+        const foundRoute = loadedRoutes.find(r => r.id == routeId);
+        if (!foundRoute) {
             console.error('Percorso non trovato nei dati caricati:', routeId);
+            return;
         }
-        
-    } catch (error) {
-        console.error('Errore in showRouteDetailsFromMarker:', error);
+
+        // Mostra il percorso sulla mappa
+        if (selectedRouteLayer) {
+            selectedRouteLayer.clearLayers();
+            selectedRouteLayer.addData(foundRoute.coordinates);
+        }
+
+        // Mostra i dettagli sotto la mappa
+        displayRouteDetails(foundRoute);
+
+        // Chiudi eventuali popup aperti
+        if (mainMap) mainMap.closePopup();
+
+    } catch (err) {
+        console.error('Errore in showRouteDetailsFromMarker:', err);
     }
 };
+function addRouteMarker(route) {
+    if (!route.coordinates?.geometry?.coordinates?.[0]) return;
+
+    const start = route.coordinates.geometry.coordinates[0];
+
+    // Scegli l'icona
+    const icon = activityIcons[route.activity_type] || defaultIcon;
+
+    const marker = L.marker([start[1], start[0]], { icon });
+
+    // Contenuto del popup
+    const popupContent = `
+        <div style="min-width: 200px; text-align: center;">
+            <h6 style="margin-bottom: 8px; font-weight: bold;">${route.name}</h6>
+            <p style="margin-bottom: 8px; font-size: 0.9em;">Distanza: ${route.distance_km?.toFixed(2) || 'N/D'} km</p>
+            ${route.king_queen ? `<span class="badge bg-warning text-dark" style="font-size: 0.8em;"><i class="bi bi-trophy-fill"></i> ${route.king_queen.username}</span><br><br>` : ''}
+            <button class="btn btn-sm btn-success" onclick="window.showRouteDetailsFromMarker(${route.id})" style="width: 100%;">
+                <i class="bi bi-info-circle"></i> Vedi Dettagli
+            </button>
+        </div>
+    `;
+
+    marker.bindPopup(popupContent, { maxWidth: 300, className: 'route-popup' });
+
+    // Mostra percorso al click diretto sul marker
+    marker.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        selectedRouteLayer.clearLayers();
+        selectedRouteLayer.addData(route.coordinates);
+        displayRouteDetails(route);
+        this.openPopup();
+    });
+
+    // Aggiungi il marker al cluster
+    markers.addLayer(marker);
+}
+
 
 // Funzione helper per formattare la durata da secondi a HH:MM:SS
 function formatDuration(seconds) {
