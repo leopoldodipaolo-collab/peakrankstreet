@@ -1,8 +1,411 @@
 // =======================================================
-// FUNZIONI GLOBALI
+// VARIABILI GLOBALI
 // =======================================================
+let mainMap, markers, osmLayer, topoLayer;
+let selectedRouteLayer;
+let userProfileUrlBase, routeDetailUrlBase, activityDetailUrlBase, profilePicsBaseUrl, mapDataApiUrl, userInitialCity;
+let loadedRoutes = [];
 
-// Funzione per visualizzare i dettagli del percorso SOTTO LA MAPPA
+// =======================================================
+// INIZIALIZZAZIONE PRINCIPALE
+// =======================================================
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Registrazione Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/js/sw.js')
+            .then(() => console.log('Service Worker registrato'))
+            .catch(err => console.log('Service Worker fallito:', err));
+    }
+
+    if (typeof is_homepage_js === 'undefined' || !is_homepage_js) return;
+
+    // Inizializza variabili globali
+    userProfileUrlBase = document.getElementById('user-profile-url-base')?.textContent || '';
+    routeDetailUrlBase = document.getElementById('route-detail-url-base')?.textContent || '';
+    activityDetailUrlBase = document.getElementById('activity-detail-url-base')?.textContent || '';
+    mapDataApiUrl = document.getElementById('map-data-api-url')?.textContent || '';
+    userInitialCity = document.getElementById('user-initial-city')?.textContent || '';
+    profilePicsBaseUrl = document.getElementById('profile-pics-base-url')?.textContent || '';
+
+    // Inizializza mappa
+    initializeMap();
+
+    // Setup ricerca città
+    setupCitySearch();
+
+    // Caricamento iniziale della città
+    searchInitialCity();
+});
+
+function formatDuration(seconds) {
+    if (!seconds && seconds !== 0) return 'N/D';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return (h ? h + 'h ' : '') + (m ? m + 'm ' : '') + (s ? s + 's' : '');
+}
+
+function formatDurationCompact(seconds) {
+    if (!seconds && seconds !== 0) return 'N/D';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
+// =======================================================
+// FUNZIONI MAPPA
+// =======================================================
+function initializeMap() {
+    if (!mainMap) {
+        mainMap = L.map('mainMap', {
+            center: [42.3498, 13.3995],
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true,
+            preferCanvas: true
+        });
+
+        // Layer di base
+        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mainMap);
+        topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenTopoMap' });
+
+        // Cluster marker
+        markers = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 });
+        mainMap.addLayer(markers);
+
+        // Layer percorsi selezionati
+        selectedRouteLayer = L.geoJSON(null, { style: { color: '#007bff', weight: 6 }, interactive: false }).addTo(mainMap);
+
+        // Controllo layer
+        L.control.layers({ "Stradale": osmLayer, "Topografica": topoLayer }, { "Percorsi": markers }).addTo(mainMap);
+
+        // Click sulla mappa per deselezionare
+        mainMap.on('click', hideRouteDetails);
+
+        // Resize mappa
+        setTimeout(() => mainMap.invalidateSize(), 100);
+    }
+}
+
+// =======================================================
+// RICERCA CITTÀ
+// =======================================================
+function setupCitySearch() {
+    const cityInput = document.getElementById('citySearchInput');
+    const cityButton = document.getElementById('searchCityButton');
+    const citySpinner = document.getElementById('citySearchSpinner');
+
+    if (!cityInput || !cityButton) return;
+
+    async function searchCity(cityName) {
+        if (!cityName) return;
+        cityButton.disabled = true;
+        citySpinner.style.display = 'inline-block';
+
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=5`);
+            const data = await res.json();
+            console.log('Local leaderboards:', data.local_leaderboards); // <--- qui funziona
+            if (!data || data.length === 0) {
+                alert('Città non trovata.');
+                return;
+            }
+
+            const city = data[0].display_name.split(',')[0].trim();
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+
+            loadMapAndData(lat, lon, 13, city);
+            loadClassicRoutes(city);
+
+        } catch (err) {
+            console.error('Errore ricerca città:', err);
+            alert('Errore di rete durante la ricerca.');
+        } finally {
+            cityButton.disabled = false;
+            citySpinner.style.display = 'none';
+        }
+    }
+
+    cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value); });
+    cityButton.addEventListener('click', () => searchCity(cityInput.value));
+}
+
+function searchInitialCity() {
+    const city = userInitialCity ? userInitialCity.split(',')[0].trim() : "Italia";
+    const cityInput = document.getElementById('citySearchInput');
+    if (cityInput) cityInput.value = city;
+    cityInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+}
+
+// =======================================================
+// CARICAMENTO DATI MAPPA
+// =======================================================
+async function loadMapAndData(lat, lon, zoom = 13, city = null) {
+    if (!mainMap) return;
+    mainMap.flyTo([lat, lon], zoom, { duration: 1.2 });
+
+    // Pulisce vecchi marker e percorsi selezionati
+    markers.clearLayers();
+    selectedRouteLayer.clearLayers();
+
+    // Marker città
+    if (city) L.marker([lat, lon]).addTo(mainMap).bindPopup(`<b>${city}</b>`).openPopup();
+
+    const activityType = document.querySelector('#activityTypeFilter .btn.active')?.dataset.type || 'all';
+    
+    try {
+        // Chiamata API filtrata per città
+        const apiUrl = `${mapDataApiUrl}?lat=${lat}&lon=${lon}&radius_km=50&activity_type=${activityType}&city=${encodeURIComponent(city || '')}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        loadedRoutes = data.routes || [];
+
+        // Aggiungi marker dei percorsi
+        loadedRoutes.forEach(r => addRouteMarker(r));
+        if (markers.getLayers().length > 0) mainMap.fitBounds(markers.getBounds(), { padding: [50, 50], maxZoom: 15 });
+
+        // Popola le varie liste
+        populateAvailableRoutes(data.routes);
+        populateRecentChallenges(data.challenges);
+        populateRecentActivities(data.recent_activities);
+
+        // AGGIORNAMENTO ERROI LOCALI per la città selezionata
+        if (data.local_leaderboards) {
+            populateLocalLeaderboards(data.local_leaderboards);
+        } else {
+            populateLocalLeaderboards({ distance: [], creators: [] });
+        }
+
+    } catch (err) {
+        console.error('Errore caricamento dati:', err);
+    }
+}
+
+
+// =======================================================
+// AGGIUNGI MARKER PERCORSO
+// =======================================================
+function addRouteMarker(route) {
+    if (!route.coordinates?.geometry?.coordinates?.[0]) return;
+    const start = route.coordinates.geometry.coordinates[0];
+
+    const icon = {
+        'Corsa': '/static/icons/runner.png',
+        'Bici': '/static/icons/bicycle.png',
+        'Hike': '/static/icons/hiking.png'
+    }[route.activity_type] || '/static/icons/default.png';
+
+    const marker = L.marker([start[1], start[0]], { icon: L.icon({ iconUrl: icon, iconSize: [32,32], iconAnchor: [16,32] }) });
+    marker.bindPopup(`<b>${route.name}</b><br>Distanza: ${route.distance_km?.toFixed(2) || 'N/D'} km`);
+
+    marker.on('mouseover', () => selectedRouteLayer.clearLayers() || selectedRouteLayer.addData(route.coordinates));
+    marker.on('mouseout', () => selectedRouteLayer.clearLayers());
+    marker.on('click', () => displayRouteDetails(route));
+
+    markers.addLayer(marker);
+}
+
+// =======================================================
+// PERCORSI CLASSICI
+// =======================================================
+// =======================================================
+// PERCORSI CLASSICI - VERSIONE REFACTOR
+// =======================================================
+async function loadClassicRoutes(city) {
+    console.log('loadClassicRoutes chiamata per città:', city);
+
+    const section = document.getElementById('classic-routes-section');
+    const container = document.getElementById('classic-routes-container');
+    const noRoutes = document.getElementById('no-classic-routes');
+    const cityTitle = document.getElementById('classic-routes-city');
+
+    if (!section || !container || !cityTitle) {
+        console.error('Elementi HTML non trovati!');
+        return;
+    }
+
+    if (!city || city.trim() === '') {
+        section.style.display = 'none';
+        return;
+    }
+
+    // Mostra sezione e titolo città
+    section.style.display = 'block';
+    cityTitle.textContent = city;
+
+    // Mostra spinner di caricamento
+    container.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Caricamento percorsi classici...</p>
+        </div>
+    `;
+    noRoutes.style.display = 'none';
+
+    try {
+        const response = await fetch(`/api/classic-routes/${encodeURIComponent(city)}?include_top_times=true`);
+        if (!response.ok) throw new Error(`Errore di rete: ${response.status}`);
+
+        let routes = await response.json();
+        if (!Array.isArray(routes)) routes = [];
+
+        if (routes.length === 0) {
+            container.style.display = 'none';
+            noRoutes.style.display = 'block';
+            return;
+        }
+
+        container.style.display = 'flex';
+        noRoutes.style.display = 'none';
+
+        // Genera HTML dei percorsi
+        container.innerHTML = routes.map(route => createClassicRouteCard(route)).join('');
+
+    } catch (error) {
+        console.error('Errore nel caricamento percorsi classici:', error);
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Errore nel caricamento: ${error.message}
+                </div>
+            </div>
+        `;
+    }
+}
+
+// =======================================================
+// FUNZIONE HELPER: CREA CARD PERCORSO CLASSICO
+// =======================================================
+function createClassicRouteCard(route) {
+    const topTimesHtml = createTopTimesHtml(route.top_5_times);
+
+    const featuredImageHtml = route.featured_image
+        ? `<img src="/static/featured_routes/${route.featured_image}" 
+                class="card-img-top route-card-img" alt="${route.name}">`
+        : `<div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white route-card-img-placeholder">
+               <i class="bi bi-geo-alt-fill" style="font-size:3rem;"></i>
+           </div>`;
+
+    return `
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 route-card shadow-sm border-0 animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 text-truncate">${route.name}</h5>
+                <div class="badge-container">
+                    <span class="badge bg-light text-dark me-1" data-bs-toggle="tooltip" title="Attività: ${route.activity_type}">${route.activity_type}</span>
+                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Difficoltà: ${route.difficulty}">${route.difficulty}</span>
+                </div>
+            </div>
+
+            ${featuredImageHtml}
+
+            <div class="card-body d-flex flex-column">
+                <p class="card-text text-truncate-3">${route.description}</p>
+                <div class="route-details mb-3">
+                    ${createRouteDetailsHtml(route)}
+                </div>
+
+                <div class="row mt-auto g-3">
+                    <div class="col-12 col-md-7">${topTimesHtml}</div>
+                    <div class="col-12 col-md-5">
+                        <div class="action-buttons h-100 d-flex flex-column justify-content-between">
+                            <a href="/activities/record?route_id=${route.id}" class="btn btn-success btn-sm w-100 mb-2 action-btn">
+                                <i class="bi bi-stopwatch me-1"></i>Registra Tempo
+                            </a>
+                            <a href="/challenges/new?route_id=${route.id}" class="btn btn-warning btn-sm w-100 action-btn">
+                                <i class="bi bi-trophy me-1"></i>Sfida
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-activity me-1"></i>${route.total_activities} attività
+                </small>
+                <a href="/route/${route.id}" class="btn btn-primary btn-sm action-btn">
+                    <i class="bi bi-eye me-1"></i>Dettagli
+                </a>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+// =======================================================
+// FUNZIONE HELPER: CREA HTML DETTAGLI PERCORSO
+// =======================================================
+function createRouteDetailsHtml(route) {
+    return `
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-geo-alt me-2 text-primary" style="font-size:0.8rem;"></i>
+            <small><strong>Partenza:</strong> ${route.start_location}</small>
+        </div>
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-flag me-2 text-success" style="font-size:0.8rem;"></i>
+            <small><strong>Arrivo:</strong> ${route.end_location}</small>
+        </div>
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-arrows-expand me-2 text-info" style="font-size:0.8rem;"></i>
+            <small><strong>Distanza:</strong> ${route.distance_km.toFixed(1)} km</small>
+        </div>
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-mountain me-2 text-warning" style="font-size:0.8rem;"></i>
+            <small><strong>Dislivello:</strong> +${route.elevation_gain} m</small>
+        </div>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-clock me-2 text-secondary" style="font-size:0.8rem;"></i>
+            <small><strong>Tempo:</strong> ${route.estimated_time}</small>
+        </div>
+    `;
+}
+
+// =======================================================
+// FUNZIONE HELPER: CREA HTML TOP 5 TIMES
+// =======================================================
+function createTopTimesHtml(topTimes) {
+    if (!topTimes || topTimes.length === 0) {
+        return `
+            <div class="top-times-section">
+                <h6 class="border-bottom pb-1 mb-2 small text-muted">
+                    <i class="bi bi-trophy me-1"></i>Top 5 Tempi
+                </h6>
+                <small class="text-muted">Nessun tempo registrato</small>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="top-times-section">
+            <h6 class="border-bottom pb-1 mb-2 small">
+                <i class="bi bi-trophy text-warning me-1"></i>Top 5 Tempi
+            </h6>
+            <div class="top-times-list">
+                ${topTimes.slice(0, 5).map((time, index) => `
+                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom top-times-item">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-secondary me-2" style="font-size:0.65rem; min-width:20px;">${index + 1}</span>
+                            <img src="${time.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width:24px; height:24px;">
+                            <small class="text-truncate" style="max-width:80px;">${time.username}</small>
+                        </div>
+                        <small class="text-muted">${formatDurationCompact(time.duration)}</small>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// =======================================================
+// DETTAGLI PERCORSO
+// =======================================================
 function displayRouteDetails(routeProps) { 
     console.log('Display details for:', routeProps.name);
     
@@ -69,7 +472,6 @@ function displayRouteDetails(routeProps) {
         detailsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
 }
-
 // Funzione per nascondere i dettagli
 function hideRouteDetails() {
     const detailsCard = document.getElementById('selected-route-details');
@@ -89,364 +491,9 @@ function hideRouteDetails() {
     }
 }
 
-// Funzione globale per mostrare i dettagli dal popup del marker
-window.showRouteDetailsFromMarker = function(routeId) {
-    console.log('Mostra dettagli per route:', routeId);
-    
-    try {
-        // Chiudi tutti i popup aperti
-        if (typeof mainMap !== 'undefined' && mainMap && typeof mainMap.closePopup === 'function') {
-            mainMap.closePopup();
-        }
-        
-        // CERCA IL PERCORSO NEI DATI GIA' CARICATI
-        let foundRoute = null;
-        
-        if (window.loadedRoutes && Array.isArray(window.loadedRoutes)) {
-            foundRoute = window.loadedRoutes.find(route => route.id == routeId);
-        }
-        
-        if (foundRoute) {
-            console.log('Percorso trovato in cache:', foundRoute.name);
-            
-            // Mostra il percorso sulla mappa
-            if (selectedRouteLayer) {
-                selectedRouteLayer.clearLayers();
-                selectedRouteLayer.addData(foundRoute.coordinates);
-            }
-            
-            // Mostra i dettagli SOTTO LA MAPPA
-            displayRouteDetails(foundRoute);
-        } else {
-            console.error('Percorso non trovato nei dati caricati:', routeId);
-        }
-        
-    } catch (error) {
-        console.error('Errore in showRouteDetailsFromMarker:', error);
-    }
-};
-
-// Funzione helper per formattare la durata da secondi a HH:MM:SS
-function formatDuration(seconds) {
-    if (typeof seconds !== 'number' || isNaN(seconds)) return 'N/D';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    return [h, m, s]
-        .map(v => String(v).padStart(2, '0'))
-        .join(":");
-}
-
-// Funzione helper per formattare la durata in modo compatto
-function formatDurationCompact(seconds) {
-    if (!seconds) return 'N/A';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`;
-}
-
 // =======================================================
-// VARIABILI GLOBALI
+// FUNZIONI PER POPOLARE LISTE
 // =======================================================
-
-let mainMap, markers, osmLayer, topoLayer;
-let userProfileUrlBase, routeDetailUrlBase, activityDetailUrlBase, profilePicsBaseUrl, mapDataApiUrl, userInitialCity;
-let selectedRouteLayer;
-
-// =======================================================
-// DEFINIZIONE ICONE PERSONALIZZATE
-// =======================================================
-
-const L_Icon = L.Icon.extend({
-    options: {
-        iconSize:     [32, 32],
-        iconAnchor:   [16, 32],
-        popupAnchor:  [0, -32]
-    }
-});
-
-const runIcon = new L_Icon({iconUrl: '/static/icons/runner.png'});
-const bikeIcon = new L_Icon({iconUrl: '/static/icons/bicycle.png'});
-const hikeIcon = new L_Icon({iconUrl: '/static/icons/hiking.png'});
-const defaultIcon = new L_Icon({iconUrl: '/static/icons/default.png'});
-
-const activityIcons = {
-    'Corsa': runIcon,
-    'Bici': bikeIcon,
-    'Hike': hikeIcon
-};
-
-// =======================================================
-// FUNZIONI PRINCIPALI
-// =======================================================
-
-// Funzione di inizializzazione mappa
-function initializeMap() {
-    console.log('Inizializzazione mappa...');
-    
-    if (!mainMap) {
-        mainMap = L.map('mainMap', {
-            center: [42.3498, 13.3995],
-            zoom: 13,
-            zoomControl: true,
-            attributionControl: true,
-            preferCanvas: true,
-            fadeAnimation: false,
-            markerZoomAnimation: false
-        });
-
-        // Aggiungi layer base
-        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-            attribution: '&copy; OpenStreetMap' 
-        }).addTo(mainMap);
-        
-        topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { 
-            attribution: '&copy; OpenTopoMap' 
-        });
-
-        // Inizializza cluster marker
-        markers = L.markerClusterGroup({
-            chunkedLoading: true,
-            maxClusterRadius: 50,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: false
-        });
-        mainMap.addLayer(markers);
-
-        // Layer per il percorso selezionato
-        selectedRouteLayer = L.geoJSON(null, { 
-            style: { color: '#007bff', weight: 6, opacity: 1 },
-            interactive: false
-        }).addTo(mainMap);
-
-        // Controllo layer
-        L.control.layers(
-            { "Stradale": osmLayer, "Topografica": topoLayer }, 
-            { "Percorsi": markers }
-        ).addTo(mainMap);
-
-        // Gestione click sulla mappa (per deselezionare)
-        mainMap.on('click', function(e) {
-            console.log('Mappa cliccata - deseleziona');
-            mainMap.closePopup();
-            
-            // Nascondi i dettagli del percorso
-            hideRouteDetails();
-        });
-
-        setTimeout(() => {
-            if (mainMap) {
-                mainMap.invalidateSize();
-            }
-        }, 100);
-    }
-    
-    return mainMap;
-}
-
-// Funzione principale di caricamento dati
-// Funzione principale di caricamento dati
-window.loadMapAndData = function(lat, lon, zoom = 13, city = null) {
-    console.log('Caricamento mappa per:', lat, lon, city);
-    
-    // Assicurati che la mappa sia inizializzata
-    if (!mainMap) {
-        console.error('Mappa non inizializzata!');
-        return;
-    }
-    
-    mainMap.setView([lat, lon], zoom);
-    
-    // Pulisci i marker esistenti in modo sicuro
-    mainMap.eachLayer(layer => { 
-        if (layer.options && layer.options.isCitySearchMarker) {
-            mainMap.removeLayer(layer);
-        }
-    });
-    
-    // Aggiungi marker della città se specificata
-    if (city) {
-        L.marker([lat, lon], { isCitySearchMarker: true })
-            .addTo(mainMap)
-            .bindPopup(`<b>${city}</b>`)
-            .openPopup();
-    }
-
-    // Mostra stati di caricamento
-    const loadingMsg = `<p class="text-center text-muted p-3">Caricamento...</p>`;
-    const leaderboardLoadingMsg = `<li class="list-group-item text-center text-muted">Caricamento...</li>`;
-    
-    const availableRoutesListDiv = document.getElementById('available-routes-list');
-    const recentChallengesListDiv = document.getElementById('recent-challenges-list');
-    const recentActivitiesListDiv = document.getElementById('recent-activities-list');
-    
-    if (availableRoutesListDiv) availableRoutesListDiv.innerHTML = loadingMsg;
-    if (recentChallengesListDiv) recentChallengesListDiv.innerHTML = loadingMsg;
-    if (recentActivitiesListDiv) recentActivitiesListDiv.innerHTML = loadingMsg;
-    
-    const distanceList = document.querySelector('#top-distance-list');
-    const creatorsList = document.querySelector('#top-creators-list');
-    if (distanceList) distanceList.innerHTML = leaderboardLoadingMsg;
-    if (creatorsList) creatorsList.innerHTML = leaderboardLoadingMsg;
-
-    const activityTypeFilter = document.querySelector('#activityTypeFilter .btn.active');
-    const activityType = activityTypeFilter ? activityTypeFilter.dataset.type : 'all';
-
-    // URL dell'API con parametri
-    const apiUrl = `${mapDataApiUrl}?lat=${lat}&lon=${lon}&radius_km=50&activity_type=${activityType}`;
-    console.log('Chiamando API:', apiUrl);
-
-    fetch(apiUrl)
-        .then(response => {
-            // Controlla se la risposta è JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('La risposta non è JSON. Probabilmente un errore del server.');
-            }
-            
-            if (!response.ok) {
-                throw new Error(`Errore HTTP: ${response.status} ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Dati ricevuti:', data.routes ? data.routes.length : 0, 'percorsi');
-            
-            // SALVA I PERCORSI IN VARIABILE GLOBALE PER RIUTILIZZO
-            window.loadedRoutes = data.routes || [];
-            
-            // PULISCI I MARKER IN MODO SICURO
-            if (markers) {
-                markers.clearLayers();
-            }
-            
-            // Aggiungi i nuovi marker
-            if (data.routes && Array.isArray(data.routes)) {
-                data.routes.forEach(r => {
-                    if (!r.coordinates || !r.coordinates.geometry || !r.coordinates.geometry.coordinates[0]) {
-                        console.warn('Percorso senza coordinate valide:', r.id);
-                        return;
-                    }
-                    
-                    const startPoint = r.coordinates.geometry.coordinates[0];
-                    const selectedIcon = activityIcons[r.activity_type] || defaultIcon;
-
-                    // CREA UN SOLO MARKER
-                    const marker = L.marker([startPoint[1], startPoint[0]], { 
-                        icon: selectedIcon,
-                        title: r.name
-                    });
-                    
-                    // Contenuto del popup SEMPLICE
-                    let popupContent = `
-                        <div style="min-width: 200px; text-align: center;">
-                            <h6 style="margin-bottom: 8px; font-weight: bold;">${r.name}</h6>
-                            <p style="margin-bottom: 8px; font-size: 0.9em;">Distanza: ${r.distance_km ? r.distance_km.toFixed(2) + ' km' : 'N/D'}</p>
-                            ${r.king_queen ? `<span class="badge bg-warning text-dark" style="font-size: 0.8em;"><i class="bi bi-trophy-fill"></i> ${r.king_queen.username}</span><br><br>` : ''}
-                            <button class="btn btn-sm btn-success" onclick="window.showRouteDetailsFromMarker(${r.id})" style="width: 100%;">
-                                <i class="bi bi-info-circle"></i> Vedi Dettagli
-                            </button>
-                        </div>
-                    `;
-                    
-                    marker.bindPopup(popupContent, {
-                        maxWidth: 300,
-                        className: 'route-popup'
-                    });
-
-                    // GESTIONE CLICK DIRETTO SUL MARKER
-                    marker.on('click', function(e) {
-                        console.log('Marker cliccato direttamente:', r.name);
-                        
-                        // IMPORTANTE: Ferma la propagazione per evitare conflitti
-                        L.DomEvent.stopPropagation(e);
-                        
-                        // Chiudi il popup se aperto
-                        this.closePopup();
-                        
-                        // Aspetta un millisecondo per evitare conflitti
-                        setTimeout(() => {
-                            // Mostra il percorso sulla mappa
-                            if (selectedRouteLayer) {
-                                selectedRouteLayer.clearLayers();
-                                selectedRouteLayer.addData(r.coordinates);
-                            }
-                            
-                            // Mostra i dettagli SOTTO LA MAPPA
-                            displayRouteDetails(r);
-                        }, 10);
-                    });
-
-                    // AGGIUNGI IL MARKER UNA VOLTA SOLA
-                    markers.addLayer(marker);
-                });
-            }
-
-            // Adatta la vista della mappa
-            if (markers.getLayers().length > 0) {
-                setTimeout(() => {
-                    mainMap.fitBounds(markers.getBounds(), { 
-                        padding: [50, 50],
-                        maxZoom: 15 
-                    });
-                }, 100);
-            }
-
-            // Popola le liste
-            if (data.routes) populateAvailableRoutes(data.routes);
-            if (data.challenges) populateRecentChallenges(data.challenges);
-            if (data.recent_activities) populateRecentActivities(data.recent_activities);
-            if (data.local_leaderboards) populateLocalLeaderboards(data.local_leaderboards);
-
-        })
-        .catch(error => {
-            console.error('Errore nel caricamento dati:', error);
-            const errorMsg = `
-                <div class="text-center p-4">
-                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
-                    <h5 class="text-danger mt-2">Errore di caricamento</h5>
-                    <p class="text-muted">${error.message}</p>
-                    <small class="text-muted">Controlla la connessione e riprova.</small>
-                </div>
-            `;
-            
-            const availableRoutesListDiv = document.getElementById('available-routes-list');
-            const recentChallengesListDiv = document.getElementById('recent-challenges-list');
-            const recentActivitiesListDiv = document.getElementById('recent-activities-list');
-            
-            if (availableRoutesListDiv) availableRoutesListDiv.innerHTML = errorMsg;
-            if (recentChallengesListDiv) recentChallengesListDiv.innerHTML = errorMsg;
-            if (recentActivitiesListDiv) recentActivitiesListDiv.innerHTML = errorMsg;
-            
-            // Mostra anche nelle classifiche
-            const distanceList = document.querySelector('#top-distance-list');
-            const creatorsList = document.querySelector('#top-creators-list');
-            if (distanceList) distanceList.innerHTML = '<li class="list-group-item text-center text-muted">Errore di caricamento</li>';
-            if (creatorsList) creatorsList.innerHTML = '<li class="list-group-item text-center text-muted">Errore di caricamento</li>';
-        })
-        .finally(() => {
-            // Riabilita il pulsante di ricerca
-            const searchButton = document.getElementById('searchCityButton');
-            const searchSpinner = document.getElementById('citySearchSpinner');
-            if (searchButton) searchButton.disabled = false;
-            if (searchSpinner) searchSpinner.style.display = 'none';
-        });
-
-    // Carica percorsi classici solo se l'elemento esiste
-    const userInitialCityElement = document.getElementById('user-initial-city');
-    if (userInitialCityElement) {
-        setTimeout(() => {
-            const userCity = userInitialCityElement.textContent;
-            const defaultCity = "L'Aquila";
-            loadClassicRoutes(userCity || defaultCity);
-        }, 1500);
-    }
-};
-
-// =======================================================
-// FUNZIONI PER POPOLARE LE LISTE
-// =======================================================
-
 function populateAvailableRoutes(routes) {
     const availableRoutesListDiv = document.getElementById('available-routes-list');
     if (!availableRoutesListDiv) return;
@@ -551,8 +598,9 @@ function populateLocalLeaderboards(leaderboards) {
     const creatorsList = document.querySelector('#top-creators-list');
     if (!distanceList || !creatorsList) return;
 
+    // Distanza percorsa
     distanceList.innerHTML = '';
-    if (leaderboards && leaderboards.distance && leaderboards.distance.length > 0) {
+    if (leaderboards.distance && leaderboards.distance.length > 0) {
         leaderboards.distance.forEach((entry, index) => {
             distanceList.innerHTML += `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -568,12 +616,13 @@ function populateLocalLeaderboards(leaderboards) {
         distanceList.innerHTML = '<li class="list-group-item text-center text-muted">Nessun dato per l\'area.</li>';
     }
 
+    // Percorsi creati
     creatorsList.innerHTML = '';
-    if (leaderboards && leaderboards.creators && leaderboards.creators.length > 0) {
+    if (leaderboards.creators && leaderboards.creators.length > 0) {
         leaderboards.creators.forEach((entry, index) => {
             creatorsList.innerHTML += `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                     <span>
+                    <span>
                         <span class="badge bg-secondary rounded-pill me-2">${index + 1}</span>
                         <img src="${profilePicsBaseUrl}${entry.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
                         <a href="${userProfileUrlBase.replace('12345', entry.id)}">${entry.username}</a>
@@ -587,321 +636,31 @@ function populateLocalLeaderboards(leaderboards) {
 }
 
 // =======================================================
-// PERCORSI CLASSICI
+// LIKE ATTIVITÀ
 // =======================================================
+document.body.addEventListener('click', function(event) {
+    const likeButton = event.target.closest('.like-activity-button');
+    if (!likeButton) return;
 
-// Funzione per caricare e visualizzare i percorsi classici
-function loadClassicRoutes(city) {
-    console.log('loadClassicRoutes chiamata per città:', city);
-    
-    if (!city || city.trim() === '') {
-        const section = document.getElementById('classic-routes-section');
-        if (section) section.style.display = 'none';
-        return;
-    }
+    event.preventDefault();
+    const activityId = likeButton.dataset.activityId;
+    const likeCountSpan = likeButton.querySelector('.like-count');
 
-    const section = document.getElementById('classic-routes-section');
-    const container = document.getElementById('classic-routes-container');
-    const noRoutes = document.getElementById('no-classic-routes');
-    
-    if (!section || !container) {
-        console.error('Elementi HTML non trovati!');
-        return;
-    }
-    
-    // Rendi visibile la sezione
-    section.style.display = 'block';
-    
-    // Aggiorna il titolo della città
-    const cityTitle = document.getElementById('classic-routes-city');
-    if (cityTitle) {
-        cityTitle.textContent = city;
-    }
-    
-    // Mostra loading
-    container.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Caricamento...</span></div><p class="mt-2 text-muted">Caricamento percorsi classici...</p></div>';
-
-    fetch(`/api/classic-routes/${encodeURIComponent(city)}?include_top_times=true`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Errore di rete: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(routes => {
-            if (!Array.isArray(routes)) {
-                routes = [];
-            }
-
-            if (routes.length === 0) {
-                container.style.display = 'none';
-                if (noRoutes) noRoutes.style.display = 'block';
-                return;
-            }
-
-            if (noRoutes) noRoutes.style.display = 'none';
-            container.style.display = 'flex';
-            
-            let htmlContent = '';
-            routes.forEach(route => {
-                // Sezione Top 5 Tempi compatta
-                const topTimesHtml = route.top_5_times && route.top_5_times.length > 0 ? `
-                    <div class="top-times-section">
-                        <h6 class="border-bottom pb-1 mb-2 small">
-                            <i class="bi bi-trophy text-warning me-1"></i>Top 5 Tempi
-                        </h6>
-                        <div class="top-times-list">
-                            ${route.top_5_times.slice(0, 5).map((time, index) => `
-                                <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-secondary me-2" style="font-size: 0.6rem; min-width: 20px;">${index + 1}</span>
-                                        <small class="text-truncate" style="max-width: 80px;">${time.username}</small>
-                                    </div>
-                                    <small class="text-muted">${formatDurationCompact(time.duration)}</small>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : `
-                    <div class="top-times-section">
-                        <h6 class="border-bottom pb-1 mb-2 small text-muted">
-                            <i class="bi bi-trophy me-1"></i>Top 5 Tempi
-                        </h6>
-                        <small class="text-muted">Nessun tempo registrato</small>
-                    </div>
-                `;
-
-                htmlContent += `
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100 route-card shadow-sm border-0">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0" style="font-size: 1.1rem;">${route.name}</h5>
-                            <div class="badge-container">
-                                <span class="badge bg-light text-dark me-1">${route.activity_type}</span>
-                                <span class="badge bg-warning text-dark">${route.difficulty}</span>
-                            </div>
-                        </div>
-                        
-                        ${route.featured_image ? `
-                            <img src="/static/featured_routes/${route.featured_image}" 
-                                 class="card-img-top" alt="${route.name}" 
-                                 style="height: 180px; object-fit: cover;">
-                        ` : `
-                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" 
-                                 style="height: 180px;">
-                                <i class="bi bi-geo-alt-fill" style="font-size: 3rem;"></i>
-                            </div>
-                        `}
-                        
-                        <div class="card-body">
-                            <p class="card-text" style="font-size: 0.9rem;">${route.description}</p>
-                            
-                            <div class="route-details" style="font-size: 0.8rem;">
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="bi bi-geo-alt me-2 text-primary" style="font-size: 0.8rem;"></i>
-                                    <small><strong>Partenza:</strong> ${route.start_location}</small>
-                                </div>
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="bi bi-flag me-2 text-success" style="font-size: 0.8rem;"></i>
-                                    <small><strong>Arrivo:</strong> ${route.end_location}</small>
-                                </div>
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="bi bi-arrows-expand me-2 text-info" style="font-size: 0.8rem;"></i>
-                                    <small><strong>Distanza:</strong> ${route.distance_km.toFixed(1)} km</small>
-                                </div>
-                                <div class="d-flex align-items-center mb-1">
-                                    <i class="bi bi-mountain me-2 text-warning" style="font-size: 0.8rem;"></i>
-                                    <small><strong>Dislivello:</strong> +${route.elevation_gain} m</small>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-clock me-2 text-secondary" style="font-size: 0.8rem;"></i>
-                                    <small><strong>Tempo:</strong> ${route.estimated_time}</small>
-                                </div>
-                            </div>
-                            
-                            <!-- Layout a due colonne per Top Times e Pulsanti -->
-                            <div class="row mt-3 g-2">
-                                <!-- Colonna Top Times -->
-                                <div class="col-7">
-                                    ${topTimesHtml}
-                                </div>
-                                
-                                <!-- Colonna Pulsanti -->
-                                <div class="col-5">
-                                    <div class="action-buttons h-100 d-flex flex-column justify-content-between">
-                                        <a href="/activities/record?route_id=${route.id}" class="btn btn-success btn-sm w-100 mb-2">
-                                            <i class="bi bi-stopwatch me-1"></i>Registra Tempo
-                                        </a>
-                                        <a href="/challenges/new?route_id=${route.id}" class="btn btn-warning btn-sm w-100">
-                                            <i class="bi bi-trophy me-1"></i>Sfida
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card-footer bg-transparent">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    <i class="bi bi-activity me-1"></i>
-                                    ${route.total_activities} attività
-                                </small>
-                                <a href="/route/${route.id}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-eye me-1"></i>Dettagli
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            });
-            
-            container.innerHTML = htmlContent;
-        })
-        .catch(error => {
-            console.error('Errore nel caricamento percorsi classici:', error);
-            container.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Errore nel caricamento: ${error.message}
-                    </div>
-                </div>
-            `;
-        });
-}
-
-// =======================================================
-// GESTIONE LIKE ATTIVITÀ
-// =======================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Gestione dei like sulle attività
-    document.body.addEventListener('click', function(event) {
-        const likeButton = event.target.closest('.like-activity-button');
-        
-        if (likeButton) {
-            event.preventDefault();
-            
-            const activityId = likeButton.dataset.activityId;
-            const likeCountSpan = likeButton.querySelector('.like-count');
-            
-            fetch(`/api/activity/${activityId}/like`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    likeCountSpan.textContent = data.new_like_count;
-                    
-                    if (data.action === 'liked') {
-                        likeButton.classList.remove('btn-outline-danger');
-                        likeButton.classList.add('btn-danger');
-                    } else {
-                        likeButton.classList.remove('btn-danger');
-                        likeButton.classList.add('btn-outline-danger');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Errore durante l-operazione di like:', error);
-                if (error.response && error.response.status === 401) {
-                    window.location.href = '/login'; 
-                }
-            });
-        }
-    });
-});
-
-// =======================================================
-// INIZIALIZZAZIONE PRINCIPALE
-// =======================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Service Worker registration
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/static/js/sw.js')
-            .then(function(registration) {
-                console.log('Service Worker registrato');
-            })
-            .catch(function(error) {
-                console.log('Service Worker fallito:', error);
-            });
-    }
-
-    if (typeof is_homepage_js === 'undefined' || !is_homepage_js) return;
-
-    // INIZIALIZZA LE VARIABILI PRIMA
-    userProfileUrlBase = document.getElementById('user-profile-url-base')?.textContent || '';
-    routeDetailUrlBase = document.getElementById('route-detail-url-base')?.textContent || '';
-    activityDetailUrlBase = document.getElementById('activity-detail-url-base')?.textContent || '';
-    mapDataApiUrl = document.getElementById('map-data-api-url')?.textContent || '';
-    userInitialCity = document.getElementById('user-initial-city')?.textContent || '';
-    profilePicsBaseUrl = document.getElementById('profile-pics-base-url')?.textContent || '';
-
-    // INIZIALIZZA LA MAPPA
-    initializeMap();
-
-    // GESTORI EVENTI
-    const citySearchInput = document.getElementById('citySearchInput');
-    const citySearchButton = document.getElementById('searchCityButton');
-    const citySearchSpinner = document.getElementById('citySearchSpinner');
-
-    function searchCity(cityName) {
-        if (!cityName) return;
-        if (citySearchButton) citySearchButton.disabled = true;
-        if (citySearchSpinner) citySearchSpinner.style.display = 'inline-block';
-        
-        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.length > 0) {
-                    loadMapAndData(parseFloat(data[0].lat), parseFloat(data[0].lon), 13, data[0].display_name);
+    fetch(`/api/activity/${activityId}/like`, { method: 'POST', headers: {'Content-Type': 'application/json'} })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                likeCountSpan.textContent = data.new_like_count;
+                if (data.action === 'liked') {
+                    likeButton.classList.remove('btn-outline-danger');
+                    likeButton.classList.add('btn-danger');
                 } else {
-                    alert('Città non trovata.');
-                    if (citySearchButton) citySearchButton.disabled = false;
-                    if (citySearchSpinner) citySearchSpinner.style.display = 'none';
+                    likeButton.classList.remove('btn-danger');
+                    likeButton.classList.add('btn-outline-danger');
                 }
-            }).catch(err => {
-                console.error('Errore ricerca città:', err);
-                alert('Errore di rete durante la ricerca.');
-                if (citySearchButton) citySearchButton.disabled = false;
-                if (citySearchSpinner) citySearchSpinner.style.display = 'none';
-            });
-    }
-
-    if (citySearchInput) {
-        citySearchInput.addEventListener('keypress', e => { 
-            if (e.key === 'Enter') searchCity(citySearchInput.value); 
-        });
-    }
-    
-    if (citySearchButton) {
-        citySearchButton.addEventListener('click', () => searchCity(citySearchInput?.value || ''));
-    }
-    
-    // Filtri attività
-    document.querySelectorAll('#activityTypeFilter .btn').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelector('#activityTypeFilter .btn.active').classList.remove('active');
-            this.classList.add('active');
-            const center = mainMap.getCenter();
-            loadMapAndData(center.lat, center.lng, mainMap.getZoom());
-        });
-    });
-
-    // CARICAMENTO INIZIALE
-    setTimeout(() => {
-        searchCity(userInitialCity || "Italia");
-    }, 500);
+            }
+        })
+        .catch(err => console.error('Errore like attività:', err));
 });
 
 console.log('🚀 Main.js completamente caricato!');

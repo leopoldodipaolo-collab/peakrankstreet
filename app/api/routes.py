@@ -355,7 +355,7 @@ def get_classic_routes(city):
     # DEBUG: Query originale
     classic_routes = Route.query.filter(
         Route.is_classic == True,
-        Route.classic_city == city
+        func.lower(Route.classic_city) == city.lower()
     ).order_by(Route.name).all()
     
     print(f"✅ Route trovate con filtro città '{city}': {len(classic_routes)}")

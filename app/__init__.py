@@ -78,6 +78,11 @@ def create_app():
     jwt.init_app(app)
     CORS(app)
     csrf.init_app(app)
+    from flask_wtf.csrf import generate_csrf
+
+    @app.context_processor
+    def inject_csrf_token():
+        return dict(csrf_token=generate_csrf)
 
     # --- Configura Login Manager ---
     login_manager.login_view = 'auth.login'

@@ -4,6 +4,7 @@
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
+
             <!-- Header -->
             <div class="text-center mb-4">
                 <h1>🏃 Inizia la tua Attività</h1>
@@ -12,593 +13,306 @@
 
             <!-- Selezione Percorso -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">📌 Seleziona Percorso (Opzionale)</h5>
-                </div>
+                <div class="card-header"><h5>📌 Seleziona Percorso (Opzionale)</h5></div>
                 <div class="card-body">
                     <select class="form-select" id="routeSelect">
-                        <option value="">🎯 Modalità Libera - Traccia qualsiasi percorso</option>
+                        <option value="">🎯 Modalità Libera</option>
                         {% for route in routes %}
                         <option value="{{ route.id }}" data-distance="{{ route.distance or 0 }}">
-                            📍 {{ route.name }} 
-                            {% if route.distance %}
-                                ({{ "%.1f"|format(route.distance) }} km)
-                            {% else %}
-                                (Distanza non specificata)
-                            {% endif %}
+                            📍 {{ route.name }} {% if route.distance %}({{ "%.1f"|format(route.distance) }} km){% endif %}
                         </option>
                         {% endfor %}
                     </select>
                     <small class="text-muted">
-                        <strong>Modalità Libera:</strong> Traccia qualsiasi percorso senza vincoli<br>
-                        <strong>Percorso specifico:</strong> Confronta la tua performance con il percorso ufficiale
+                        <strong>Libera:</strong> tracciamento libero<br>
+                        <strong>Percorso:</strong> confronta performance
                     </small>
                 </div>
             </div>
 
             <!-- Pannello Tracking -->
             <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">🎯 Tracciamento Live</h5>
-                </div>
+                <div class="card-header bg-success text-white"><h5>🎯 Tracciamento Live</h5></div>
                 <div class="card-body text-center">
-                    <!-- Stats Live -->
-                    <div class="row mb-4" id="liveStats" style="display: none;">
-                        <div class="col-4">
-                            <div class="stat-box">
-                                <div class="stat-value" id="timer">00:00:00</div>
-                                <div class="stat-label">TEMPO</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-box">
-                                <div class="stat-value" id="distance">0.00</div>
-                                <div class="stat-label">KM</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="stat-box">
-                                <div class="stat-value" id="pace">0:00</div>
-                                <div class="stat-label">MIN/KM</div>
-                            </div>
-                        </div>
+
+                    <!-- Prompt GPS -->
+                    <div id="gpsPermissionPrompt" class="alert alert-info">
+                        <h5>🔍 Abilita il GPS</h5>
+                        <p>Per iniziare il tracciamento, clicca il pulsante per autorizzare la posizione.</p>
+                        <button class="btn btn-primary" id="btnEnableGPS">📍 Consenti GPS</button>
                     </div>
 
-                    <!-- Mappa Mini -->
-                    <div id="miniMap" style="height: 200px; display: none;" class="mb-3"></div>
+                    <!-- Spinner -->
+                    <div id="autoStartMessage" class="alert alert-info" style="display:none;">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Avvio del tracciamento GPS...
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="row mb-4" id="liveStats" style="display:none;">
+                        <div class="col-3 stat-box"><div class="stat-value" id="timer">00:00:00</div><div class="stat-label">TEMPO</div></div>
+                        <div class="col-3 stat-box"><div class="stat-value" id="distance">0.00</div><div class="stat-label">KM</div></div>
+                        <div class="col-3 stat-box"><div class="stat-value" id="pace">0:00</div><div class="stat-label">MIN/KM</div></div>
+                        <div class="col-3 stat-box"><div class="stat-value" id="speed">0.0</div><div class="stat-label">KM/H</div></div>
+                    </div>
+
+                    <!-- Barra progresso -->
+                    <div class="progress mb-2" id="routeProgress" style="display:none;height:20px;">
+                        <div class="progress-bar bg-success" style="width:0%">0%</div>
+                    </div>
+
+                    <!-- Mini mappa -->
+                    <div id="miniMap" style="height:200px;display:none;" class="mb-3"></div>
 
                     <!-- Controlli -->
-                    <!-- Modifica i pulsanti per mostrare lo stato automatico -->
                     <div class="tracking-controls">
-                        <button id="btnStart" class="btn btn-success btn-lg" style="display: none;">
-                            ▶️ INIZIA TRACCIAMENTO
-                        </button>
-                        <button id="btnStop" class="btn btn-danger btn-lg" onclick="stopTracking()" style="display: none;">
-                            ⏹️ FERMA E SALVA
-                        </button>
-                        <button id="btnPause" class="btn btn-warning btn-lg" onclick="pauseTracking()" style="display: none;">
-                            ⏸️ PAUSA
-                        </button>
+                        <button id="btnStop" class="btn btn-danger btn-lg" onclick="stopTracking()" style="display:none;">⏹️ FERMA E SALVA</button>
+                        <button id="btnPause" class="btn btn-warning btn-lg" onclick="pauseTracking()" style="display:none;">⏸️ PAUSA</button>
+                        <span id="gpsIndicator"></span>
                     </div>
 
-                    <!-- Aggiungi uno stato di caricamento -->
-                    <div id="autoStartMessage" class="alert alert-info">
-                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                        Avvio automatico del tracciamento GPS...
-                    </div>
-
-                    <!-- Messaggi di Stato -->
+                    <!-- Messaggi stato -->
                     <div id="statusMessage" class="mt-3"></div>
                 </div>
             </div>
 
-            <!-- Dati Nascosti per JavaScript -->
-            <div id="tracking-data" 
-                 data-save-url="{{ url_for('main.save_live_activity') }}"
-                 style="display: none;">
+            <!-- Modal istruzioni GPS -->
+            <div class="modal fade" id="gpsInstructionsModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title">⚠️ GPS Bloccato</h5>
+                        </div>
+                        <div class="modal-body">
+                            <p>Per utilizzare il tracciamento, devi abilitare il GPS nel tuo browser.</p>
+                            <h6>Chrome:</h6>
+                            <ol>
+                                <li>Clicca sull’icona 🔒 a sinistra della barra URL</li>
+                                <li>Trova “Posizione” e seleziona “Consenti”</li>
+                                <li>Ricarica la pagina</li>
+                            </ol>
+                            <h6>Firefox:</h6>
+                            <ol>
+                                <li>Clicca sull’icona a sinistra della barra URL</li>
+                                <li>Seleziona “Consenti condivisione posizione”</li>
+                                <li>Ricarica la pagina</li>
+                            </ol>
+                            <h6>Safari:</h6>
+                            <ol>
+                                <li>Vai su Preferenze → Sito Web → Posizione</li>
+                                <li>Imposta “Consenti” per questo sito</li>
+                                <li>Ricarica la pagina</li>
+                            </ol>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Chiudi</button>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <div id="tracking-data" data-save-url="{{ url_for('main.save_live_activity') }}" style="display:none;"></div>
         </div>
     </div>
 </div>
 
 <style>
-.stat-box {
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
-}
-.stat-value {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #28a745;
-}
-.stat-label {
-    font-size: 0.8em;
-    color: #6c757d;
-    text-transform: uppercase;
-}
-.tracking-controls .btn {
-    margin: 5px;
-    min-width: 200px;
-}
+.stat-box{padding:10px;background:#f8f9fa;border-radius:8px;border:2px solid #e9ecef;}
+.stat-value{font-size:1.5em;font-weight:bold;color:#28a745;}
+.stat-label{font-size:.8em;color:#6c757d;text-transform:uppercase;}
+.tracking-controls .btn{margin:5px;min-width:180px;}
+#gpsIndicator{display:inline-block;width:12px;height:12px;border-radius:50%;background:red;margin-left:5px;}
+.gps-active{background:green;}
 </style>
 {% endblock %}
 
 {% block scripts %}
-<!-- Leaflet per mappa mini -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<!-- Bootstrap JS per i modal -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 class ActivityTracker {
-    constructor() {
-        this.isTracking = false;
-        this.isPaused = false;
-        this.startTime = null;
-        this.positions = [];
-        this.watchId = null;
-        this.distance = 0;
-        this.miniMap = null;
-        this.polyline = null;
-
+    constructor(){
+        this.isTracking=false; this.isPaused=false; this.startTime=null;
+        this.positions=[]; this.watchId=null; this.distance=0;
+        this.miniMap=null; this.polyline=null; this.timerInterval=null;
     }
 
-   async startTracking() {
-        if (!navigator.geolocation) {
-            this.showStatus("Il tuo browser non supporta il GPS", "error");
-            return;
-        }
-
-        // MOSTRA UN MESSAGGIO CHIARO PRIMA DI CHIEDERE IL GPS
-        this.showStatus(`
-            <div class="alert alert-info">
-                <h5>🔍 Autorizza il GPS</h5>
-                <p>Stiamo per chiedere l'accesso alla tua posizione.</p>
-                <p><strong>Clicca "Consenti" quando richiesto dal browser!</strong></p>
-                <div class="spinner-border spinner-border-sm me-2"></div>
-                Attendere la richiesta...
-            </div>
-        `, "info");
-
-        // Piccola pausa per far leggere il messaggio
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // POI richiedi il permesso
-        const hasPermission = await this.requestGPSPermission();
-        if (!hasPermission) {
-            this.showStatus(`
-                <div class="alert alert-warning">
-                    <h5>❌ GPS Bloccato</h5>
-                    <p>Devi autorizzare manualmente il GPS:</p>
-                    <ol>
-                        <li>Clicca sull'icona <strong>🔒</strong> accanto all'URL</li>
-                        <li>Cerca <strong>"Posizione"</strong> o <strong>"Location"</strong></li>
-                        <li>Imposta su <strong>"Consenti"</strong> o <strong>"Allow"</strong></li>
-                        <li>Ricarica la pagina e riprova</li>
-                    </ol>
-                    <button class="btn btn-sm btn-primary" onclick="location.reload()">
-                        🔄 Ricarica Pagina
-                    </button>
-                </div>
-            `, "warning");
-            return;
-        }
-
-        // Se abbiamo il permesso, avvia il tracking
-        this.showStatus("Avvio tracciamento GPS...", "info");
-        
+    async startTracking(){
+        document.getElementById('autoStartMessage').style.display='block';
         this.initMiniMap();
-        
-        this.isTracking = true;
-        this.startTime = new Date();
-        this.positions = [];
-        this.distance = 0;
-
+        this.isTracking=true; this.startTime=new Date(); this.positions=[]; this.distance=0;
         this.updateTimer();
-        this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+        this.timerInterval=setInterval(()=>this.updateTimer(),1000);
 
-        this.watchId = navigator.geolocation.watchPosition(
-            (position) => this.handlePosition(position),
-            (error) => this.handleError(error),
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 2000
-            }
+        this.watchId=navigator.geolocation.watchPosition(
+            pos=>this.handlePosition(pos),
+            err=>this.handleError(err),
+            {enableHighAccuracy:true,timeout:30000,maximumAge:2000}
         );
 
-        document.getElementById('btnStart').style.display = 'none';
-        document.getElementById('btnStop').style.display = 'inline-block';
-        document.getElementById('btnPause').style.display = 'inline-block';
-        document.getElementById('liveStats').style.display = 'flex';
-        document.getElementById('miniMap').style.display = 'block';
-
-        this.showStatus("✅ Tracciamento attivo! Inizia la tua attività.", "success");
-    }
-    
-    // === AGGIUNGI QUESTO NUOVO METODO ===
-    async requestGPSPermission() {
-        try {
-            // Richiedi permesso esplicito
-            const result = await navigator.permissions.query({ name: 'geolocation' });
-            
-            if (result.state === 'granted') {
-                this.showStatus("GPS già autorizzato!", "success");
-                return true;
-            } else if (result.state === 'prompt') {
-                this.showStatus("Autorizza il GPS quando richiesto...", "info");
-                return true;
-            } else {
-                this.showStatus(`
-                    <div class="alert alert-warning">
-                        <h5>GPS Bloccato</h5>
-                        <p>Devi sbloccare manualmente i permessi GPS:</p>
-                        <p><strong>Chrome:</strong> Clicca 🔒 → Impostazioni sito → Posizione → Consenti</p>
-                        <p><strong>Firefox:</strong> Clicca 🌐 → Impostazioni → Condividi posizione → Consenti</p>
-                        <button class="btn btn-sm btn-primary" onclick="location.reload()">Ricarica dopo aver autorizzato</button>
-                    </div>
-                `, "warning");
-                return false;
-            }
-        } catch (error) {
-            console.log("API Permissions non supportata", error);
-            return true; // Procedi comunque
-        }
+        document.getElementById('btnStop').style.display='inline-block';
+        document.getElementById('btnPause').style.display='inline-block';
+        document.getElementById('liveStats').style.display='flex';
+        document.getElementById('miniMap').style.display='block';
+        this.updateGPSIndicator(true);
+        document.getElementById('autoStartMessage').style.display='none';
+        this.showStatus("✅ Tracciamento attivo!", "success");
     }
 
-    // === POI MODIFICA IL METODO startTracking ===
-    async startTracking() {
-        if (!navigator.geolocation) {
-            this.showStatus("Il tuo browser non supporta il GPS", "error");
-            return;
+    handlePosition(pos){
+        const newPos={lat:pos.coords.latitude,lng:pos.coords.longitude,timestamp:new Date(),speed:pos.coords.speed||0};
+        if(this.positions.length>0){
+            const last=this.positions[this.positions.length-1];
+            const d=this.calculateDistance(last.lat,last.lng,newPos.lat,newPos.lng);
+            if(d<0.05) return;
+            this.distance+=d;
         }
-
-        // PRIMA RICHIEDI IL PERMESSO
-        const hasPermission = await this.requestGPSPermission();
-        if (!hasPermission) {
-            return; // Fermati se non hai il permesso
-        }
-
-        this.showStatus("Avvio tracciamento GPS...", "info");
-        
-        // ... il resto del codice ESISTENTE di startTracking
-        this.initMiniMap();
-        
-        this.isTracking = true;
-        this.startTime = new Date();
-        this.positions = [];
-        this.distance = 0;
-
-        this.updateTimer();
-        this.timerInterval = setInterval(() => this.updateTimer(), 1000);
-
-        this.watchId = navigator.geolocation.watchPosition(
-            (position) => this.handlePosition(position),
-            (error) => this.handleError(error),
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 2000
-            }
-        );
-
-        document.getElementById('btnStart').style.display = 'none';
-        document.getElementById('btnStop').style.display = 'inline-block';
-        document.getElementById('btnPause').style.display = 'inline-block';
-        document.getElementById('liveStats').style.display = 'flex';
-        document.getElementById('miniMap').style.display = 'block';
-
-        this.showStatus("Tracciamento attivo! Inizia la tua attività.", "success");
-    }
-
-    handlePosition(position) {
-        const newPos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            timestamp: new Date(),
-            speed: position.coords.speed || 0,
-            altitude: position.coords.altitude || 0
-        };
-
-        // Calcola distanza se abbiamo posizioni precedenti
-        if (this.positions.length > 0) {
-            const lastPos = this.positions[this.positions.length - 1];
-            const segmentDistance = this.calculateDistance(
-                lastPos.lat, lastPos.lng, 
-                newPos.lat, newPos.lng
-            );
-            this.distance += segmentDistance;
-        }
-
         this.positions.push(newPos);
-        this.updateDisplay();
-        this.updateMap(newPos);
+        this.updateDisplay(); this.updateMap(newPos); this.updateRouteProgress();
     }
 
-    calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Raggio Terra in km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+    calculateDistance(lat1,lon1,lat2,lon2){
+        const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+        const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+        return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
     }
 
-    updateDisplay() {
-        // Aggiorna timer
+    updateDisplay(){
         this.updateTimer();
-        
-        // Aggiorna distanza
-        document.getElementById('distance').textContent = this.distance.toFixed(2);
-        
-        // Aggiorna pace
-        const elapsedHours = (new Date() - this.startTime) / 3600000;
-        if (elapsedHours > 0 && this.distance > 0) {
-            const paceMinPerKm = (elapsedHours * 60) / this.distance;
-            const minutes = Math.floor(paceMinPerKm);
-            const seconds = Math.floor((paceMinPerKm - minutes) * 60);
-            document.getElementById('pace').textContent = 
-                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('distance').textContent=this.distance.toFixed(2);
+        const elapsedH=(new Date()-this.startTime)/3600000;
+        if(elapsedH>0 && this.distance>0){
+            const pace=(elapsedH*60)/this.distance;
+            const m=Math.floor(pace), s=Math.floor((pace-m)*60);
+            document.getElementById('pace').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+            document.getElementById('speed').textContent=(this.distance/elapsedH).toFixed(1);
         }
     }
 
-    updateTimer() {
-        if (!this.startTime) return;
-        
-        const elapsed = new Date() - this.startTime;
-        const hours = Math.floor(elapsed / 3600000);
-        const minutes = Math.floor((elapsed % 3600000) / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        
-        document.getElementById('timer').textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    updateTimer(){
+        if(!this.startTime) return;
+        const e=new Date()-this.startTime,h=Math.floor(e/3600000),m=Math.floor((e%3600000)/60000),s=Math.floor((e%60000)/1000);
+        document.getElementById('timer').textContent=`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
-    initMiniMap() {
-        this.miniMap = L.map('miniMap').setView([42.350, 13.395], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(this.miniMap);
-        
-        this.polyline = L.polyline([], {color: 'red'}).addTo(this.miniMap);
+    initMiniMap(){
+        this.miniMap=L.map('miniMap').setView([42.35,13.395],13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(this.miniMap);
+        this.polyline=L.polyline([], {color:'red'}).addTo(this.miniMap);
+        this.miniMap.addControl(L.control.scale());
     }
 
-    updateMap(position) {
-        if (!this.miniMap) return;
-        
-        const latLng = [position.lat, position.lng];
-        this.polyline.addLatLng(latLng);
-        
-        // Centra mappa sull'ultima posizione
-        this.miniMap.setView(latLng);
+    updateMap(pos){
+        if(!this.miniMap) return;
+        const ll=[pos.lat,pos.lng];
+        this.polyline.addLatLng(ll);
+        this.miniMap.setView(ll);
     }
 
-    async stopTracking() {
-        const routeSelect = document.getElementById('routeSelect');
-        const selectedRouteId = routeSelect.value;
-        const selectedOption = routeSelect.options[routeSelect.selectedIndex];
-        const selectedRouteDistance = parseFloat(selectedOption.getAttribute('data-distance')) || 0;
-        
+    updateGPSIndicator(active){
+        const el=document.getElementById('gpsIndicator');
+        active?el.classList.add('gps-active'):el.classList.remove('gps-active');
+    }
 
-          // DEBUG: vedi i valori
-        console.log("Route ID:", selectedRouteId);
-        console.log("Route Distance:", selectedRouteDistance);
-        console.log("Tracked Distance:", this.distance);
-        console.log("Selected Option Text:", selectedOption.text);
-        
-        // Se è selezionato un percorso specifico (non "Percorso Libero")
-        if (selectedRouteId && selectedRouteDistance > 0) {
-            // Calcola differenza percentuale
-            const difference = Math.abs(this.distance - selectedRouteDistance) / selectedRouteDistance;
-            
-            // Se la differenza è > 30%, mostra avviso
-            if (difference > 0.3) {
-                const routeName = selectedOption.text.split(' (')[0]; // Prende solo il nome
-                const userChoice = await this.showDistanceWarning(routeName, selectedRouteDistance, this.distance, difference);
-                
-                if (userChoice === 'cancel') {
-                    this.showStatus("Salvataggio annullato. Modifica il percorso selezionato o continua il tracking.", "warning");
-                    return;
-                }
-            }
+    updateRouteProgress(){
+        const sel=document.getElementById('routeSelect');
+        const opt=sel.options[sel.selectedIndex];
+        const rd=parseFloat(opt.getAttribute('data-distance'))||0;
+        if(rd>0){
+            const p=Math.min(100,(this.distance/rd)*100);
+            const bar=document.getElementById('routeProgress').querySelector('.progress-bar');
+            bar.style.width=p+'%';
+            bar.textContent=p.toFixed(0)+'%';
+            document.getElementById('routeProgress').style.display='block';
         }
-        
-        // Procedi con il salvataggio normale
-        if (this.watchId) {
+    }
+
+    pauseTracking(){
+        this.isPaused=!this.isPaused;
+        if(this.isPaused){
             navigator.geolocation.clearWatch(this.watchId);
-        }
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-        }
-
-        this.isTracking = false;
-        
-        const activityData = {
-            route_id: selectedRouteId,
-            duration: Math.round((new Date() - this.startTime) / 1000),
-            distance: this.distance,
-            positions: this.positions,
-            start_time: this.startTime.toISOString()
-        };
-
-        await this.saveActivity(activityData);
-    }
-
-    // AGGIUNGI QUESTO NUOVO METODO
-    async showDistanceWarning(routeName, expectedDistance, actualDistance, difference) {
-        return new Promise((resolve) => {
-            // Crea un modal di avviso invece di alert() base
-            const warningHTML = `
-                <div class="modal fade" id="distanceWarningModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header bg-warning">
-                                <h5 class="modal-title">⚠️ Percorso Diverso Rilevato</h5>
-                            </div>
-                            <div class="modal-body">
-                                <p><strong>Percorso selezionato:</strong> ${routeName}</p>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="card text-center">
-                                            <div class="card-body">
-                                                <h6>Distanza Attesa</h6>
-                                                <h4 class="text-primary">${expectedDistance} km</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="card text-center">
-                                            <div class="card-body">
-                                                <h6>Distanza Reale</h6>
-                                                <h4 class="text-success">${actualDistance.toFixed(2)} km</h4>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="alert alert-warning mt-3">
-                                    <strong>Differenza:</strong> ${(difference * 100).toFixed(0)}%
-                                </div>
-                                <p class="text-muted">Vuoi salvare comunque con il percorso selezionato?</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" id="btnCancelSave">Annulla</button>
-                                <button type="button" class="btn btn-warning" id="btnSaveAnyway">Salva Comunque</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Aggiungi il modal al DOM
-            document.body.insertAdjacentHTML('beforeend', warningHTML);
-            const modal = new bootstrap.Modal(document.getElementById('distanceWarningModal'));
-            
-            // Gestisci i click
-            document.getElementById('btnCancelSave').onclick = () => {
-                modal.hide();
-                resolve('cancel');
-                setTimeout(() => document.getElementById('distanceWarningModal').remove(), 500);
-            };
-            
-            document.getElementById('btnSaveAnyway').onclick = () => {
-                modal.hide();
-                resolve('continue');
-                setTimeout(() => document.getElementById('distanceWarningModal').remove(), 500);
-            };
-            
-            // Mostra il modal
-            modal.show();
-        });
-    }
-
-    async saveActivity(activityData) {
-        try {
-            this.showStatus("Salvataggio attività...", "info");
-            
-            const response = await fetch("{{ url_for('main.save_live_activity') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(activityData)
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showStatus("Attività salvata con successo!", "success");
-                setTimeout(() => {
-                    window.location.href = "{{ url_for('main.all_activities') }}";
-                }, 2000);
-            } else {
-                this.showStatus("Errore nel salvataggio: " + result.error, "error");
-            }
-        } catch (error) {
-            this.showStatus("Errore di connessione: " + error.message, "error");
-        }
-    }
-
-    pauseTracking() {
-        this.isPaused = !this.isPaused;
-        
-        if (this.isPaused) {
-            navigator.geolocation.clearWatch(this.watchId);
-            document.getElementById('btnPause').innerHTML = '▶️ RIPRENDI';
-            this.showStatus("Tracciamento in pausa", "warning");
+            document.getElementById('btnPause').innerHTML='▶️ RIPRENDI';
+            this.showStatus("Tracciamento in pausa","warning");
+            this.updateGPSIndicator(false);
         } else {
-            this.watchId = navigator.geolocation.watchPosition(
-                (position) => this.handlePosition(position),
-                (error) => this.handleError(error),
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
-            );
-            document.getElementById('btnPause').innerHTML = '⏸️ PAUSA';
-            this.showStatus("Tracciamento ripreso", "success");
+            this.startTracking();
+            document.getElementById('btnPause').innerHTML='⏸️ PAUSA';
         }
     }
 
-    handleError(error) {
-            let message = "";
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    message = `
-                        <div class="alert alert-warning">
-                            <h5>🔒 GPS Bloccato su Chrome</h5>
-                            <p><strong>Istruzioni per Chrome:</strong></p>
-                            <ol>
-                                <li>Clicca sull'icona <strong>🔒</strong> a sinistra dell'URL</li>
-                                <li>Cerca <strong>"Posizione"</strong> nella lista</li>
-                                <li>Cambia da <strong>"Blocca"</strong> a <strong>"Consenti"</strong></li>
-                                <li><strong>Ricarica la pagina</strong> e riprova</li>
-                            </ol>
-                            <p><strong>Alternative:</strong></p>
-                            <ul>
-                                <li>Prova con Firefox o Safari</li>
-                                <li>Assicurati di usare HTTPS in produzione</li>
-                            </ul>
-                            <button class="btn btn-sm btn-primary" onclick="location.reload()">
-                                🔄 Ricarica e Riprova
-                            </button>
-                        </div>
-                    `;
-                    break;
-            case error.POSITION_UNAVAILABLE:
-                message += "Posizione non disponibile. Controlla il segnale GPS.";
-                break;
-            case error.TIMEOUT:
-                message += "Timeout del GPS. Riprova.";
-                break;
-            default:
-                message += "Errore sconosciuto.";
-                break;
+    handleError(err){
+        if(err.code===err.PERMISSION_DENIED){
+            const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+            modal.show();
+        } else {
+            let msg="Errore GPS sconosciuto";
+            if(err.code===err.POSITION_UNAVAILABLE) msg="Posizione non disponibile";
+            if(err.code===err.TIMEOUT) msg="Timeout GPS";
+            this.showStatus(msg,"danger");
         }
-        this.showStatus(message, "error");
+        this.updateGPSIndicator(false);
     }
 
-    showStatus(message, type) {
-        const statusEl = document.getElementById('statusMessage');
-        statusEl.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    async stopTracking(){
+        if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
+        if(this.timerInterval) clearInterval(this.timerInterval);
+        this.isTracking=false; this.updateGPSIndicator(false);
+        const sel=document.getElementById('routeSelect');
+        const data={
+            route_id:sel.value,
+            duration:Math.round((new Date()-this.startTime)/1000),
+            distance:this.distance,
+            positions:this.positions,
+            start_time:this.startTime.toISOString()
+        };
+        await this.saveActivity(data);
+    }
+
+    async saveActivity(data){
+        try{
+            this.showStatus("Salvataggio attività...","info");
+            const res=await fetch("{{ url_for('main.save_live_activity') }}",{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(data)
+            });
+            const r=await res.json();
+            if(r.success){
+                this.showStatus("✅ Attività salvata!","success");
+                setTimeout(()=>window.location.href="{{ url_for('main.all_activities') }}",2000);
+            } else this.showStatus("Errore: "+r.error,"danger");
+        } catch(e){
+            this.showStatus("Errore di connessione: "+e.message,"danger");
+        }
+    }
+
+    showStatus(msg,type,timeout=5000){
+        const el=document.getElementById('statusMessage');
+        el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+        if(timeout) setTimeout(()=>{el.innerHTML='';},timeout);
     }
 }
 
-// Istanza globale del tracker
-const tracker = new ActivityTracker();
+const tracker=new ActivityTracker();
 
-// Funzioni globali per i button
-function startTracking() {
-    tracker.startTracking();
-}
+// Controllo permessi GPS all'avvio
+if(navigator.permissions){
+    navigator.permissions.query({name:'geolocation'}).then(s=>{
+        if(s.state==='granted'){document.getElementById('gpsPermissionPrompt').style.display='none'; tracker.startTracking();}
+        else document.getElementById('gpsPermissionPrompt').style.display='block';
+    });
+} 
 
-function stopTracking() {
-    tracker.stopTracking();
-}
+document.getElementById('btnEnableGPS').addEventListener('click', ()=>{
+    navigator.geolocation.getCurrentPosition(
+        pos=>{document.getElementById('gpsPermissionPrompt').style.display='none'; tracker.startTracking();},
+        err=>{const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal')); modal.show();},
+        {enableHighAccuracy:true}
+    );
+});
 
-function pauseTracking() {
-    tracker.pauseTracking();
-}
+function stopTracking(){tracker.stopTracking();}
+function pauseTracking(){tracker.pauseTracking();}
 </script>
+
 {% endblock %}

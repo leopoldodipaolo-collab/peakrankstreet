@@ -494,123 +494,140 @@ a:hover {
     color: var(--brand-primary);
 }
 
-/* Classic Routes Cards */
-.classic-route-card {
+/* ======================================================= */
+/* CLASSIC ROUTES CARDS - STILI COMPLETI                 */
+/* ======================================================= */
+
+/* Colonna: permette alla card di “uscire” dal contenitore */
+.col-12.col-md-6.col-lg-4.mb-4 {
+    overflow: visible;
+}
+
+/* Card principale */
+.route-card {
     border-radius: 0.75rem;
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--card-border);
+    transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.35s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+    background-color: #fff;
 }
-.classic-route-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+
+/* Hover: muove e solleva la card */
+.col-12.col-md-6.col-lg-4.mb-4:hover .route-card {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 16px 32px rgba(0,0,0,0.2);
 }
-.classic-route-card .card-img-top {
+
+/* Immagine di copertina */
+.route-card .route-card-img {
     height: 180px;
     object-fit: cover;
-    border-bottom: 3px solid var(--bs-danger); /* Colore per evidenziare */
-}
-.classic-route-card .card-body {
-    padding: 1.25rem;
-}
-.classic-route-card .card-title {
-    font-size: 1.25rem;
-    color: var(--text-color-dark);
-}
-.classic-route-card .card-text {
-    font-size: 0.9rem;
-    color: var(--text-color-muted);
-}
-.classic-route-card .card-footer {
-    background-color: var(--brand-light);
-    border-top: 1px solid rgba(0,0,0,0.05);
-    font-size: 0.85rem;
-    color: var(--text-color-muted);
-}
-.classic-routes-section .card-header {
-    background-color: var(--bs-secondary) !important;
+    border-bottom: 3px solid var(--bs-danger);
+    transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-
-/* Challenge and Activity List Items */
-.list-group-item {
-    border-color: rgba(0, 0, 0, 0.08);
-    transition: background-color 0.2s ease;
-}
-.list-group-item:hover {
-    background-color: rgba(0,0,0,0.03);
+/* Hover immagine: leggero zoom + oscuramento */
+.col-12.col-md-6.col-lg-4.mb-4:hover .route-card .route-card-img {
+    transform: scale(1.03);
+    filter: brightness(0.95);
 }
 
-/* Stili specifici per pulsante "like" */
-.like-button {
-    background-color: #e9ecef;
-    color: var(--text-color-dark);
-    border: 1px solid var(--card-border);
-    padding: 5px 10px;
-    border-radius: var(--border-radius-base);
-}
-.like-button.liked {
-    background-color: var(--bs-danger);
-    color: white;
-    border-color: var(--bs-danger);
-}
-.like-button.liked:hover {
-    background-color: #c82333;
-}
-
-
-/* ===== STILI PERCORSI CLASSICI & LEADERBOARD DETTAGLI ===== */
-.bg-gradient-classic {
-    background: linear-gradient(135deg, var(--bs-danger) 0%, #fd7e14 100%);
-}
-
-.record-badge {
-    background: rgba(255, 193, 7, 0.2);
-    border: 1px solid var(--bs-warning);
-    border-radius: var(--border-radius-base);
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8em;
+/* Card header */
+.route-card .card-header {
+    background-color: var(--bs-primary);
+    color: #fff;
     font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.route-info div {
-    margin-bottom: 0.25rem;
+.route-card .card-title {
+    font-size: 1.15rem;
 }
 
-/* Badge per difficoltà */
-.badge.bg-warning-route { /* Classe specifica per badge difficoltà route */
-    background: linear-gradient(45deg, var(--bs-warning), #ff8c00) !important;
+/* Badge tipologia e difficoltà */
+.badge-container .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+    transition: transform 0.2s;
+}
+
+.badge-container .badge:hover {
+    transform: scale(1.1);
+    cursor: default;
+}
+
+/* Gradient badge per difficoltà */
+.badge.bg-warning-route {
+    background: linear-gradient(45deg, #ffc107, #ff8c00) !important;
     color: white;
 }
+
 .badge.bg-success-route {
-    background: linear-gradient(45deg, var(--bs-success), var(--brand-primary-dark)) !important;
+    background: linear-gradient(45deg, #198754, #0a5c33) !important;
     color: white;
 }
+
 .badge.bg-danger-route {
-    background: linear-gradient(45deg, var(--bs-danger), #dc143c) !important;
+    background: linear-gradient(45deg, #dc3545, #b2001b) !important;
     color: white;
 }
 
-
-/* Stili per la sezione Top 5 Tempi compatta */
-.top-times-compact {
-    background: var(--brand-light);
-    border-radius: 6px;
-    padding: 8px;
-    border: 1px solid var(--card-border);
+/* Card Body */
+.route-card .card-body {
+    padding: 1rem;
 }
 
-.top-times-compact h6 {
+.route-card .card-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #555;
+}
+
+/* Route details */
+.route-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.route-details small {
+    line-height: 1.2;
+    color: #666;
+}
+
+.route-details i {
+    width: 1.2rem;
+}
+
+/* Top 5 Tempi */
+.top-times-section {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(0,0,0,0.08);
+    margin-bottom: 0.25rem;
+    transition: box-shadow 0.2s;
+}
+
+.top-times-section:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.top-times-section h6 {
     font-size: 0.8rem;
     font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--text-color-dark);
+    margin-bottom: 0.4rem;
 }
 
 .top-times-list {
     max-height: 120px;
     overflow-y: auto;
-    padding-right: 5px; /* Spazio per scrollbar */
+    padding-right: 4px;
 }
 
 .top-times-list::-webkit-scrollbar {
@@ -621,53 +638,72 @@ a:hover {
     background: var(--bs-secondary);
     border-radius: 2px;
 }
+
 .top-times-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.2rem 0.4rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.top-times-list li:hover {
+    background-color: rgba(0,123,255,0.05);
+}
+
+.top-times-list li img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* Pulsanti azione */
+.action-buttons .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.8rem;
+    white-space: nowrap;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+/* Card Footer */
+.route-card .card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0,0,0,0.05);
     font-size: 0.85rem;
-    padding: 0.2rem 0;
+    color: #666;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
-.top-times-list li span {
-    font-weight: 500;
-}
-.top-times-list li .time {
-    color: var(--brand-primary);
-    font-weight: 600;
-}
 
-/* Assicurati che il testo sia compatto */
-.route-card .card-body {
-    padding: 1rem;
-}
-
-.route-card .card-text {
-    font-size: 0.9rem;
-    line-height: 1.3;
-}
-
-.route-details small {
-    line-height: 1.2;
-}
-
-/* Stili per i pulsanti azione */
-.action-buttons .btn {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
-    white-space: nowrap;
-}
-
-/* Layout a due colonne per schermi piccoli */
+/* Layout responsive per pulsanti */
 @media (max-width: 576px) {
     .action-buttons {
         flex-direction: row !important;
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
     .action-buttons .btn {
         flex: 1;
     }
 }
 
+/* Hover lista challenge/attività */
+.list-group-item {
+    border-color: rgba(0,0,0,0.08);
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0,123,255,0.05);
+}
 
 /* ===== STILI PER LE SCOMMESSE (BETTING) ===== */
 .bet-card {
