@@ -1,0 +1,66 @@
+{% extends "index.html" %} {# Assumendo che index.html sia il tuo template base corretto #}
+{% block title %}Carica GPX - PeakRankStreet{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-success-custom">
+                <div class="card-header bg-success-custom text-white text-center">
+                    <h3 class="mb-0"><i class="bi bi-upload me-2"></i>Carica il tuo file GPX</h3>
+                    <p class="mb-0 small">Traccia la tua prossima avventura!</p>
+                </div>
+                <div class="card-body p-4">
+                    {# Form per caricare il file GPX #}
+                    <form id="gpxUploadForm" action="{{ url_for('main.upload_gpx') }}" method="post" enctype="multipart/form-data">
+                        
+                        {# --- Gestione CSRF Token Manuale --- #}
+                        {# Questo campo DEVE esistere se la tua app usa CSRF #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+                        
+                        <div class="mb-4">
+                            <label for="gpxFile" class="form-label fw-bold">Seleziona il tuo file GPX:</label>
+                            <input class="form-control form-control-lg" type="file" id="gpxFile" name="gpx_file" accept=".gpx" required>
+                            <div class="form-text mt-2">
+                                Assicurati che il file sia in formato .gpx. Puoi usare app come Strava, Garmin Connect, Komoot, ecc. per esportare i tuoi tracciati.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-lg btn-success-custom mt-3">
+                                Carica e Analizza
+                                <span id="uploadSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                 <div class="card-footer text-center bg-light-custom">
+                    <p class="mb-0 small text-muted">Una volta caricato, potrai rivedere i dettagli, salvarlo come attività o percorso, e poi decidere se creare una sfida!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('gpxUploadForm');
+        const fileInput = document.getElementById('gpxFile');
+        const submitButton = form.querySelector('button[type="submit"]');
+        const spinner = document.getElementById('uploadSpinner');
+
+        form.addEventListener('submit', function(event) {
+            if (!fileInput.value) {
+                alert('Per favore, seleziona un file GPX prima di procedere.');
+                event.preventDefault();
+                return;
+            }
+            
+            submitButton.disabled = true;
+            spinner.style.display = 'inline-block';
+        });
+    });
+</script>
+{% endblock %}

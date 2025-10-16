@@ -15,6 +15,7 @@ from decimal import Decimal, InvalidOperation
 from shapely.geometry import LineString, Point
 from math import radians, sin, cos, sqrt, atan2
 from werkzeug.utils import secure_filename # Utile per gestire i nomi dei file
+from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione manuale
 
 main = Blueprint('main', __name__)
 
@@ -1863,3 +1864,217 @@ def debug_bets_detailed():
     
     return result
 ###################################################################################################################################
+# ... (altri import e la definizione della route upload_gpx) ...
+@main.route('/upload-gpx', methods=['GET', 'POST'])
+@login_required
+def upload_gpx():
+    if request.method == 'POST':
+        # --- VALIDAZIONE CSRF MANUALE ---
+        csrf_token_from_form = request.form.get('csrf_token')
+        if not csrf_token_from_form or len(csrf_token_from_form) < 10:
+            flash('Token CSRF mancante o non valido.', 'danger')
+            return redirect(url_for('main.upload_gpx'))
+
+        # --- Logica di upload del file ---
+        if 'gpx_file' not in request.files:
+            flash('Nessun file selezionato.', 'danger')
+            return redirect(url_for('main.upload_gpx'))
+        
+        file = request.files['gpx_file']
+        
+        if file.filename == '':
+            flash('Nessun file selezionato.', 'warning')
+            return redirect(url_for('main.upload_gpx'))
+            
+        if file and file.filename.lower().endswith('.gpx'):
+            filename = secure_filename(file.filename)
+            try:
+                gpx = gpxpy.parse(file.stream)
+                
+                points = []
+                points_count = 0
+                distance_km = 0.0
+                duration_sec = 0
+
+                if gpx.tracks and gpx.tracks[0].segments:
+                    track_segment = gpx.tracks[0].segments[0] 
+                    if track_segment.points:
+                        points = [{'lat': p.latitude, 'lon': p.longitude} for p in track_segment.points]
+                        points_count = len(points)
+                        
+                        try:
+                            if gpx.length_3d():
+                                distance_km = gpx.length_3d() / 1000.0
+                            elif gpx.length_2d():
+                                distance_km = gpx.length_2d() / 1000.0
+                        except Exception as dist_e:
+                            print(f"Errore nel calcolo della distanza GPX: {dist_e}")
+                            distance_km = 0.0 
+
+                        start_time = None
+                        end_time = None
+                        
+                        if track_segment.points:
+                            for p in track_segment.points:
+                                if p.time:
+                                    start_time = p.time
+                                    break
+                            for p in reversed(track_segment.points):
+                                if p.time:
+                                    end_time = p.time
+                                    break
+                        
+                        if start_time and end_time:
+                            duration_sec = (end_time - start_time).total_seconds()
+                        elif gpx.get_time_first() and gpx.get_time_last():
+                            duration_sec = (gpx.get_time_last() - gpx.get_time_first()).total_seconds()
+                        
+                        gpx_points_json = json.dumps(points)
+                        
+                        return render_template('upload_gpx_confirm.html', 
+                                               filename=filename,
+                                               points_count=points_count,
+                                               distance_km=distance_km,
+                                               duration_sec=duration_sec,
+                                               gpx_points_json=gpx_points_json,
+                                               # NON passare 'name' o 'description' qui
+                                               )
+
+                    else:
+                        flash('Il segmento GPX non contiene punti di tracciato validi.', 'danger')
+                        return redirect(url_for('main.upload_gpx'))
+                else:
+                    flash('Il file GPX non contiene tracce o segmenti validi.', 'danger')
+                    return redirect(url_for('main.upload_gpx'))
+            
+            # --- MANTIENI SOLO L'ECCEZIONE GENERICA PER GLI ERRORI ---
+            except Exception as e: # Cattura tutti gli errori generici durante il parsing/elaborazione GPX
+                flash(f'Errore durante l\'elaborazione del file GPX: {e}', 'danger')
+                print(f"Errore generico upload_gpx: {e}") # Log dell'errore sul server
+                return redirect(url_for('main.upload_gpx'))
+        else:
+            flash('Formato file non valido. Si prega di caricare un file .gpx.', 'warning')
+            return redirect(url_for('main.upload_gpx'))
+            
+    # Se è una richiesta GET, mostra semplicemente il form di upload
+    return render_template('upload_gpx.html')
+
+@main.route('/api/save-gpx-item', methods=['POST'])
+@login_required
+def save_gpx_item():
+    """
+    API endpoint per salvare un'attività o un percorso da dati GPX estratti.
+    Riceve dati JSON dal frontend e restituisce una risposta JSON.
+    """
+    # --- VALIDAZIONE CSRF PER API ---
+    # Per le API, è comune ricevere il token CSRF nell'header 'X-CSRFToken'.
+    # Il frontend (JavaScript) dovrebbe inviarlo.
+    # Assicurati che il tuo frontend invii questo header, e che la tua app verifichi la sua validità.
+    # Esempio di recupero dall'header:
+    # csrf_token_header = request.headers.get('X-CSRFToken')
+    # if not csrf_token_header or not validate_csrf(csrf_token_header): # Se hai la validazione
+    #     return jsonify({"status": "error", "message": "Token CSRF non valido per API."}), 403
+
+    # Se il token CSRF viene inviato nel corpo JSON (come nel nostro form manuale):
+    if not request.is_json:
+        return jsonify({"status": "error", "message": "Richiesta deve essere JSON."}), 400
+    
+    data = request.get_json()
+    
+    # --- Estrazione e Validazione Dati Ricevuti ---
+    filename = data.get('filename') # Utile per contesto, non per salvataggio
+    name = data.get('name')
+    description = data.get('description')
+    activity_type = data.get('activity_type')
+    distance_str = data.get('distance')
+    duration_str = data.get('duration')
+    points_json = data.get('points_json')
+    item_type = data.get('item_type') # 'activity' o 'route'
+    route_id_for_activity = data.get('route_id') # ID del percorso, se si salva un'attività associata
+    
+    # Validazione dei campi essenziali ricevuti
+    if not all([name, activity_type, points_json, item_type]):
+        return jsonify({"status": "error", "message": "Dati essenziali mancanti (nome, tipo, punti)."}), 400
+    
+    if not points_json or points_json == '[]':
+        return jsonify({"status": "error", "message": "Il tracciato non contiene punti validi."}), 400
+
+    try:
+        # --- Conversione Dati ---
+        distance_km = float(distance_str) if distance_str and distance_str != 'N/D' else 0.0
+        duration_sec = 0
+        if duration_str and duration_str != 'N/D':
+            try:
+                duration_sec = int(duration_str) # Assumendo che venga passato in secondi
+            except ValueError:
+                # Se la durata non è un numero valido, gestisci l'errore o lasciala a 0
+                pass 
+
+        # --- Creazione Oggetto (Activity o Route) ---
+        user_id = current_user.id
+        
+        if item_type == 'activity':
+            # Crea una nuova Attività
+            new_activity = Activity(
+                user_id=user_id,
+                route_id=route_id_for_activity, # Potrebbe essere None se non associato
+                name=name,
+                description=description,
+                activity_type=activity_type,
+                gps_track=points_json,
+                distance=distance_km,
+                duration=duration_sec,
+                # Calcola avg_speed in km/h (distanza_km / ore)
+                avg_speed= (distance_km / (duration_sec / 3600.0)) if duration_sec > 0 else 0.0 
+            )
+            db.session.add(new_activity)
+            db.session.commit()
+            
+            # --- Badge e Record ---
+            # Controlla se questa attività merita un badge "Prima Attività"
+            # Questa funzione dovrebbe essere importata o definita correttamente
+            # Esempio: award_badge_if_earned(current_user, "Prima Attività")
+            
+            # Controlla e aggiorna record per questo percorso/attività
+            # Dovrai implementare una funzione tipo check_and_update_route_record
+            # if route_id_for_activity and activity_type:
+            #     check_and_update_route_record(route_id=route_id_for_activity, activity_type=activity_type, activity_duration=duration_sec, activity_id=new_activity.id)
+            
+            return jsonify({
+                "status": "success", 
+                "message": "Attività salvata con successo!", 
+                "item_id": new_activity.id, 
+                "item_type": "activity"
+            })
+            
+        elif item_type == 'route':
+            # Crea un nuovo Percorso
+            new_route = Route(
+                name=name,
+                description=description,
+                coordinates=points_json,
+                distance=distance_km,
+                duration=duration_sec, # Durata media stimata dal GPX
+                activity_type=activity_type,
+                created_by=user_id
+            )
+            db.session.add(new_route)
+            db.session.commit()
+            
+            # Controlla se questa creazione merita un badge "Primo Percorso"
+            # Esempio: award_badge_if_earned(current_user, "Primo Percorso")
+
+            return jsonify({
+                "status": "success", 
+                "message": "Percorso salvato con successo!", 
+                "item_id": new_route.id, 
+                "item_type": "route"
+            })
+            
+        else:
+            return jsonify({"status": "error", "message": "Tipo di elemento non valido."}), 400
+
+    except Exception as e:
+        db.session.rollback() # Annulla le modifiche in caso di errore
+        print(f"Errore API save_gpx_item: {e}") # Logga l'errore sul server
+        return jsonify({"status": "error", "message": f"Errore interno del server: {e}"}), 500

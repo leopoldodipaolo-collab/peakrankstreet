@@ -1,0 +1,317 @@
+{% extends "index.html" %} {# Estende il tuo template base #}
+{% block title %}Conferma Dati GPX - PeakRankStreet{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h1 class="text-center mb-4 fw-bold"><i class="bi bi-file-earmark-check me-2"></i>Revisiona il tuo Tracciato GPX</h1>
+    <p class="text-center text-muted mb-5">Verifica i dettagli estratti dal tuo file GPX e salvalo come attività o nuovo percorso!</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            
+            {# Card per mostrare i dati estratti dal GPX #}
+            <div class="card shadow-lg mb-4 border-primary-custom">
+                <div class="card-header bg-primary-custom text-white">
+                    <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>Dati Estratti dal GPX:</h4>
+                </div>
+                <div class="card-body">
+                    {# Questo form invierà i dati all'API per il salvataggio #}
+                    <form id="saveGpxItemForm"> 
+                        
+                        {# --- Campi Nascosti per Dati GPX e CSRF --- #}
+                        {# Necessari per passare i dati al backend tramite AJAX #}
+                        <input type="hidden" id="gpxFilename" name="filename" value="{{ filename }}">
+                        <input type="hidden" id="gpxPointsJson" name="points_json" value="{{ gpx_points_json }}"> {# JSON dei punti #}
+                        <input type="hidden" id="gpxDistance" name="distance" value="{{ '%.2f'|format(distance_km) if distance_km else 'N/D' }}">
+                        <input type="hidden" id="gpxDuration" name="duration" value="{{ duration_sec }}"> {# Assumendo che la route Flask passi 'duration_sec' #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> {# CSRF Token Manuale #}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label fw-bold">Nome Attività/Percorso:</label>
+                                <input type="text" class="form-control form-control-lg" id="name" name="name" value="{{ filename.rsplit('.', 1)[0] }}" required> 
+                                {# Valore di default preso dal nome del file senza estensione #}
+                                <div class="invalid-feedback"></div> {# Spazio per errori di validazione JS #}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="activity_type" class="form-label fw-bold">Tipo Attività:</label>
+                                <select class="form-select form-select-lg" id="activity_type" name="activity_type" required>
+                                    <option value="" disabled selected>Seleziona un tipo...</option>
+                                    <option value="Corsa" {% if 'running' in filename.lower() or 'corsa' in filename.lower() %}selected{% endif %}>Corsa</option>
+                                    <option value="Bici" {% if 'bike' in filename.lower() or 'bici' in filename.lower() %}selected{% endif %}>Bici</option>
+                                    <option value="Hike" {% if 'hike' in filename.lower() or 'trekking' in filename.lower() %}selected{% endif %}>Hike</option>
+                                    <option value="Sci" {% if 'ski' in filename.lower() %}selected{% endif %}>Sci</option>
+                                    <option value="Altro">Altro</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        {# Campi per la visualizzazione (readonly) #}
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Distanza:</label>
+                                {# Usa il valore dal campo hidden #}
+                                <input type="text" class="form-control form-control-lg" id="displayDistance" value="{{ '%.2f'|format(distance_km) if distance_km else 'N/D' }}" readonly>
+                                <div class="form-text">km</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Durata:</label>
+                                {# Usa il placeholder "N/D", il JS formatterà il valore dal campo hidden #}
+                                <input type="text" class="form-control form-control-lg" id="displayDuration" value="N/D" readonly> 
+                                <div class="form-text">HH:MM:SS</div>
+                            </div>
+                             <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Punti Tracciato:</label>
+                                <input type="text" class="form-control form-control-lg" id="displayPointsCount" value="{{ points_count if points_count else 'N/D' }}" readonly>
+                                <div class="form-text">punti</div>
+                            </div>
+                        </div>
+                        
+                        {# Descrizione rimossa per semplicità #}
+                        {# Se vuoi reintrodurla, dovrai aggiungerla qui come textarea e recuperarla nel JS #}
+                        {# e nella route API #}
+
+                        {# Visualizzazione mappa preliminare #}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Anteprima Mappa:</label>
+                            <div id="gpxMapPreview" style="height: 300px; background-color: #e0e0e0;">
+                                Caricamento mappa...
+                            </div>
+                        </div>
+                        
+                    </form> {# Fine form principale #}
+                </div>
+            </div>
+
+            {# Card per le Azioni: Salva Attività, Salva Percorso, Crea Sfida #}
+            <div class="card shadow-lg mb-4 border-warning-custom">
+                <div class="card-header bg-warning-custom text-dark">
+                    <h4 class="mb-0"><i class="bi bi-tools me-2"></i>Cosa vuoi fare con questo tracciato?</h4>
+                </div>
+                <div class="card-body text-center">
+                    
+                    {# Pulsanti per salvare Attività o Percorso #}
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <button id="saveActivityBtn" class="btn btn-lg btn-primary-custom w-100">
+                                <i class="bi bi-activity me-2"></i>Salva come Attività
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <button id="saveRouteBtn" class="btn btn-lg btn-secondary-custom w-100">
+                                <i class="bi bi-map-fill me-2"></i>Salva come Nuovo Percorso
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    {# Pulsante per creare una sfida (sarà abilitato dopo aver salvato) #}
+                    <div id="createChallengeSection" style="display: none;" class="mt-3">
+                        <p class="fw-bold">Ottimo! Ora puoi creare una sfida basata su questo percorso.</p>
+                        <button type="button" id="createChallengeFromGPXBtn" class="btn btn-lg btn-success-custom">
+                            <i class="bi bi-award-fill me-2"></i>Crea una Sfida su questo Percorso
+                        </button>
+                    </div>
+                    
+                    {# Messaggi di stato per il salvataggio #}
+                    <div id="savingInfo" style="display: none;" class="alert alert-info mt-3">Salvataggio in corso...</div>
+                    <div id="saveError" style="display: none;" class="alert alert-danger mt-3">Errore durante il salvataggio. Riprova più tardi.</div>
+                    <div id="saveSuccess" style="display: none;" class="alert alert-success mt-3">Tracciato salvato con successo!</div>
+
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Elementi del DOM ---
+        const saveGpxItemForm = document.getElementById('saveGpxItemForm');
+        
+        // --- DICHIARA SEMPRE QUESTI ELEMENTI, ANCHE SE POTREBBERO ESSERE NULL ---
+        const nameInput = document.getElementById('name');
+        const activityTypeSelect = document.getElementById('activity_type');
+        const descriptionTextarea = document.getElementById('description');
+        
+        const gpxFilenameInput = document.getElementById('gpxFilename'); // Hidden field per filename
+        const gpxPointsJsonInput = document.getElementById('gpxPointsJson'); // Hidden field per punti JSON
+        const gpxDistanceInput = document.getElementById('gpxDistance'); // Hidden field per distanza
+        const gpxDurationInput = document.getElementById('gpxDuration'); // Hidden field per durata (secondi)
+        
+        const displayDistanceInput = document.getElementById('displayDistance'); // Readonly display per distanza
+        const displayDurationInput = document.getElementById('displayDuration'); // Readonly display per durata
+        const displayPointsCountInput = document.getElementById('displayPointsCount'); // Readonly display per conteggio punti
+        
+        const saveActivityBtn = document.getElementById('saveActivityBtn');
+        const saveRouteBtn = document.getElementById('saveRouteBtn');
+        const createChallengeBtn = document.getElementById('createChallengeFromGPXBtn');
+        const createChallengeSection = document.getElementById('createChallengeSection');
+        const savingInfoDiv = document.getElementById('savingInfo');
+        const saveErrorDiv = document.getElementById('saveError');
+        const saveSuccessDiv = document.getElementById('saveSuccess');
+        
+        let selectedRouteIdForActivity = null; // Inizializza come null
+
+        // --- Funzione helper per formattare la durata ---
+        function formatDuration(seconds) { /* ... come prima ... */ }
+
+        // --- Inizializzazione Dati e Mappa ---
+        try {
+            const pointsJsonString = gpxPointsJsonInput.value;
+            const points = JSON.parse(pointsJsonString);
+            
+            const map = L.map('gpxMapPreview').setView([41.9028, 12.4964], 6); 
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            if (points && points.length > 0) {
+                const latlngs = points.map(p => [p.lat, p.lon]);
+                const gpxLayer = L.polyline(latlngs, { color: 'blue' }).addTo(map);
+                const bounds = L.latLngBounds(latlngs);
+                map.fitBounds(bounds);
+            } else {
+                mapPreviewDiv.innerHTML = "Impossibile caricare il tracciato sulla mappa.";
+            }
+
+            // Formatta e mostra la durata
+            const durationSeconds = parseInt(gpxDurationInput.value); 
+            if (!isNaN(durationSeconds) && durationSeconds > 0) {
+                displayDurationInput.value = formatDuration(durationSeconds);
+            } else {
+                displayDurationInput.value = "N/D";
+            }
+            
+            displayDistanceInput.value = gpxDistanceInput.value || 'N/D';
+            displayPointsCountInput.value = displayPointsCount.value || 'N/D';
+
+        } catch (e) {
+            console.error("Errore nell'inizializzazione:", e);
+            if (saveErrorDiv) {
+                saveErrorDiv.textContent = "Errore nell'inizializzazione della pagina.";
+                saveErrorDiv.style.display = 'block';
+            }
+        }
+
+        // --- Funzione per il Salvataggio (AJAX) ---
+        async function saveItem(itemType) { 
+            savingInfoDiv.style.display = 'block';
+            saveErrorDiv.style.display = 'none';
+            saveSuccessDiv.style.display = 'none';
+            
+            saveActivityBtn.disabled = true;
+            saveRouteBtn.disabled = true;
+            createChallengeBtn.disabled = true;
+
+            // Prepara i dati da inviare all'API
+            const data = {
+                filename: gpxFilenameInput.value,
+                // --- CONTROLLA QUESTI VALORI PRIMA DI ACCEDERVI ---
+                name: nameInput ? nameInput.value : '', // Leggi solo se nameInput esiste
+                description: descriptionTextarea ? descriptionTextarea.value : '', // Leggi solo se descriptionTextarea esiste
+                activity_type: activityTypeSelect ? activityTypeSelect.value : '', // Leggi solo se activityTypeSelect esiste
+                distance: gpxDistanceInput.value,           
+                duration: gpxDurationInput.value,           
+                points_json: gpxPointsJsonInput.value,      
+                item_type: itemType,
+                route_id: (itemType === 'activity' && selectedRouteIdForActivity) ? selectedRouteIdForActivity : null 
+            };
+
+            // --- Validazione Client-Side ---
+            if (!data.name) {
+                 showError("Per favore, inserisci un nome.");
+                 return;
+            }
+            if (!data.activity_type) {
+                 showError("Per favore, seleziona un tipo di attività.");
+                 return;
+            }
+            if (!data.points_json || data.points_json === '[]') {
+                 showError("Dati del tracciato non validi.");
+                 return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                
+                const response = await fetch("{{ url_for('main.save_gpx_item') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    saveSuccessDiv.textContent = result.message;
+                    saveSuccessDiv.style.display = 'block';
+                    
+                    createChallengeSection.style.display = 'block';
+                    createChallengeBtn.dataset.itemId = result.item_id; 
+                    createChallengeBtn.dataset.itemType = itemType; 
+
+                    if (itemType === 'activity') {
+                        saveActivityBtn.textContent = 'Attività Salvata!';
+                        saveActivityBtn.classList.add('btn-success-custom');
+                        saveActivityBtn.disabled = true;
+                    } else {
+                        saveRouteBtn.textContent = 'Percorso Salvato!';
+                        saveRouteBtn.classList.add('btn-success-custom');
+                        saveRouteBtn.disabled = true;
+                    }
+                    
+                } else {
+                    throw new Error(result.message || 'Errore sconosciuto dal server.');
+                }
+
+            } catch (error) {
+                console.error('Errore durante il salvataggio:', error);
+                showError(`Errore: ${error.message}`);
+            } finally {
+                savingInfoDiv.style.display = 'none';
+            }
+        }
+
+        // --- Funzione helper per mostrare errori ---
+        function showError(message) {
+            saveErrorDiv.textContent = message;
+            saveErrorDiv.style.display = 'block';
+            // Assicurati che i pulsanti siano riabilitati se c'è un errore
+            if (saveActivityBtn) saveActivityBtn.disabled = false;
+            if (saveRouteBtn) saveRouteBtn.disabled = false;
+            if (createChallengeBtn) createChallengeBtn.disabled = false;
+        }
+
+        // --- Event Listeners per i Pulsanti ---
+        saveActivityBtn.addEventListener('click', () => {
+            saveItem('activity');
+        });
+        
+        saveRouteBtn.addEventListener('click', () => {
+            saveItem('route');
+        });
+        
+        createChallengeBtn.addEventListener('click', () => {
+            const itemId = createChallengeBtn.dataset.itemId;
+            const itemType = createChallengeBtn.dataset.itemType; 
+
+            if (!itemId || !itemType) {
+                alert("Errore: impossibile procedere alla creazione della sfida. Dati mancanti.");
+                return;
+            }
+            window.location.href = `{{ url_for('main.create_challenge') }}?item_id=${itemId}&item_type=${itemType}`;
+        });
+        
+    });
+</script>
+{% endblock %}

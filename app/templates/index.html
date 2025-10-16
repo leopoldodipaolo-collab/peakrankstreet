@@ -143,11 +143,19 @@
                     <div class="container">
                         <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
                         <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di StreetSport.</p>
+                        <p class="lead mb-4 animate__animated animate__fadeInUp">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, escursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>
                         {% if not current_user.is_authenticated %}
+                            {# Pulsante primario: Registrazione #}
                             <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn">Inizia Ora!</a>
-                            <a href="{{ url_for('main.explore_users') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn">Esplora</a>
+                            {# Pulsante secondario: Caricamento GPX #}
+                            <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica il tuo GPX</a>
+                            {# Altri pulsanti come Esplora possono rimanere #}
+                            {# <a href="{{ url_for('main.explore_users') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn">Esplora</a> #}
                         {% else %}
+                            {# Utente Loggato #}
                              <a href="{{ url_for('main.track_activity') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn"><i class="bi bi-geo-alt-fill me-2"></i>Inizia a Tracciare!</a>
+                             {# Aggiunto il pulsante Carica GPX anche per utenti loggati #}
+                             <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica GPX</a>
                              <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
                         {% endif %}
                     </div>

@@ -159,6 +159,11 @@ class Activity(db.Model):
     distance = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
+    # --- CAMPI AGGIUNTI ---
+    name = db.Column(db.String(100), nullable=True) 
+    description = db.Column(db.String(500), nullable=True) 
+    # --- FINE CAMPI AGGIUNTI ---
+
     likes = db.relationship('ActivityLike', backref='activity', lazy='dynamic', cascade="all, delete-orphan")
 
     def __repr__(self):
