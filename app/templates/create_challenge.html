@@ -3,7 +3,6 @@
 {% block title %}Crea Nuova Sfida{% endblock %}
 
 {% block content %}
-    <!-- MODIFICATO: Aggiunto 'main.' -->
     <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -13,6 +12,8 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" class="needs-validation" novalidate id="createChallengeForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome della Sfida:</label>
                             <input type="text" id="name" name="name" class="form-control" required>
@@ -57,7 +58,6 @@
                             </div>
                         </div>
 
-                        <!-- === NUOVA SEZIONE: TIPO SFIDA === -->
                         <div class="mb-3">
                             <label class="form-label">Tipo di Sfida:</label>
                             <div class="form-check">
@@ -74,7 +74,6 @@
                             </div>
                         </div>
 
-                        <!-- === NUOVA SEZIONE: SCOMMESSA === -->
                         <div class="mb-3">
                             <label for="betType" class="form-label">Cosa si scommette? 🎯</label>
                             <select class="form-select" name="bet_type" id="betType">
@@ -89,7 +88,6 @@
                             </div>
                         </div>
 
-                        <!-- === NUOVA SEZIONE: INVITI AMICI === -->
                         <div class="mb-3" id="inviteSection">
                             <label class="form-label">Invita Amici:</label>
                             <div class="friends-list border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
@@ -116,12 +114,10 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Gestione cambio tipo sfida
     document.querySelectorAll('input[name="challenge_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const isClosed = this.value === 'closed';
             const inviteHelp = document.getElementById('inviteHelp');
-            
             if (isClosed) {
                 inviteHelp.innerHTML = '⚠️ <strong>Per le sfide chiuse, devi invitare almeno un amico</strong>';
                 inviteHelp.className = 'text-warning';
@@ -132,13 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Gestione tipo scommessa
     document.getElementById('betType').addEventListener('change', function() {
         const customContainer = document.getElementById('customBetContainer');
         customContainer.style.display = this.value === 'custom' ? 'block' : 'none';
     });
 
-    // Caricamento lista amici
     function loadFriendsList() {
         fetch('/api/my-friends')
             .then(response => {
@@ -167,13 +161,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Validazione form personalizzata
     document.getElementById('createChallengeForm').addEventListener('submit', function(e) {
-        // Validazione date esistente
         const startDate = new Date(document.getElementById('start_date').value);
         const endDate = new Date(document.getElementById('end_date').value);
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setHours(0,0,0,0);
 
         if (startDate < today) {
             e.preventDefault();
@@ -189,18 +181,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
 
-        // NUOVA VALIDAZIONE: Per sfide chiuse
         const challengeType = document.querySelector('input[name="challenge_type"]:checked').value;
         const isClosed = challengeType === 'closed';
         const invitedFriends = document.querySelectorAll('input[name="invited_friends"]:checked').length;
-        
         if (isClosed && invitedFriends === 0) {
             e.preventDefault();
             alert('⚠️ Per le sfide chiuse devi invitare almeno un amico!');
             return false;
         }
 
-        // Validazione Bootstrap
         if (!this.checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
@@ -209,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
         this.classList.add('was-validated');
     });
 
-    // Validazione date in tempo reale
     document.getElementById('start_date').addEventListener('change', validateDates);
     document.getElementById('end_date').addEventListener('change', validateDates);
 
@@ -217,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const startDate = new Date(document.getElementById('start_date').value);
         const endDate = new Date(document.getElementById('end_date').value);
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setHours(0,0,0,0);
 
         if (startDate && startDate < today) {
             document.getElementById('start-date-feedback').textContent = 'La data di inizio non può essere nel passato.';
@@ -234,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Carica la lista amici
     loadFriendsList();
 });
 </script>

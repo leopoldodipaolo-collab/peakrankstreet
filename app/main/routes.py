@@ -16,6 +16,7 @@ from shapely.geometry import LineString, Point
 from math import radians, sin, cos, sqrt, atan2
 from werkzeug.utils import secure_filename # Utile per gestire i nomi dei file
 from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione manuale
+import traceback  # ⚠️ AGGIUNGI QUESTO IMPORT
 
 main = Blueprint('main', __name__)
 
@@ -654,11 +655,46 @@ def record_activity():
 @main.route("/activity/<int:activity_id>")
 def activity_detail(activity_id):
     activity = Activity.query.get_or_404(activity_id)
-    activity_geojson_data = json.dumps(json.loads(activity.gps_track))
-    route_geojson_data = json.dumps(json.loads(activity.route_activity.coordinates))
+    
+    # DEBUG
+    print(f"=== DEBUG activity_detail ===")
+    print(f"Activity ID: {activity.id}")
+    print(f"Has GPS track: {bool(activity.gps_track)}")
+    print(f"Has route: {bool(activity.route_activity)}")
+    
+    route_geojson_data = None
+    if activity.route_activity and activity.route_activity.coordinates:
+        try:
+            route_geojson_data = json.loads(activity.route_activity.coordinates)
+            print(f"Route GeoJSON type: {type(route_geojson_data)}")
+            print(f"Route GeoJSON keys: {route_geojson_data.keys() if isinstance(route_geojson_data, dict) else 'Not a dict'}")
+        except Exception as e:
+            print(f"Error parsing route coordinates: {e}")
+            route_geojson_data = None
+    
+    activity_geojson_data = None
+    if activity.gps_track:
+        try:
+            points = json.loads(activity.gps_track)
+            activity_geojson_data = {
+                "type": "LineString",
+                "coordinates": [[point['lon'], point['lat']] for point in points]
+            }
+            print(f"Activity GeoJSON coordinates count: {len(activity_geojson_data['coordinates'])}")
+        except Exception as e:
+            print(f"Error parsing activity GPS track: {e}")
+            activity_geojson_data = None
+    
+    print("=======================")
+    
     return render_template("activity_detail.html",
-                           activity=activity, user=activity.user_activity, route=activity.route_activity, challenge=activity.challenge_info,
-                           activity_geojson_data=activity_geojson_data, route_geojson_data=route_geojson_data, is_homepage=False)
+                           activity=activity, 
+                           user=activity.user_activity, 
+                           route=activity.route_activity,
+                           challenge=activity.challenge_info,
+                           activity_geojson_data=activity_geojson_data, 
+                           route_geojson_data=route_geojson_data, 
+                           is_homepage=False)
 
 @main.route("/activities")
 def all_activities():
@@ -2036,6 +2072,35 @@ def save_gpx_item():
         else:
             print("Durata non valida o vuota, uso 0")
         
+        # --- CONVERSIONE A GEOJSON ---
+        try:
+            points = json.loads(points_json)
+            
+            # Crea geometria GeoJSON LineString
+            geojson_geometry = {
+                "type": "LineString",
+                "coordinates": [[point['lon'], point['lat']] for point in points]  # [lon, lat] ordine GeoJSON
+            }
+            
+            # Feature GeoJSON completa (opzionale)
+            geojson_feature = {
+                "type": "Feature",
+                "geometry": geojson_geometry,
+                "properties": {
+                    "name": name,
+                    "activity_type": activity_type,
+                    "distance_km": distance_km,
+                    "duration_sec": duration_sec
+                }
+            }
+            
+            print(f"✅ Convertito in GeoJSON: {len(points)} punti")
+            print(f"✅ Primo punto GeoJSON: {geojson_geometry['coordinates'][0]}")
+            
+        except Exception as e:
+            print(f"❌ Errore conversione GeoJSON: {e}")
+            return jsonify({"status": "error", "message": "Errore nella conversione del tracciato."}), 400
+        
         # --- Creazione Oggetto ---
         user_id = current_user.id
         
@@ -2047,7 +2112,7 @@ def save_gpx_item():
                 name=name,
                 description=description or "",
                 activity_type=activity_type,
-                gps_track=points_json,
+                gps_track=points_json,  # Mantieni originale per Activity
                 distance=distance_km,
                 duration=duration_sec,
                 avg_speed= (distance_km / (duration_sec / 3600.0)) if duration_sec > 0 else 0.0
@@ -2065,12 +2130,12 @@ def save_gpx_item():
             })
             
         elif item_type == 'route':
-            # Crea un nuovo Percorso
+            # Crea un nuovo Percorso CON GEOJSON
             new_route = Route(
                 name=name,
                 description=description or "",
-                coordinates=points_json,
-                distance_km=distance_km,  # ⚠️ ASSICURATI CHE SIA distance_km
+                coordinates=json.dumps(geojson_geometry),   # ⚠️ SALVA GEOJSON invece del JSON originale
+                distance_km=distance_km,
                 duration=duration_sec,
                 activity_type=activity_type,
                 created_by=user_id
@@ -2081,6 +2146,7 @@ def save_gpx_item():
             # DEBUG per verificare
             print(f"✅ Percorso salvato con ID: {new_route.id}")
             print(f"✅ Distance_km salvata: {new_route.distance_km} km")
+            print(f"✅ Coordinate salvate come GeoJSON: {type(new_route.coordinates)}")
             
             return jsonify({
                 "status": "success", 
@@ -2090,7 +2156,6 @@ def save_gpx_item():
             })
             
         else:
-            # Questo caso dovrebbe essere già gestito dalla validazione sopra
             return jsonify({"status": "error", "message": "Tipo di elemento non valido."}), 400
 
     except Exception as e:

@@ -265,7 +265,27 @@ async function saveItem(itemType) {
 
         if (result.status === 'success') {
             console.log("Salvataggio riuscito!");
-            // ... resto del codice success
+            
+            // ⚠️ AGGIUNGI QUESTO CODICE PER MOSTRARE IL SUCCESSO
+            saveSuccessDiv.textContent = result.message;
+            saveSuccessDiv.style.display = 'block';
+            
+            // Mostra il pulsante per creare la sfida
+            createChallengeSection.style.display = 'block';
+            createChallengeBtn.dataset.itemId = result.item_id; 
+            createChallengeBtn.dataset.itemType = itemType; 
+
+            // Aggiorna lo stato dei pulsanti di salvataggio
+            if (itemType === 'activity') {
+                saveActivityBtn.textContent = 'Attività Salvata!';
+                saveActivityBtn.classList.add('btn-success-custom');
+                saveActivityBtn.disabled = true;
+            } else {
+                saveRouteBtn.textContent = 'Percorso Salvato!';
+                saveRouteBtn.classList.add('btn-success-custom');
+                saveRouteBtn.disabled = true;
+            }
+            
         } else {
             throw new Error(result.message || 'Errore sconosciuto dal server.');
         }

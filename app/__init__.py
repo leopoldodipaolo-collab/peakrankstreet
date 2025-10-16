@@ -82,6 +82,7 @@ def create_app():
 
     @app.context_processor
     def inject_csrf_token():
+        from flask_wtf.csrf import generate_csrf
         return dict(csrf_token=generate_csrf)
 
     # --- Configura Login Manager ---

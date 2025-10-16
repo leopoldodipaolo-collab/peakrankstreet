@@ -12,12 +12,23 @@
         <div class="card-body">
             <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
             <p class="card-text"><strong>Atleta:</strong> <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="user-link text-primary">{{ user.username }}</a></p>
-            <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
-            <p class="card-text"><strong>Percorso:</strong> <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="user-link text-success">{{ route.name }}</a></p>
+            
+            <!-- ⚠️ CORREGGI: Controlla se route esiste -->
+            <p class="card-text">
+                <strong>Percorso:</strong> 
+                {% if route %}
+                    <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
+                    <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="user-link text-success">{{ route.name }}</a>
+                {% else %}
+                    <span class="text-muted">Percorso Libero</span>
+                {% endif %}
+            </p>
+            
             {% if challenge %}
                 <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
                 <p class="card-text"><strong>Sfida:</strong> <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="user-link text-info">{{ challenge.name }}</a></p>
             {% endif %}
+            
             <p class="card-text"><strong>Data Attività:</strong> {{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
             <p class="card-text"><strong>Distanza:</strong> {{ "%.2f"|format(activity.distance) }} km</p>
             <p class="card-text"><strong>Tempo:</strong>
@@ -30,62 +41,203 @@
 
             <h3 class="mt-4">Tracciato GPS dell'Attività e Percorso di Riferimento</h3>
             <div id="activityMap" style="height: 500px; width: 100%; border: 1px solid #ddd; border-radius: 5px;"></div>
-            <div class="map-legend mt-2">
-                <span class="d-inline-block" style="width: 15px; height: 10px; background-color: #007bff; margin-right: 5px;"></span>Tracciato Attività
-                <span class="d-inline-block" style="width: 15px; height: 10px; background-color: #FF7800; margin-left: 15px; margin-right: 5px;"></span>Percorso di Riferimento
+            
+            <!-- LEGENDA COMPLETA -->
+            <div class="map-legend mt-3 p-3 border rounded">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="d-inline-block" style="width: 20px; height: 8px; background-color: #007bff; margin-right: 8px;"></span>
+                            <span>Tracciato Attività</span>
+                        </div>
+                        {% if route %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="d-inline-block" style="width: 20px; height: 8px; background-color: #FF7800; margin-right: 8px;"></span>
+                            <span>Percorso di Riferimento</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="d-inline-block" style="width: 16px; height: 16px; background-color: green; border-radius: 50%; border: 2px solid white; margin-right: 8px;"></span>
+                            <span>Partenza</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="d-inline-block" style="width: 16px; height: 16px; background-color: red; border-radius: 50%; border: 2px solid white; margin-right: 8px;"></span>
+                            <span>Arrivo</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }} {# Importante per includere gli script del blocco padre #}
+    {{ super() }}
     <script>
-        var activityMap = L.map('activityMap').setView([0, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(activityMap);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza la mappa
+            var activityMap = L.map('activityMap').setView([41.9028, 12.4964], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(activityMap);
 
-        var allLayers = L.featureGroup();
+            var allLayers = L.featureGroup();
+            var hasAnyData = false;
 
-        var activityGeoJSONData = {{ activity_geojson_data | safe }};
-        if (activityGeoJSONData && activityGeoJSONData.geometry && activityGeoJSONData.geometry.coordinates.length > 0) {
-            var activityLayer = L.geoJSON(activityGeoJSONData, {
-                style: {
-                    color: '#007bff',
-                    weight: 5,
-                    opacity: 0.9
-                }
+            // CREA ICONE PERSONALIZZATE PER PARTENZA E ARRIVO
+            var startIcon = L.divIcon({
+                html: '<div style="background-color: green; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                className: 'custom-div-icon',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
-            allLayers.addLayer(activityLayer);
-        } else {
-            console.warn("Nessun dato GeoJSON valido per il tracciato dell'attività da visualizzare.");
-        }
 
-        var routeGeoJSONData = {{ route_geojson_data | safe }};
-        if (routeGeoJSONData && routeGeoJSONData.geometry && routeGeoJSONData.geometry.coordinates.length > 0) {
-            var routeLayer = L.geoJSON(routeGeoJSONData, {
-                style: {
-                    color: '#FF7800',
-                    weight: 3,
-                    opacity: 0.8,
-                    dashArray: '5, 5'
-                }
+            var endIcon = L.divIcon({
+                html: '<div style="background-color: red; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                className: 'custom-div-icon',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
-            allLayers.addLayer(routeLayer);
-        } else {
-            console.warn("Nessun dato GeoJSON valido per il percorso di riferimento da visualizzare.");
-        }
-        
-        if (allLayers.getLayers().length > 0) {
-            allLayers.addTo(activityMap);
-            activityMap.fitBounds(allLayers.getBounds());
-        } else {
-            activityMap.setView([45.4642, 9.1900], 13);
-            L.popup()
-                .setLatLng([45.4642, 9.1900])
-                .setContent("Nessun tracciato GPS o percorso di riferimento disponibile per la visualizzazione.")
-                .openOn(activityMap);
-        }
+
+            // TRACCIATO ATTIVITÀ (PRINCIPALE)
+            var activityGeoJSONData = {{ activity_geojson_data | safe if activity_geojson_data else 'null' }};
+            if (activityGeoJSONData) {
+                try {
+                    var activityLayer = L.geoJSON(activityGeoJSONData, {
+                        style: {
+                            color: '#007bff',
+                            weight: 5,
+                            opacity: 0.9
+                        }
+                    });
+                    allLayers.addLayer(activityLayer);
+                    hasAnyData = true;
+                    console.log("✅ Tracciato attività caricato");
+
+                    // AGGIUNGI MARKER PARTENZA E ARRIVO
+                    var coordinates = activityGeoJSONData.coordinates;
+                    if (coordinates && coordinates.length > 0) {
+                        // PRIMO PUNTO = PARTENZA (VERDE)
+                        var startPoint = coordinates[0];
+                        var startMarker = L.marker([startPoint[1], startPoint[0]], {icon: startIcon})
+                            .bindPopup(`
+                                <div class="text-center">
+                                    <strong>🏁 PARTENZA</strong><br>
+                                    <small>Lat: ${startPoint[1].toFixed(6)}</small><br>
+                                    <small>Lon: ${startPoint[0].toFixed(6)}</small>
+                                </div>
+                            `)
+                            .addTo(activityMap);
+                        
+                        // ULTIMO PUNTO = ARRIVO (ROSSO)
+                        var endPoint = coordinates[coordinates.length - 1];
+                        var endMarker = L.marker([endPoint[1], endPoint[0]], {icon: endIcon})
+                            .bindPopup(`
+                                <div class="text-center">
+                                    <strong>🎯 ARRIVO</strong><br>
+                                    <small>Lat: ${endPoint[1].toFixed(6)}</small><br>
+                                    <small>Lon: ${endPoint[0].toFixed(6)}</small>
+                                </div>
+                            `)
+                            .addTo(activityMap);
+
+                        console.log("✅ Marker partenza e arrivo aggiunti");
+                    }
+
+                } catch (e) {
+                    console.error("❌ Errore tracciato attività:", e);
+                }
+            }
+
+            // PERCORSO DI RIFERIMENTO (OPZIONALE)
+            var routeGeoJSONData = {{ route_geojson_data | safe if route_geojson_data else 'null' }};
+            if (routeGeoJSONData) {
+                try {
+                    var routeLayer = L.geoJSON(routeGeoJSONData, {
+                        style: {
+                            color: '#FF7800',
+                            weight: 3,
+                            opacity: 0.8,
+                            dashArray: '5, 5'
+                        }
+                    });
+                    allLayers.addLayer(routeLayer);
+                    console.log("✅ Percorso riferimento caricato");
+                } catch (e) {
+                    console.error("❌ Errore percorso riferimento:", e);
+                }
+            }
+
+            // GESTIONE FINALE MAPPA
+            if (hasAnyData) {
+                allLayers.addTo(activityMap);
+                activityMap.fitBounds(allLayers.getBounds().pad(0.1)); // Aggiungi un po' di padding
+                console.log("✅ Mappa centrata sui dati disponibili");
+            } else {
+                console.warn("⚠️ Nessun dato GeoJSON disponibile");
+                
+                // FALLBACK: Prova a creare il tracciato dai punti GPS grezzi
+                {% if activity.gps_track %}
+                    try {
+                        var points = JSON.parse('{{ activity.gps_track | safe }}');
+                        if (points && points.length > 0) {
+                            var latlngs = points.map(function(p) {
+                                return [p.lat, p.lon];
+                            });
+                            var polyline = L.polyline(latlngs, {
+                                color: 'blue', 
+                                weight: 5,
+                                opacity: 0.9
+                            }).addTo(activityMap);
+                            
+                            // Aggiungi marker partenza e arrivo anche per il fallback
+                            var startPoint = latlngs[0];
+                            var endPoint = latlngs[latlngs.length - 1];
+                            
+                            L.marker(startPoint, {icon: startIcon})
+                                .bindPopup('<strong>🏁 PARTENZA</strong>')
+                                .addTo(activityMap);
+                                
+                            L.marker(endPoint, {icon: endIcon})
+                                .bindPopup('<strong>🎯 ARRIVO</strong>')
+                                .addTo(activityMap);
+                            
+                            activityMap.fitBounds(polyline.getBounds().pad(0.1));
+                            console.log("✅ Tracciato creato da punti GPS grezzi");
+                        }
+                    } catch (e) {
+                        console.error("❌ Impossibile creare tracciato:", e);
+                        activityMap.setView([45.4642, 9.1900], 13);
+                        L.popup()
+                            .setLatLng([45.4642, 9.1900])
+                            .setContent("Impossibile visualizzare il tracciato GPS.")
+                            .openOn(activityMap);
+                    }
+                {% else %}
+                    activityMap.setView([45.4642, 9.1900], 13);
+                    L.popup()
+                        .setLatLng([45.4642, 9.1900])
+                        .setContent("Nessun tracciato GPS disponibile per questa attività.")
+                        .openOn(activityMap);
+                {% endif %}
+            }
+
+            // Aggiungi qualche stile CSS per migliorare l'aspetto
+            var style = document.createElement('style');
+            style.textContent = `
+                .map-legend {
+                    background-color: #f8f9fa;
+                    font-size: 14px;
+                }
+                .custom-div-icon {
+                    background: transparent !important;
+                    border: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 {% endblock %}
