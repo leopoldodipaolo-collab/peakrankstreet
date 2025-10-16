@@ -35,12 +35,8 @@
                 <div class="card-header bg-success text-white"><h5>🎯 Tracciamento Live</h5></div>
                 <div class="card-body text-center">
 
-                    <!-- Prompt GPS -->
-                    <div id="gpsPermissionPrompt" class="alert alert-info">
-                        <h5>🔍 Abilita il GPS</h5>
-                        <p>Per iniziare il tracciamento, clicca il pulsante per autorizzare la posizione.</p>
-                        <button class="btn btn-primary" id="btnEnableGPS">📍 Consenti GPS</button>
-                    </div>
+                    <!-- Pulsante Start -->
+                    <button id="btnStart" class="btn btn-success btn-lg mb-3">▶️ INIZIA TRACCIAMENTO</button>
 
                     <!-- Spinner -->
                     <div id="autoStartMessage" class="alert alert-info" style="display:none;">
@@ -150,6 +146,7 @@ class ActivityTracker {
             {enableHighAccuracy:true,timeout:30000,maximumAge:2000}
         );
 
+        document.getElementById('btnStart').style.display='none';
         document.getElementById('btnStop').style.display='inline-block';
         document.getElementById('btnPause').style.display='inline-block';
         document.getElementById('liveStats').style.display='flex';
@@ -295,24 +292,27 @@ class ActivityTracker {
 
 const tracker=new ActivityTracker();
 
-// Controllo permessi GPS all'avvio
-if(navigator.permissions){
-    navigator.permissions.query({name:'geolocation'}).then(s=>{
-        if(s.state==='granted'){document.getElementById('gpsPermissionPrompt').style.display='none'; tracker.startTracking();}
-        else document.getElementById('gpsPermissionPrompt').style.display='block';
-    });
-} 
-
-document.getElementById('btnEnableGPS').addEventListener('click', ()=>{
-    navigator.geolocation.getCurrentPosition(
-        pos=>{document.getElementById('gpsPermissionPrompt').style.display='none'; tracker.startTracking();},
-        err=>{const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal')); modal.show();},
-        {enableHighAccuracy:true}
-    );
+document.getElementById('btnStart').addEventListener('click', async ()=>{
+    if(!navigator.geolocation){
+        alert("GPS non supportato dal browser");
+        return;
+    }
+    try{
+        await new Promise((resolve,reject)=>{
+            navigator.geolocation.getCurrentPosition(
+                pos=>resolve(pos),
+                err=>reject(err),
+                {enableHighAccuracy:true}
+            );
+        });
+        tracker.startTracking();
+    }catch(e){
+        const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+        modal.show();
+    }
 });
 
 function stopTracking(){tracker.stopTracking();}
 function pauseTracking(){tracker.pauseTracking();}
 </script>
-
 {% endblock %}
