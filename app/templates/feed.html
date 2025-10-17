@@ -3,93 +3,172 @@
 {% block title %}Il Tuo Feed - StreetSport{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">Il Tuo Feed</h1>
-    <p class="lead">Le attività recenti degli atleti che segui.</p>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="container my-5">
+    <!-- Input nascosto per CSRF -->
+    <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">Il Tuo Feed</h1>
+                <a href="{{ url_for('main.record_activity') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Registra Attività
+                </a>
+            </div>
 
-    {% if activities %}
-        <div class="list-group">
-            {% for activity in activities %}
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="rounded-circle profile-image-small" alt="Avatar">
-                        <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}">{{ activity.user_activity.username }}</a>
-                        ha completato <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}">{{ activity.route_activity.name }}</a>
-                    </h5>
-                    <p class="card-text">
-                        <strong>Distanza:</strong> {{ "%.2f"|format(activity.distance) }} km |
-                        <strong>Durata:</strong> {{ (activity.duration / 60)|int }} min {{ activity.duration % 60 }} sec
-                    </p>
-                    
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-outline-primary">Vedi Dettagli</a>
-                        
-                        <div class="like-section d-flex align-items-center">
+            {% if activities %}
+                {% for activity in activities %}
+                <div class="card feed-card shadow-sm mb-4">
+                    <!-- Header -->
+                    <div class="card-header bg-white d-flex align-items-center">
+                        <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}">
+                            <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="profile-image-feed me-3" alt="Avatar di {{ activity.user_activity.username }}">
+                        </a>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0 fs-6">
+                                <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="user-link text-dark fw-bold">{{ activity.user_activity.username }}</a>
+                            </h5>
+                            <small class="text-muted" title="{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ activity.created_at.strftime('%d %B %Y') }}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="card-body">
+                        <p class="feed-activity-title">
+                            Ha completato 
+                            <strong>
+                                <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="user-link text-success">{{ activity.route_activity.name }}</a>
+                            </strong>
+                        </p>
+                        <div class="activity-stats d-flex justify-content-around text-center my-3">
+                            <div class="stat-item">
+                                <i class="bi bi-geo-alt-fill text-primary"></i>
+                                <strong>{{ "%.2f"|format(activity.distance) }}</strong>
+                                <small class="text-muted d-block">km</small>
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-clock-fill text-primary"></i>
+                                {% set hours = activity.duration // 3600 %}
+                                {% set minutes = (activity.duration % 3600) // 60 %}
+                                <strong>{{ "%02d:%02d"|format(hours, minutes) }}</strong>
+                                <small class="text-muted d-block">hh:mm</small>
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-speedometer2 text-primary"></i>
+                                <strong>{{ "%.2f"|format(activity.avg_speed) }}</strong>
+                                <small class="text-muted d-block">km/h</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer: Like & Commenti -->
+                    <div class="card-footer feed-actions d-flex justify-content-between align-items-center">
+                        <div class="action-buttons">
                             {% if current_user.is_authenticated %}
                                 {% set user_has_liked = current_user.id in activity.likes.with_entities(ActivityLike.user_id).all()|map(attribute=0) %}
-                                
-                                <button class="btn btn-sm like-activity-button {% if user_has_liked %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                                <button class="btn btn-action like-activity-button {% if user_has_liked %}liked{% endif %}"
                                         data-activity-id="{{ activity.id }}">
                                     <i class="bi bi-heart-fill"></i>
                                     <span class="like-count ms-1">{{ activity.likes.count() }}</span>
                                 </button>
                             {% else %}
-                                <span class="btn btn-sm btn-outline-danger disabled">
+                                <span class="btn btn-action disabled">
                                     <i class="bi bi-heart-fill"></i>
                                     <span class="like-count ms-1">{{ activity.likes.count() }}</span>
                                 </span>
                             {% endif %}
+                            <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}#comments" class="btn btn-action">
+                                <i class="bi bi-chat-dots-fill"></i>
+                                <span class="ms-1">Commenti</span>
+                            </a>
                         </div>
+                        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-outline-secondary">
+                            Vedi Dettagli
+                        </a>
                     </div>
-                    <small class="text-muted d-block text-end mt-2">{{ activity.created_at.strftime('%d-%m-%Y %H:%M') }}</small>
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <!-- ======================================================= -->
-        <!-- NUOVO BLOCCO PER FEED VUOTO, CON STILE MIGLIORATO       -->
-        <!-- ======================================================= -->
-        <div class="card shadow-sm my-5">
-            <div class="card-body text-center p-5">
-                <i class="bi bi-binoculars-fill" style="font-size: 3rem; color: var(--secondary-color);"></i>
-                <h2 class="mt-3">Il tuo feed è vuoto!</h2>
-                <p class="lead text-muted">Sembra un po' solitario qui...</p>
-                <p>Inizia a seguire altri atleti per vedere le loro attività e sfide apparire qui.</p>
-                <a href="{{ url_for('main.explore_users') }}" class="btn btn-primary btn-lg mt-3">
-                    <i class="bi bi-search"></i> Trova Atleti da Seguire
-                </a>
-            </div>
-        </div>
-    {% endif %}
-
-    <!-- ======================================================= -->
-    <!-- NUOVO BLOCCO PAGINAZIONE (VISIBILE SOLO SE NECESSARIO)  -->
-    <!-- ======================================================= -->
-    {% if pagination and pagination.pages > 1 %}
-    <div class="mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('main.feed', page=pagination.prev_num) }}">Precedente</a>
-                </li>
-                {% for page_num in pagination.iter_pages() %}
-                    {% if page_num %}
-                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('main.feed', page=page_num) }}">{{ page_num }}</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
                 {% endfor %}
-                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('main.feed', page=pagination.next_num) }}">Successivo</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-    {% endif %}
+            {% else %}
+                <div class="card shadow-sm my-5">
+                    <div class="card-body text-center p-5">
+                        <i class="bi bi-binoculars-fill" style="font-size: 3rem; color: var(--bs-secondary);"></i>
+                        <h2 class="mt-3">Il tuo feed è vuoto!</h2>
+                        <p class="lead text-muted">Sembra un po' solitario qui...</p>
+                        <p>Inizia a seguire altri atleti per vedere le loro attività apparire in questa pagina.</p>
+                        <a href="{{ url_for('main.explore_users') }}" class="btn btn-primary btn-lg mt-3">
+                            <i class="bi bi-search me-2"></i> Trova Atleti da Seguire
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
 
+            <!-- Paginazione -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="Navigazione del Feed" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.feed', page=pagination.prev_num) }}">Precedente</a>
+                    </li>
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('main.feed', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.feed', page=pagination.next_num) }}">Successivo</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.getElementById('csrf_token')?.value || '';
+
+    document.querySelectorAll('.like-activity-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const activityId = this.dataset.activityId;
+            const likeCountSpan = this.querySelector('.like-count');
+
+            fetch(`/api/activity/${activityId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    likeCountSpan.textContent = data.likes_count;
+                    this.classList.toggle('liked', data.action === 'liked');
+                } else {
+                    console.error('Errore backend:', data.message);
+                }
+            })
+            .catch(error => console.error('Errore like attività:', error));
+        });
+    });
+});
+
+</script>
+{% endblock %}
+

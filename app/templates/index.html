@@ -313,22 +313,78 @@
                             </div>
 
                             <!-- Sezione Sfide Recenti -->
+                            <!-- Sezione Sfide Recenti -->
                             <div class="card shadow-lg my-5">
                                 <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
-                                    <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti</h3>
+                                    {# Assumiamo che 'user_city' sia una variabile globale passata dal backend #}
+                                    <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city if user_city else 'Vicino a te' }}</h3> 
                                     <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
                                 </div>
                                 <div class="card-body">
                                     <div id="recent-challenges-list" class="list-group">
-                                        <p class="text-center text-muted">Caricamento sfide...</p>
+                                        {# --- INIZIO CODICE JINJA PER MOSTRARE SFIDE --- #}
+                                        {% if recent_challenges_in_city %} {# Assicurati che questa variabile venga passata dal backend #}
+                                            {% for challenge in recent_challenges_in_city %}
+                                                {# Classe challenge-with-bet per stile CSS #}
+                                                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                                                class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
+                                                    
+                                                    <div>
+                                                        {# --- ICONA SCOMMESSA --- #}
+                                                        {% if challenge.bet_type != 'none' %}
+                                                            <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                                                {% if challenge.bet_type == 'beer' %} 🍺
+                                                                {% elif challenge.bet_type == 'dinner' %} 🍝
+                                                                {% elif challenge.bet_type == 'coffee' %} ☕
+                                                                {% elif challenge.bet_type == 'custom' %} 🎁
+                                                                {% endif %}
+                                                            </span>
+                                                        {% endif %}
+                                                        {# --- Nome Sfida e Percorso --- #}
+                                                        <strong>{{ challenge.name }}</strong>
+                                                        <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
+                                                    </div>
+                                                    
+                                                    {# --- Stato e Data Fine --- #}
+                                                    <div class="text-end">
+                                                        {% if challenge.is_active %}
+                                                            <span class="badge bg-success me-2">Attiva</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary me-2">Finita</span>
+                                                        {% endif %}
+                                                        <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
+                                                    </div>
+                                                    
+                                                    {# --- DETTAGLIO SCOMMESSA (se presente) --- #}
+                                                    {% if challenge.bet_type != 'none' %}
+                                                        <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-currency-exchange"></i> 
+                                                                Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
+                                                            </small>
+                                                        </div>
+                                                    {% endif %}
+                                                </a>
+                                            {% endfor %}
+                                        {% else %}
+                                            {# Messaggio se non ci sono sfide recenti nella città #}
+                                            <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
+                                        {% endif %}
+                                        {# --- FINE CODICE JINJA --- #}
                                     </div>
                                     <hr class="my-4">
                                     <div class="text-center">
-                                         <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
+                                        <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
                                     </div>
                                 </div>
                             </div>
-                            
+                                    <hr class="my-4">
+                                    <div class="text-center">
+                                        <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
+                                    </div>
+                                </div>
+                            </div>
+                                                        
                             <!-- SEZIONE NEWS AGGIORNATA CON POST PERSONALIZZATI -->
                             <div class="news-feed-card shadow-lg">
                                 <div class="card-header">
@@ -492,7 +548,11 @@
                 <div class="row g-2">
                     <div class="col-md-4">
                         <h6 class="text-white">PeakRankStreet</h6>
-                        <p class="small mb-0">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, escursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>
+                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                        <!-- <p class="small mb-0">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, 
+                            scursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra 
+                            piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e 
+                            badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>-->
                     </div>
                     <div class="col-md-4">
                         <h6 class="text-white">Link Utili</h6>

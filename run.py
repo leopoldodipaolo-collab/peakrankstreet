@@ -1,3 +1,4 @@
+# run.py
 import click
 from app import create_app, db
 from app.models import User, Route, Activity, ActivityLike

@@ -3,81 +3,120 @@
 {% block title %}Dettaglio Attività{% endblock %}
 
 {% block content %}
-    <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
-    <a href="{{ url_for('main.all_activities') }}" class="btn btn-secondary mb-3">&larr; Tutte le Attività</a>
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">Dettaglio Attività</h2>
-        </div>
-        <div class="card-body">
-            <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
-            <p class="card-text"><strong>Atleta:</strong> <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="user-link text-primary">{{ user.username }}</a></p>
-            
-            <!-- ⚠️ CORREGGI: Controlla se route esiste -->
-            <p class="card-text">
-                <strong>Percorso:</strong> 
-                {% if route %}
-                    <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
-                    <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="user-link text-success">{{ route.name }}</a>
-                {% else %}
-                    <span class="text-muted">Percorso Libero</span>
-                {% endif %}
-            </p>
-            
-            {% if challenge %}
-                <!-- MODIFICATO: Aggiunto 'main.' al blueprint -->
-                <p class="card-text"><strong>Sfida:</strong> <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="user-link text-info">{{ challenge.name }}</a></p>
-            {% endif %}
-            
-            <p class="card-text"><strong>Data Attività:</strong> {{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-            <p class="card-text"><strong>Distanza:</strong> {{ "%.2f"|format(activity.distance) }} km</p>
-            <p class="card-text"><strong>Tempo:</strong>
-                {% set hours = activity.duration // 3600 %}
-                {% set minutes = (activity.duration % 3600) // 60 %}
-                {% set seconds = activity.duration % 60 %}
-                <strong>{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</strong>
-            </p>
-            <p class="card-text"><strong>Velocità Media:</strong> {{ "%.2f"|format(activity.avg_speed) }} km/h</p>
+<div class="container my-5">
+    <a href="{{ url_for('main.all_activities') }}" class="btn btn-secondary mb-4">&larr; Torna a Tutte le Attività</a>
 
-            <h3 class="mt-4">Tracciato GPS dell'Attività e Percorso di Riferimento</h3>
-            <div id="activityMap" style="height: 500px; width: 100%; border: 1px solid #ddd; border-radius: 5px;"></div>
+    <div class="row">
+        <!-- COLONNA SINISTRA: Dati e Statistiche -->
+        <div class="col-lg-4">
             
-            <!-- LEGENDA COMPLETA -->
-            <div class="map-legend mt-3 p-3 border rounded">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="d-inline-block" style="width: 20px; height: 8px; background-color: #007bff; margin-right: 8px;"></span>
-                            <span>Tracciato Attività</span>
+            <!-- Card Dettagli Principali (NUOVO STILE) -->
+            <div class="card detail-card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="card-title-icon"><i class="bi bi-info-circle-fill me-2"></i>Dettagli Attività</h4>
+                    <hr>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <i class="bi bi-person-circle fs-4 me-3 text-muted"></i>
+                            <div>
+                                <small class="text-muted">Atleta</small>
+                                <p class="mb-0 fw-bold">
+                                    <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="user-link text-primary">{{ user.username }}</a>
+                                </p>
+                            </div>
                         </div>
-                        {% if route %}
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="d-inline-block" style="width: 20px; height: 8px; background-color: #FF7800; margin-right: 8px;"></span>
-                            <span>Percorso di Riferimento</span>
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <i class="bi bi-signpost-2-fill fs-4 me-3 text-muted"></i>
+                            <div>
+                                <small class="text-muted">Percorso</small>
+                                <p class="mb-0 fw-bold">
+                                    {% if route %}
+                                        <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="user-link text-success">{{ route.name }}</a>
+                                    {% else %}
+                                        <span class="text-muted">Percorso Libero</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% if challenge %}
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <i class="bi bi-trophy-fill fs-4 me-3 text-muted"></i>
+                            <div>
+                                <small class="text-muted">Sfida</small>
+                                <p class="mb-0 fw-bold">
+                                    <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="user-link text-info">{{ challenge.name }}</a>
+                                </p>
+                            </div>
                         </div>
                         {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="d-inline-block" style="width: 16px; height: 16px; background-color: green; border-radius: 50%; border: 2px solid white; margin-right: 8px;"></span>
-                            <span>Partenza</span>
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <i class="bi bi-calendar-event-fill fs-4 me-3 text-muted"></i>
+                            <div>
+                                <small class="text-muted">Data</small>
+                                <p class="mb-0 fw-bold">{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                            </div>
                         </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="d-inline-block" style="width: 16px; height: 16px; background-color: red; border-radius: 50%; border: 2px solid white; margin-right: 8px;"></span>
-                            <span>Arrivo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Statistiche (NUOVO STILE) -->
+            <div class="card detail-card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title-icon"><i class="bi bi-bar-chart-line-fill me-2"></i>Statistiche</h4>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-12 stat-highlight mb-3">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                            <div class="stat-value">{{ "%.2f"|format(activity.distance) }}</div>
+                            <div class="stat-label">Distanza (km)</div>
+                        </div>
+                        <div class="col-6">
+                            <i class="bi bi-clock-fill text-primary"></i>
+                            {% set hours = activity.duration // 3600 %}
+                            {% set minutes = (activity.duration % 3600) // 60 %}
+                            {% set seconds = activity.duration % 60 %}
+                            <div class="stat-value-small">{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</div>
+                            <div class="stat-label">Tempo</div>
+                        </div>
+                        <div class="col-6">
+                            <i class="bi bi-speedometer2 text-primary"></i>
+                            <div class="stat-value-small">{{ "%.2f"|format(activity.avg_speed) }}</div>
+                            <div class="stat-label">Vel. Media (km/h)</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- COLONNA DESTRA: Mappa -->
+        <div class="col-lg-8 mt-4 mt-lg-0">
+            <div class="card shadow-sm map-card-custom">
+                <div class="card-header bg-white"> <!-- Header più leggero -->
+                    <h5 class="mb-0 text-dark"><i class="bi bi-map-fill me-2"></i>Tracciato GPS</h5>
+                </div>
+                <div class="map-container" id="activityMap"></div>
+                <div class="card-footer map-legend">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <div class="legend-item"><span class="legend-color-box activity-track"></span>Tracciato Attività</div>
+                        {% if route %}
+                        <div class="legend-item"><span class="legend-color-box route-track"></span>Percorso di Riferimento</div>
+                        {% endif %}
+                        <div class="legend-item"><span class="legend-marker start-marker"></span>Partenza</div>
+                        <div class="legend-item"><span class="legend-marker end-marker"></span>Arrivo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
+    <!-- Il blocco script rimane invariato, non c'è bisogno di copiarlo di nuovo se è lo stesso della risposta precedente -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inizializza la mappa
             var activityMap = L.map('activityMap').setView([41.9028, 12.4964], 6);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -86,158 +125,60 @@
 
             var allLayers = L.featureGroup();
             var hasAnyData = false;
-
-            // CREA ICONE PERSONALIZZATE PER PARTENZA E ARRIVO
+            
             var startIcon = L.divIcon({
-                html: '<div style="background-color: green; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-                className: 'custom-div-icon',
-                iconSize: [20, 20],
+                className: 'map-marker-icon start-marker',
+                iconSize: [20, 20], 
                 iconAnchor: [10, 10]
             });
-
             var endIcon = L.divIcon({
-                html: '<div style="background-color: red; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-                className: 'custom-div-icon',
-                iconSize: [20, 20],
+                className: 'map-marker-icon end-marker',
+                iconSize: [20, 20], 
                 iconAnchor: [10, 10]
             });
 
-            // TRACCIATO ATTIVITÀ (PRINCIPALE)
+            function createPopupContent(title, lat, lon) {
+                return `<div class="map-popup"><strong>${title}</strong><hr><small>Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}</small></div>`;
+            }
+
             var activityGeoJSONData = {{ activity_geojson_data | safe if activity_geojson_data else 'null' }};
             if (activityGeoJSONData) {
-                try {
-                    var activityLayer = L.geoJSON(activityGeoJSONData, {
-                        style: {
-                            color: '#007bff',
-                            weight: 5,
-                            opacity: 0.9
-                        }
-                    });
-                    allLayers.addLayer(activityLayer);
-                    hasAnyData = true;
-                    console.log("✅ Tracciato attività caricato");
+                var activityLayer = L.geoJSON(activityGeoJSONData, {
+                    style: { color: 'var(--bs-primary)', weight: 5, opacity: 0.9 }
+                });
+                allLayers.addLayer(activityLayer);
+                hasAnyData = true;
 
-                    // AGGIUNGI MARKER PARTENZA E ARRIVO
-                    var coordinates = activityGeoJSONData.coordinates;
-                    if (coordinates && coordinates.length > 0) {
-                        // PRIMO PUNTO = PARTENZA (VERDE)
-                        var startPoint = coordinates[0];
-                        var startMarker = L.marker([startPoint[1], startPoint[0]], {icon: startIcon})
-                            .bindPopup(`
-                                <div class="text-center">
-                                    <strong>🏁 PARTENZA</strong><br>
-                                    <small>Lat: ${startPoint[1].toFixed(6)}</small><br>
-                                    <small>Lon: ${startPoint[0].toFixed(6)}</small>
-                                </div>
-                            `)
-                            .addTo(activityMap);
-                        
-                        // ULTIMO PUNTO = ARRIVO (ROSSO)
-                        var endPoint = coordinates[coordinates.length - 1];
-                        var endMarker = L.marker([endPoint[1], endPoint[0]], {icon: endIcon})
-                            .bindPopup(`
-                                <div class="text-center">
-                                    <strong>🎯 ARRIVO</strong><br>
-                                    <small>Lat: ${endPoint[1].toFixed(6)}</small><br>
-                                    <small>Lon: ${endPoint[0].toFixed(6)}</small>
-                                </div>
-                            `)
-                            .addTo(activityMap);
-
-                        console.log("✅ Marker partenza e arrivo aggiunti");
-                    }
-
-                } catch (e) {
-                    console.error("❌ Errore tracciato attività:", e);
+                var coordinates = activityGeoJSONData.coordinates;
+                if (coordinates && coordinates.length > 0) {
+                    var startPoint = coordinates[0];
+                    L.marker([startPoint[1], startPoint[0]], {icon: startIcon})
+                        .bindPopup(createPopupContent('🏁 Partenza', startPoint[1], startPoint[0]))
+                        .addTo(allLayers);
+                    
+                    var endPoint = coordinates[coordinates.length - 1];
+                    L.marker([endPoint[1], endPoint[0]], {icon: endIcon})
+                        .bindPopup(createPopupContent('🎯 Arrivo', endPoint[1], endPoint[0]))
+                        .addTo(allLayers);
                 }
             }
 
-            // PERCORSO DI RIFERIMENTO (OPZIONALE)
             var routeGeoJSONData = {{ route_geojson_data | safe if route_geojson_data else 'null' }};
             if (routeGeoJSONData) {
-                try {
-                    var routeLayer = L.geoJSON(routeGeoJSONData, {
-                        style: {
-                            color: '#FF7800',
-                            weight: 3,
-                            opacity: 0.8,
-                            dashArray: '5, 5'
-                        }
-                    });
-                    allLayers.addLayer(routeLayer);
-                    console.log("✅ Percorso riferimento caricato");
-                } catch (e) {
-                    console.error("❌ Errore percorso riferimento:", e);
-                }
+                var routeLayer = L.geoJSON(routeGeoJSONData, {
+                    style: { color: '#FF7800', weight: 4, opacity: 0.8, dashArray: '5, 10' }
+                });
+                allLayers.addLayer(routeLayer);
+                hasAnyData = true;
             }
 
-            // GESTIONE FINALE MAPPA
             if (hasAnyData) {
                 allLayers.addTo(activityMap);
-                activityMap.fitBounds(allLayers.getBounds().pad(0.1)); // Aggiungi un po' di padding
-                console.log("✅ Mappa centrata sui dati disponibili");
+                activityMap.fitBounds(allLayers.getBounds().pad(0.1));
             } else {
-                console.warn("⚠️ Nessun dato GeoJSON disponibile");
-                
-                // FALLBACK: Prova a creare il tracciato dai punti GPS grezzi
-                {% if activity.gps_track %}
-                    try {
-                        var points = JSON.parse('{{ activity.gps_track | safe }}');
-                        if (points && points.length > 0) {
-                            var latlngs = points.map(function(p) {
-                                return [p.lat, p.lon];
-                            });
-                            var polyline = L.polyline(latlngs, {
-                                color: 'blue', 
-                                weight: 5,
-                                opacity: 0.9
-                            }).addTo(activityMap);
-                            
-                            // Aggiungi marker partenza e arrivo anche per il fallback
-                            var startPoint = latlngs[0];
-                            var endPoint = latlngs[latlngs.length - 1];
-                            
-                            L.marker(startPoint, {icon: startIcon})
-                                .bindPopup('<strong>🏁 PARTENZA</strong>')
-                                .addTo(activityMap);
-                                
-                            L.marker(endPoint, {icon: endIcon})
-                                .bindPopup('<strong>🎯 ARRIVO</strong>')
-                                .addTo(activityMap);
-                            
-                            activityMap.fitBounds(polyline.getBounds().pad(0.1));
-                            console.log("✅ Tracciato creato da punti GPS grezzi");
-                        }
-                    } catch (e) {
-                        console.error("❌ Impossibile creare tracciato:", e);
-                        activityMap.setView([45.4642, 9.1900], 13);
-                        L.popup()
-                            .setLatLng([45.4642, 9.1900])
-                            .setContent("Impossibile visualizzare il tracciato GPS.")
-                            .openOn(activityMap);
-                    }
-                {% else %}
-                    activityMap.setView([45.4642, 9.1900], 13);
-                    L.popup()
-                        .setLatLng([45.4642, 9.1900])
-                        .setContent("Nessun tracciato GPS disponibile per questa attività.")
-                        .openOn(activityMap);
-                {% endif %}
+                activityMap.setView([45.4642, 9.1900], 13);
+                L.popup().setLatLng([45.4642, 9.1900]).setContent("Nessun tracciato GPS per questa attività.").openOn(activityMap);
             }
-
-            // Aggiungi qualche stile CSS per migliorare l'aspetto
-            var style = document.createElement('style');
-            style.textContent = `
-                .map-legend {
-                    background-color: #f8f9fa;
-                    font-size: 14px;
-                }
-                .custom-div-icon {
-                    background: transparent !important;
-                    border: none !important;
-                }
-            `;
-            document.head.appendChild(style);
         });
     </script>
 {% endblock %}

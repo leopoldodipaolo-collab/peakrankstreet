@@ -441,7 +441,7 @@ a:hover {
 .king-queen-highlight .user-link { color: var(--text-color-dark) !important; font-weight: bolder; text-decoration: underline; }
 .king-queen-highlight .trophy-icon { font-size: 1.5em; color: #daa520; }
 .list-group-small .list-group-item { padding: .5rem 1rem; font-size: .875em; }
-.list-group-small .profile-image-small { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; margin-right: 0.5em; border: 1px solid var(--brand-primary);}
+.list-group-small .profile-image-small { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; margin-right: 0.5em; border: 1px solid var(--brand-primary); object-fit: cover; /* <-- AGGIUNGI QUESTO */}
 .leaderboard-entry-current-user { 
     background-color: #e6ffed; /* Light green for current user */
     border-color: var(--brand-primary); 
@@ -1284,4 +1284,331 @@ a:hover {
     .nav-pills {
         font-size: 0.85rem;
     }
+
+/* --- Stili per Evidenziare le Sfide con Scommessa nella challenges_list.html --- */
+
+.challenge-list-item, 
+.list-group-item { /* Applica a tutti gli item della lista */
+    border: 1px solid #e0e0e0; /* Bordo standard */
+    border-left: 5px solid transparent; /* Bordo sinistro trasparente di default */
+    transition: all 0.3s ease;
+}
+
+/* Stile specifico per le sfide con scommessa */
+.challenge-list-item.challenge-with-bet,
+.list-group-item.challenge-with-bet-list {
+    border-left: 5px solid #ffc107; /* Bordo sinistro giallo */
+    background-color: rgba(255, 193, 7, 0.05); /* Leggero sfondo giallo chiaro */
+}
+
+.challenge-list-item:hover,
+.list-group-item:hover {
+    background-color: #f8f9fa; /* Sfondo hover */
+    border-color: #d0d0d0;
+}
+
+/* Stile per i dettagli della scommessa in preview (nelle liste) */
+.challenge-bet-details-preview-list {
+    margin-top: 10px !important; /* Più spazio sopra */
+    padding-top: 8px !important;
+    border-top: 1px solid #e0e0e0; /* Separatore sottile */
+    color: #6c757d; /* Colore testo secondario */
+}
+.challenge-bet-details-preview-list strong {
+    color: #333; /* Testo più scuro per il valore della scommessa */
+}
+
+/* Assicurati che anche le icone bet-icon abbiano lo stile corretto qui */
+.bet-icon {
+    font-size: 1.1em;
+    vertical-align: middle;
+    margin-right: 5px; 
+}
+
+/* Se vuoi che le sfide con scommessa siano ancora più visibili nel filtro "Tutte le Sfide" */
+.list-group-item.challenge-with-bet-list {
+    border-color: #ffc107; /* Evidenzia il bordo */
+}
+
+/* static/css/styles.css */
+
+/* ... (tutti gli stili precedenti) ... */
+
+/* --- 10. STILI SPECIFICI PER FORM --- */
+
+/* Stile per la selezione grafica della scommessa */
+.bet-selection-options .bet-btn {
+    width: 120px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+    border-width: 2px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bet-selection-options .bet-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--box-shadow-md);
+}
+
+/* Stile per il bottone selezionato */
+.bet-selection-options .btn-check:checked + .btn-outline-secondary {
+    border-color: var(--bs-secondary);
+    background-color: rgba(var(--bs-secondary-rgb), 0.1);
+    color: var(--bs-secondary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-secondary-rgb), 0.5);
+}
+
+.bet-selection-options .btn-check:checked + .btn-outline-warning {
+    border-color: var(--bs-warning);
+    background-color: rgba(var(--bs-warning-rgb), 0.1);
+    color: #b98700;
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-warning-rgb), 0.5);
+}
+
+.bet-selection-options .btn-check:checked + .btn-outline-danger {
+    border-color: var(--bs-danger);
+    background-color: rgba(var(--bs-danger-rgb), 0.1);
+    color: var(--bs-danger);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.5);
+}
+
+.bet-selection-options .btn-check:checked + .btn-outline-info {
+    border-color: var(--bs-info);
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    color: #017c91;
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-info-rgb), 0.5);
+}
+
+.bet-selection-options .btn-check:checked + .btn-outline-primary {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.5);
+}
+
+/* Migliora la lista amici nel form */
+.friends-list .form-check-label {
+    cursor: pointer;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-base);
+    transition: background-color 0.2s ease;
+}
+
+.friends-list .form-check-label:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* static/css/styles.css */
+
+/* ... (tutti gli stili precedenti) ... */
+
+/* --- 11. STILI PER PAGINA ESPLORA ATLETI --- */
+
+
+.profile-image-large {
+    width: 100px;
+    height: 100px;
+    object-fit: cover; /* <-- AGGIUNGI QUESTO */
+    border: 4px solid var(--brand-light);
+    box-shadow: var(--box-shadow-md);
+    border-radius: 50%; /* Aggiungiamo il border-radius qui per coerenza */
+}
+
+.user-card {
+    border: none;
+    border-radius: var(--border-radius-base);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+
+.user-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--box-shadow-lg) !important;
+}
+
+.user-card .card-title {
+    font-weight: 600;
+}
+
+.user-card-stats {
+    padding: 0.5rem 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+/* Stili per il pulsante "Segui Già" con effetto hover */
+.btn-follow-toggle {
+    transition: all 0.3s ease;
+}
+
+/* Stili per la barra di ricerca arrotondata */
+.rounded-pill-left {
+    border-top-left-radius: 50rem !important;
+    border-bottom-left-radius: 50rem !important;
+}
+
+.rounded-pill-right {
+    border-top-right-radius: 50rem !important;
+    border-bottom-right-radius: 50rem !important;
+}
+
+.input-group-lg .form-control, .input-group-lg .input-group-text, .input-group-lg .btn {
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+}
+
+/* static/css/styles.css */
+
+/* ... (tutti gli stili precedenti) ... */
+
+/* --- 13. PAGINA DETTAGLIO ATTIVITÀ (AGGIORNATO) --- */
+
+.detail-card {
+    border-top: 3px solid var(--brand-primary);
+}
+.detail-card .card-title-icon {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color-dark);
+}
+.detail-card .list-group-item {
+    border: none; /* Rimuove i bordi interni per un look più pulito */
+}
+.detail-card hr {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.stat-highlight {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.stat-highlight .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.stat-highlight .stat-label {
+    font-size: 1rem;
+    color: var(--text-color-muted);
+}
+.stat-value-small {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-color-muted);
+}
+.stat-highlight i, .col-6 i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* --- Stili Mappa e Legenda --- */
+.map-container#activityMap {
+    height: 500px;
+    width: 100%;
+    border-radius: 0;
+}
+.map-legend {
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+}
+.legend-color-box {
+    width: 30px;
+    height: 5px;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+.legend-color-box.activity-track { background-color: var(--bs-primary); }
+.legend-color-box.route-track { background-color: #FF7800; border: 1px dashed #FF7800; }
+
+.legend-marker, .map-marker-icon {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    margin: 0;
+    padding: 0;
+}
+.legend-marker {
+    margin-right: 8px;
+}
+.map-marker-icon.start-marker, .legend-marker.start-marker { background-color: green; }
+.map-marker-icon.end-marker, .legend-marker.end-marker { background-color: red; }
+
+/* Stili Popup della mappa */
+.map-popup .leaflet-popup-content-wrapper { border-radius: var(--border-radius-base); box-shadow: var(--box-shadow-md); }
+.map-popup .leaflet-popup-content { font-family: var(--font-family-base); text-align: center; }
+.map-popup hr { margin: 0.5rem 0; }
+
+
+/* static/css/styles.css */
+
+/* ... (tutti gli stili precedenti) ... */
+
+/* --- 14. PAGINA FEED ATTIVITÀ --- */
+
+.profile-image-feed {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.feed-card .card-header {
+    border-bottom: 1px solid #eee;
+}
+
+.feed-activity-title {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.feed-actions {
+    background-color: #f8f9fa;
+}
+
+.btn-action {
+    color: var(--text-color-muted);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    color: var(--text-color-dark);
+    background-color: rgba(0,0,0,0.05);
+}
+
+.like-activity-button.liked {
+    color: var(--bs-danger);
+    font-weight: bold;
+}
+
+.like-activity-button.liked i {
+    transform: scale(1.1);
+}
+
+/* Animazione per il pulsante "Like" */
+@keyframes like-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}
+
+.like-activity-button.liked-animation i {
+    animation: like-animation 0.4s ease-in-out;
 }

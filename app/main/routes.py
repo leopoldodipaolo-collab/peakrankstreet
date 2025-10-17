@@ -17,6 +17,7 @@ from math import radians, sin, cos, sqrt, atan2
 from werkzeug.utils import secure_filename # Utile per gestire i nomi dei file
 from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione manuale
 import traceback  # ⚠️ AGGIUNGI QUESTO IMPORT
+from app import csrf  # <-- IMPORT CORRETTO
 
 main = Blueprint('main', __name__)
 
@@ -80,8 +81,11 @@ def allowed_file(filename):
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
+    # --- Recupero Dati Esistenti ---
     recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
-    active_challenges = Challenge.query.filter(Challenge.end_date >= datetime.utcnow(), Challenge.is_active == True).order_by(Challenge.start_date.asc()).limit(3).all()
+    
+    # Rimuovi o commenta questa query se 'recent_challenges_in_city' la sostituirà nella visualizzazione home
+    # active_challenges = Challenge.query.filter(Challenge.end_date >= datetime.utcnow(), Challenge.is_active == True).order_by(Challenge.start_date.asc()).limit(3).all()
     
     top_users_data = (
         db.session.query(User, func.sum(Activity.distance).label('total_distance'))
@@ -89,16 +93,34 @@ def index():
     )
     top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
     
-    # Recupera gli ultimi 5 post dalla community
     community_posts = Post.query.join(User).order_by(Post.created_at.desc()).limit(5).all() 
     
+    # --- NUOVA QUERY PER SFIDE RECENTI CON SCOMMESSA E PER CITTÀ ---
+    recent_challenges_in_city = []
+    if user_city:
+        # Query per sfide attive, filtrate per città (usando Route.classic_city) e che abbiano una scommessa
+        challenges_query = db.session.query(Challenge).join(Route).filter(
+            Route.classic_city == user_city,       # Filtra per la città del percorso classico
+            Challenge.end_date >= datetime.utcnow(), # Solo sfide attive
+            Challenge.is_active == True,
+            Challenge.bet_type != 'none'           # Solo sfide con una scommessa
+        ).order_by(Challenge.start_date.asc()).limit(3).all()
+        
+        recent_challenges_in_city = challenges_query
+        
+    # --- PASSAGGIO DATI AL TEMPLATE ---
+    # Assicurati di passare tutte le variabili necessarie.
+    # Ho incluso 'now' che potrebbe essere utile per confronti di date nel template.
     return render_template("index.html", 
                            user_city=user_city, 
                            is_homepage=True, 
                            recent_activities=recent_activities,
-                           active_challenges=active_challenges, 
+                           # active_challenges=active_challenges, # Se usi solo le recenti per città, rimuovi questa
+                           recent_challenges_in_city=recent_challenges_in_city, # !!! QUESTA È LA VARIABILE CRUCIALE !!!
                            top_users=top_users,
-                           community_posts=community_posts) # Passa la nuova lista al template
+                           community_posts=community_posts,
+                           now=datetime.utcnow() # Utile per confronti di date nel template
+                           )
 
 @main.route('/feed')
 @login_required
@@ -1105,6 +1127,9 @@ def track_activity():
 @login_required
 def save_live_activity():
     """Salva un'attività tracciata live"""
+    print("User:", current_user)
+    data = request.get_json()
+    print("Received data:", data)
     try:
         data = request.get_json()
         
@@ -1267,10 +1292,22 @@ def mark_bet_paid(bet_id):
     bet.status = 'paid'
     bet.paid_at = datetime.utcnow()
     db.session.commit()
-    
+
+    # --- CREA NOTIFICA PER IL VINCITORE ---
+    winner_notification = Notification(
+    recipient_id=bet.winner_id,
+    actor_id=current_user.id, # L'attore è il perdente che ha pagato
+    action='bet_paid',       # Nuova azione per indicare pagamento
+    object_id=bet.id,        # L'oggetto è la scommessa
+    object_type='bet'        # Tipo di oggetto
+)
+    db.session.add(winner_notification)
+    db.session.commit() # Commit finale per la notifica
+    # --- FINE CREAZIONE NOTIFICA ---
+
     flash(f'✅ Scommessa segnata come pagata! {bet.bet_value} a {bet.winner.username}', 'success')
     return redirect(url_for('main.bet_details', bet_id=bet.id))
-
+    
 
 @main.route("/notifications/clear_all", methods=["POST"])
 @login_required
@@ -2163,3 +2200,27 @@ def save_gpx_item():
         print(f"ERRORE CRITICO in save_gpx_item: {e}")
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({"status": "error", "message": f"Errore interno del server: {str(e)}"}), 500
+        
+
+@main.route('/api/activity/<int:activity_id>/like', methods=['POST'])
+@login_required
+@csrf.exempt
+def like_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+
+    like = ActivityLike.query.filter_by(user_id=current_user.id, activity_id=activity_id).first()
+    if like:
+        db.session.delete(like)
+        action = 'unliked'
+    else:
+        new_like = ActivityLike(user_id=current_user.id, activity_id=activity_id)
+        db.session.add(new_like)
+        action = 'liked'
+
+    db.session.commit()
+
+    return jsonify({
+        'status': 'success',
+        'action': action,
+        'likes_count': activity.likes.count()
+    })
