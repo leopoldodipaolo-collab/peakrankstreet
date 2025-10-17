@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename # Utile per gestire i nomi dei file
 from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione manuale
 import traceback  # ⚠️ AGGIUNGI QUESTO IMPORT
 from app import csrf  # <-- IMPORT CORRETTO
+import json
 
 main = Blueprint('main', __name__)
 
@@ -674,40 +675,100 @@ def record_activity():
                            pre_selected_challenge_id=pre_selected_challenge_id,
                            is_homepage=False)
 
+
+
+def parse_gps_to_geojson(gps_data_string):
+    """
+    Analizza una stringa di dati GPS da vari formati e la converte
+    in un dizionario GeoJSON "LineString" valido.
+    
+    Gestisce:
+    - GeoJSON Feature
+    - GeoJSON LineString
+    - Lista di Dizionari [{'lat': ..., 'lon': ...}]
+    - Lista di Dizionari [{'lat': ..., 'lng': ...}]
+    - Lista di Liste [[lon, lat]]
+    - Lista Vuota []
+    """
+    if not gps_data_string:
+        return None
+
+    try:
+        data = json.loads(gps_data_string)
+
+        # CASO 1: Oggetto GeoJSON "Feature"
+        if isinstance(data, dict) and data.get('type') == 'Feature':
+            print("DEBUG PARSER :: Detected GPS format: GeoJSON Feature.")
+            geometry = data.get('geometry')
+            if isinstance(geometry, dict) and geometry.get('type') == 'LineString':
+                return geometry
+        
+        # CASO 2: Oggetto GeoJSON "LineString"
+        if isinstance(data, dict) and data.get('type') == 'LineString':
+            print("DEBUG PARSER :: Detected GPS format: Pre-formatted GeoJSON LineString.")
+            return data
+
+        # CASO 3: I dati sono una lista
+        if isinstance(data, list):
+            if not data:
+                print("DEBUG PARSER :: GPS track is an empty list.")
+                return None
+
+            first_point = data[0]
+
+            # Sottocaso 3a: Lista di Dizionari
+            if isinstance(first_point, dict) and 'lat' in first_point:
+                # --- SOLUZIONE: Controlla se esiste 'lon' o 'lng' ---
+                lon_key = None
+                if 'lon' in first_point:
+                    lon_key = 'lon'
+                elif 'lng' in first_point:
+                    lon_key = 'lng'
+                # ----------------------------------------------------
+                
+                if lon_key:
+                    print(f"DEBUG PARSER :: Detected format: List of Dictionaries (using key: '{lon_key}').")
+                    coordinates = [[point[lon_key], point['lat']] for point in data]
+                    return {"type": "LineString", "coordinates": coordinates}
+            
+            # Sottocaso 3b: Lista di Liste
+            if isinstance(first_point, list) and len(first_point) >= 2:
+                print("DEBUG PARSER :: Detected GPS format: List of Lists.")
+                return {"type": "LineString", "coordinates": data}
+
+        # Se nessun formato valido è stato riconosciuto
+        print(f"Warning: Unknown or invalid GPS data format for data: {str(data)[:200]}...") # Tronca per non intasare i log
+        return None
+
+    except Exception as e:
+        print(f"Error parsing GPS data string: {e}")
+        return None
+    
 @main.route("/activity/<int:activity_id>")
 def activity_detail(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     
-    # DEBUG
-    print(f"=== DEBUG activity_detail ===")
-    print(f"Activity ID: {activity.id}")
-    print(f"Has GPS track: {bool(activity.gps_track)}")
-    print(f"Has route: {bool(activity.route_activity)}")
+    print(f"\n=== DEBUG activity_detail (Activity ID: {activity.id}) ===")
     
+    # --- GESTIONE GEOJSON DEL PERCORSO ---
+    # Anche qui potremmo usare una funzione simile se il formato potesse variare
     route_geojson_data = None
     if activity.route_activity and activity.route_activity.coordinates:
         try:
             route_geojson_data = json.loads(activity.route_activity.coordinates)
-            print(f"Route GeoJSON type: {type(route_geojson_data)}")
-            print(f"Route GeoJSON keys: {route_geojson_data.keys() if isinstance(route_geojson_data, dict) else 'Not a dict'}")
         except Exception as e:
             print(f"Error parsing route coordinates: {e}")
-            route_geojson_data = None
     
-    activity_geojson_data = None
-    if activity.gps_track:
-        try:
-            points = json.loads(activity.gps_track)
-            activity_geojson_data = {
-                "type": "LineString",
-                "coordinates": [[point['lon'], point['lat']] for point in points]
-            }
-            print(f"Activity GeoJSON coordinates count: {len(activity_geojson_data['coordinates'])}")
-        except Exception as e:
-            print(f"Error parsing activity GPS track: {e}")
-            activity_geojson_data = None
+    # --- GESTIONE GEOJSON DELL'ATTIVITÀ CON LA NUOVA FUNZIONE ---
+    print("Parsing activity GPS track...")
+    activity_geojson_data = parse_gps_to_geojson(activity.gps_track)
     
-    print("=======================")
+    if activity_geojson_data:
+        print(f"Successfully parsed GPS track. Coordinates count: {len(activity_geojson_data['coordinates'])}")
+    else:
+        print("Failed to parse GPS track.")
+        
+    print("=======================\n")
     
     return render_template("activity_detail.html",
                            activity=activity, 

@@ -1284,116 +1284,34 @@ a:hover {
     .nav-pills {
         font-size: 0.85rem;
     }
+/* All'interno di @media (max-width: 991.98px) */
 
-/* --- Stili per Evidenziare le Sfide con Scommessa nella challenges_list.html --- */
+/* --------------------------------------------------- */
+/* FIX PER NAVBAR COLLASSATA SU MOBILE
+/* --------------------------------------------------- */
 
-.challenge-list-item, 
-.list-group-item { /* Applica a tutti gli item della lista */
-    border: 1px solid #e0e0e0; /* Bordo standard */
-    border-left: 5px solid transparent; /* Bordo sinistro trasparente di default */
-    transition: all 0.3s ease;
+.navbar-collapse .navbar-nav {
+    /* 1. Impone la direzione verticale per gli elementi della lista */
+    flex-direction: column;
+    align-items: flex-start; /* Allinea gli elementi a sinistra */
 }
 
-/* Stile specifico per le sfide con scommessa */
-.challenge-list-item.challenge-with-bet,
-.list-group-item.challenge-with-bet-list {
-    border-left: 5px solid #ffc107; /* Bordo sinistro giallo */
-    background-color: rgba(255, 193, 7, 0.05); /* Leggero sfondo giallo chiaro */
+.navbar-collapse .nav-item {
+    /* 2. Assicura che ogni elemento della lista occupi tutta la larghezza */
+    width: 100%;
 }
 
-.challenge-list-item:hover,
-.list-group-item:hover {
-    background-color: #f8f9fa; /* Sfondo hover */
-    border-color: #d0d0d0;
+.navbar-collapse .nav-link {
+    /* 3. Aumenta il padding per una migliore leggibilità e tocca e fuga */
+    padding: 0.8rem 1rem;
+    width: 100%; /* Fa sì che l'intera area sia cliccabile */
 }
 
-/* Stile per i dettagli della scommessa in preview (nelle liste) */
-.challenge-bet-details-preview-list {
-    margin-top: 10px !important; /* Più spazio sopra */
-    padding-top: 8px !important;
-    border-top: 1px solid #e0e0e0; /* Separatore sottile */
-    color: #6c757d; /* Colore testo secondario */
+/* 4. Gestisce i pulsanti (es. Login/Register) nel menu collassato */
+.navbar-collapse .navbar-nav .btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: center;
 }
-.challenge-bet-details-preview-list strong {
-    color: #333; /* Testo più scuro per il valore della scommessa */
-}
-
-/* Assicurati che anche le icone bet-icon abbiano lo stile corretto qui */
-.bet-icon {
-    font-size: 1.1em;
-    vertical-align: middle;
-    margin-right: 5px; 
-}
-
-/* Se vuoi che le sfide con scommessa siano ancora più visibili nel filtro "Tutte le Sfide" */
-.list-group-item.challenge-with-bet-list {
-    border-color: #ffc107; /* Evidenzia il bordo */
-}
-
-
-
-/* --- Stili per garantire la visibilità delle icone Bootstrap --- */
-.bi {
-    display: inline-block; /* Essenziale per la visibilità */
-    font-style: normal;
-    vertical-align: -.125em; /* Allineamento verticale */
-    fill: currentColor; /* Permette di ereditare il colore dal genitore */
-    
-    /* Aggiungi uno spazio se necessario, ma fai attenzione a non nasconderla */
-    /* margin-right: .25rem; */ 
-}
-
-/* Stile specifico per le tue icone di scommessa */
-.bet-icon {
-    font-size: 1.5em; /* Già presente, ma bene ribadirlo */
-    margin-right: 8px;
-    vertical-align: -0.1em; /* Potrebbe aiutare ulteriormente l'allineamento */
-    
-    /* Assicurati che non ci sia un 'display: none;' qui per errore */
-    display: inline-block !important; /* Forza la visibilità */
-    opacity: 1 !important; /* Assicura visibilità */
-}
-
-/* --- Stili per i pulsanti di selezione scommessa --- */
-.bet-btn {
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-    border-width: 2px !important;
-    display: flex; /* Usa flex per allineare icona e testo */
-    flex-direction: column; /* Icona sopra, testo sotto */
-    align-items: center;
-    justify-content: center;
-    min-width: 120px;
-    height: 110px;
-    border-radius: 10px !important;
-    position: relative; /* Necessario se aggiungi pseudo-elementi */
-}
-
-/* Stile quando un pulsante è selezionato (radio button checked) */
-.btn-check:checked + .bet-btn {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* --- Ripristino/Applicazione dei colori corretti per i pulsanti --- */
-/* Questo assicura che le classi come btn-outline-success prendano il sopravvento */
-/* Non rimuovere classi indiscriminatamente! */
-
-/* Esempio: Assicura che il pulsante selezionato sia visibile */
-.bet-btn.active { /* O la classe che Bootstrap aggiunge allo stato checked */
-    /* Nessun display: none; o visibility: hidden; qui! */
-}
-
-/* Se il problema è che le icone scompaiono QUANDO NON sono selezionate: */
-/* Evita regole come: */
-/* .bet-btn:not(.active) .bi { display: none; } */
-/* oppure */
-/* .bet-btn:not(.active) i { visibility: hidden; } */
-
-/* Assicurati che le icone siano ereditate correttamente e non vengano sovrascritte */
-.bet-btn .bi {
-    color: inherit; /* Eredita il colore dal label (es. blu, verde, giallo) */
-    opacity: 1; /* Assicura che siano visibili */
-}
-
-/* Controlla anche il tuo file JS per assicurarti che non stia aggiungendo classi nascoste */
-/* Se il tuo JS aggiunge classi tipo 'd-none' o imposta 'display: none' agli elementi 'i' o 'span.bet-icon', quello sarà il problema. */
