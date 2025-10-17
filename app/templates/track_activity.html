@@ -2,381 +2,287 @@
 
 {% block content %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
 
-            <!-- Header -->
-            <div class="text-center mb-4">
-                <h1>🏃 Inizia la tua Attività</h1>
-                <p class="lead">Tracciamento GPS in tempo reale - Nessun GPX necessario!</p>
-            </div>
+      <!-- HEADER -->
+      <div class="text-center mb-4">
+        <h1 class="fw-bold text-success">🏃 Avvia la tua Attività</h1>
+        <p class="text-muted fs-5">Tracciamento GPS live – nessun file GPX richiesto</p>
+      </div>
 
-            <!-- Selezione Percorso -->
-            <div class="card mb-4">
-                <div class="card-header"><h5>📌 Seleziona Percorso (Opzionale)</h5></div>
-                <div class="card-body">
-                    <select class="form-select" id="routeSelect">
-                        <option value="">🎯 Modalità Libera</option>
-                        {% for route in routes %}
-                        <option value="{{ route.id }}" data-distance="{{ route.distance or 0 }}">
-                            📍 {{ route.name }} {% if route.distance %}({{ "%.1f"|format(route.distance) }} km){% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="text-muted">
-                        <strong>Libera:</strong> tracciamento libero<br>
-                        <strong>Percorso:</strong> confronta performance
-                    </small>
-                </div>
-            </div>
-
-            <!-- Pannello Tracking -->
-            <div class="card">
-                <div class="card-header bg-success text-white"><h5>🎯 Tracciamento Live</h5></div>
-                <div class="card-body text-center">
-
-                    <button id="btnStart" class="btn btn-success btn-lg mb-3">▶️ INIZIA TRACCIAMENTO</button>
-
-                    <div id="autoStartMessage" class="alert alert-info" style="display:none;">
-                        <div class="spinner-border spinner-border-sm me-2"></div>Avvio del tracciamento GPS...
-                    </div>
-
-                    <div class="row mb-4" id="liveStats" style="display:none;">
-                        <div class="col-3 stat-box"><div class="stat-value" id="timer">00:00:00</div><div class="stat-label">TEMPO</div></div>
-                        <div class="col-3 stat-box"><div class="stat-value" id="distance">0.00</div><div class="stat-label">KM</div></div>
-                        <div class="col-3 stat-box"><div class="stat-value" id="pace">0:00</div><div class="stat-label">MIN/KM</div></div>
-                        <div class="col-3 stat-box"><div class="stat-value" id="speed">0.0</div><div class="stat-label">KM/H</div></div>
-                    </div>
-
-                    <div class="progress mb-2" id="routeProgress" style="display:none;height:20px;">
-                        <div class="progress-bar bg-success" style="width:0%">0%</div>
-                    </div>
-
-                    <div id="miniMap" style="height:200px;display:none;" class="mb-3"></div>
-
-                    <div class="tracking-controls">
-                        <button id="btnStop" class="btn btn-danger btn-lg" onclick="stopTracking()" style="display:none;">⏹️ FERMA E SALVA</button>
-                        <button id="btnPause" class="btn btn-warning btn-lg" onclick="pauseTracking()" style="display:none;">⏸️ PAUSA</button>
-                        <span id="gpsIndicator"></span>
-                    </div>
-
-                    <div id="statusMessage" class="mt-3"></div>
-                </div>
-            </div>
-
-            <!-- Modal istruzioni GPS -->
-            <div class="modal fade" id="gpsInstructionsModal" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header bg-warning">
-                            <h5 class="modal-title">⚠️ GPS Bloccato</h5>
-                        </div>
-                        <div class="modal-body">
-                            <p>Per utilizzare il tracciamento, devi abilitare il GPS nel tuo browser.</p>
-                            <h6>Chrome:</h6>
-                            <ol>
-                                <li>Clicca sull’icona 🔒 a sinistra della barra URL</li>
-                                <li>Trova “Posizione” e seleziona “Consenti”</li>
-                                <li>Ricarica la pagina</li>
-                            </ol>
-                            <h6>Firefox:</h6>
-                            <ol>
-                                <li>Clicca sull’icona a sinistra della barra URL</li>
-                                <li>Seleziona “Consenti condivisione posizione”</li>
-                                <li>Ricarica la pagina</li>
-                            </ol>
-                            <h6>Safari:</h6>
-                            <ol>
-                                <li>Vai su Preferenze → Sito Web → Posizione</li>
-                                <li>Imposta “Consenti” per questo sito</li>
-                                <li>Ricarica la pagina</li>
-                            </ol>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Chiudi</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+      <!-- SELEZIONE PERCORSO -->
+      <div class="card shadow-sm mb-4 border-0 rounded-4">
+        <div class="card-header bg-light border-0">
+          <h5 class="mb-0">📌 Seleziona Percorso (Opzionale)</h5>
         </div>
+        <div class="card-body">
+          <select class="form-select mb-2" id="routeSelect">
+            <option value="">🎯 Modalità Libera</option>
+            {% for route in routes %}
+              <option value="{{ route.id }}" data-distance="{{ route.distance or 0 }}">
+                📍 {{ route.name }} {% if route.distance %}({{ "%.1f"|format(route.distance) }} km){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="small text-muted">
+            <b>Libera:</b> tracciamento libero<br>
+            <b>Percorso:</b> confronta performance
+          </div>
+        </div>
+      </div>
+
+      <!-- TRACKING PANEL -->
+      <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-success text-white rounded-top-4">
+          <h5 class="mb-0">🎯 Tracciamento Live</h5>
+        </div>
+        <div class="card-body text-center">
+
+          <button id="btnStart" class="btn btn-success btn-lg px-5 mb-3 fw-bold shadow-sm">
+            ▶️ INIZIA TRACCIAMENTO
+          </button>
+
+          <div id="autoStartMessage" class="alert alert-info d-none">
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Avvio del tracciamento GPS...
+          </div>
+
+          <div id="liveStats" class="row g-2 justify-content-center mb-3 d-none">
+            <div class="col-6 col-md-3">
+              <div class="stat-box">
+                <div id="timer" class="stat-value">00:00:00</div>
+                <div class="stat-label">TEMPO</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-box">
+                <div id="distance" class="stat-value">0.00</div>
+                <div class="stat-label">KM</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-box">
+                <div id="pace" class="stat-value">0:00</div>
+                <div class="stat-label">MIN/KM</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="stat-box">
+                <div id="speed" class="stat-value">0.0</div>
+                <div class="stat-label">KM/H</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="routeProgress" class="progress mb-3 d-none" style="height:22px;">
+            <div class="progress-bar bg-success fw-bold" style="width:0%">0%</div>
+          </div>
+
+          <div id="miniMap" class="rounded-3 shadow-sm mb-3" style="height:300px; display:none;"></div>
+
+          <div class="tracking-controls">
+            <button id="btnPause" class="btn btn-warning btn-lg fw-bold me-2 shadow-sm" onclick="pauseTracking()" style="display:none;">⏸️ PAUSA</button>
+            <button id="btnStop" class="btn btn-danger btn-lg fw-bold shadow-sm" onclick="stopTracking()" style="display:none;">⏹️ FERMA E SALVA</button>
+            <span id="gpsIndicator"></span>
+          </div>
+
+          <div id="statusMessage" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- MODAL ISTRUZIONI GPS -->
+      <div class="modal fade" id="gpsInstructionsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content rounded-4 shadow">
+            <div class="modal-header bg-warning rounded-top-4">
+              <h5 class="modal-title">⚠️ GPS Disattivato</h5>
+            </div>
+            <div class="modal-body">
+              <p>Per utilizzare il tracciamento, abilita la posizione nel browser.</p>
+              <h6>Chrome:</h6>
+              <ol><li>Clicca 🔒 vicino alla barra URL</li><li>Seleziona “Consenti” in Posizione</li><li>Ricarica la pagina</li></ol>
+              <h6>Firefox:</h6>
+              <ol><li>Clicca l’icona a sinistra della barra URL</li><li>Seleziona “Consenti condivisione posizione”</li></ol>
+              <h6>Safari:</h6>
+              <ol><li>Preferenze → Siti Web → Posizione</li><li>Imposta “Consenti” per questo sito</li></ol>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" data-bs-dismiss="modal">Chiudi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
+  </div>
 </div>
 
 <style>
-.stat-box{padding:10px;background:#f8f9fa;border-radius:8px;border:2px solid #e9ecef;}
-.stat-value{font-size:1.5em;font-weight:bold;color:#28a745;}
-.stat-label{font-size:.8em;color:#6c757d;text-transform:uppercase;}
-.tracking-controls .btn{margin:5px;min-width:180px;}
-#gpsIndicator{display:inline-block;width:12px;height:12px;border-radius:50%;background:red;margin-left:5px;}
-.gps-active{background:green;}
+.stat-box { background:#f8f9fa; border-radius:10px; padding:10px; border:1px solid #e0e0e0; }
+.stat-value { font-size:1.4em; font-weight:700; color:#198754; }
+.stat-label { font-size:0.8em; color:#6c757d; text-transform:uppercase; }
+#gpsIndicator { display:inline-block; width:14px; height:14px; border-radius:50%; background:red; margin-left:6px; vertical-align:middle; }
+.gps-active { background:green !important; }
+.tracking-controls .btn:hover { transform:scale(1.03); transition:0.15s; }
+@media(max-width:768px){ #miniMap{height:250px;} }
 </style>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Tracker JS completo (versione sicura)
 class ActivityTracker {
-    constructor() {
-        this.isTracking = false;
-        this.isPaused = false;
-        this.startTime = null;
-        this.positions = [];
-        this.watchId = null;
-        this.distance = 0;
-        this.miniMap = null;
-        this.polyline = null;
-        this.timerInterval = null;
+  constructor(){
+    this.positions=[]; this.isTracking=false; this.isPaused=false;
+    this.startTime=null; this.distance=0; this.watchId=null;
+    this.timerInterval=null; this.polyline=null; this.miniMap=null; this.marker=null;
+  }
+
+  initMiniMap(){
+    if(this.miniMap) return;
+    this.miniMap=L.map('miniMap',{zoomControl:true}).setView([42.35,13.395],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(this.miniMap);
+    this.polyline=L.polyline([], {color:'red', weight:5}).addTo(this.miniMap);
+    this.marker=L.marker([42.35,13.395]).addTo(this.miniMap);
+    this.miniMap.addControl(L.control.scale());
+  }
+
+  async startTracking(){
+    document.getElementById('autoStartMessage').classList.remove('d-none');
+    this.initMiniMap();
+    this.positions=[]; this.distance=0; this.startTime=new Date();
+    this.isTracking=true; this.isPaused=false;
+    this.timerInterval=setInterval(()=>this.updateTimer(),1000);
+
+    this.watchId=navigator.geolocation.watchPosition(
+      pos=>this.handlePosition(pos),
+      err=>this.handleError(err),
+      {enableHighAccuracy:true,timeout:20000,maximumAge:1000}
+    );
+
+    document.getElementById('btnStart').style.display='none';
+    document.getElementById('btnStop').style.display='inline-block';
+    document.getElementById('btnPause').style.display='inline-block';
+    document.getElementById('liveStats').classList.remove('d-none');
+    document.getElementById('miniMap').style.display='block';
+    this.updateGPSIndicator(true);
+    document.getElementById('autoStartMessage').classList.add('d-none');
+  }
+
+  handlePosition(pos){
+    const p={lat:pos.coords.latitude,lng:pos.coords.longitude,timestamp:new Date()};
+    if(this.positions.length){
+      const last=this.positions[this.positions.length-1];
+      const d=this.calcDist(last,p);
+      if(d<0.02) return;
+      this.distance+=d;
     }
+    this.positions.push(p);
+    this.polyline.addLatLng(p);
+    this.marker.setLatLng(p);
+    this.miniMap.fitBounds(this.polyline.getBounds(),{maxZoom:17});
+    this.updateDisplay();
+  }
 
-    async startTracking() {
-        document.getElementById('autoStartMessage').style.display='block';
-        this.initMiniMap(); // non ricrea la mappa se già inizializzata
-        this.isTracking=true;
-        this.isPaused=false;
-        this.startTime=new Date();
-        this.positions=[];
-        this.distance=0;
+  calcDist(a,b){
+    const R=6371; const dLat=(b.lat-a.lat)*Math.PI/180; const dLon=(b.lng-a.lng)*Math.PI/180;
+    const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+  }
 
-        this.updateTimer();
-        this.timerInterval=setInterval(()=>this.updateTimer(),1000);
-
-        this.watchId=navigator.geolocation.watchPosition(
-            pos=>this.handlePosition(pos),
-            err=>this.handleError(err),
-            {enableHighAccuracy:true,timeout:30000,maximumAge:2000}
-        );
-
-        document.getElementById('btnStart').style.display='none';
-        document.getElementById('btnStop').style.display='inline-block';
-        document.getElementById('btnPause').style.display='inline-block';
-        document.getElementById('liveStats').style.display='flex';
-        document.getElementById('miniMap').style.display='block';
-        this.updateGPSIndicator(true);
-        document.getElementById('autoStartMessage').style.display='none';
-        this.showStatus("✅ Tracciamento attivo!", "success");
+  updateDisplay(){
+    const dist=this.distance.toFixed(2);
+    document.getElementById('distance').textContent=dist;
+    this.updateTimer();
+    const elapsedH=(new Date()-this.startTime)/3600000;
+    if(elapsedH>0 && this.distance>0){
+      const pace=(elapsedH*60)/this.distance;
+      const m=Math.floor(pace), s=Math.floor((pace-m)*60);
+      document.getElementById('pace').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+      document.getElementById('speed').textContent=(this.distance/elapsedH).toFixed(1);
     }
+    this.updateRouteProgress();
+  }
 
-    handlePosition(pos){
-        const newPos={lat:pos.coords.latitude,lng:pos.coords.longitude,timestamp:new Date(),speed:pos.coords.speed||0};
-        if(this.positions.length>0){
-            const last=this.positions[this.positions.length-1];
-            const d=this.calculateDistance(last.lat,last.lng,newPos.lat,newPos.lng);
-            if(d<0.05) return;
-            this.distance+=d;
-        }
-        this.positions.push(newPos);
-        this.updateDisplay();
-        this.updateMap(newPos);
-        this.updateRouteProgress();
+  updateTimer(){
+    const t=new Date()-this.startTime;
+    const h=Math.floor(t/3600000), m=Math.floor((t%3600000)/60000), s=Math.floor((t%60000)/1000);
+    document.getElementById('timer').textContent=`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  }
+
+  updateRouteProgress(){
+    const opt=document.getElementById('routeSelect').selectedOptions[0];
+    const dist=parseFloat(opt?.getAttribute('data-distance'))||0;
+    if(dist>0){
+      const perc=Math.min(100,(this.distance/dist)*100);
+      const bar=document.querySelector('#routeProgress .progress-bar');
+      bar.style.width=perc+'%';
+      bar.textContent=perc.toFixed(0)+'%';
+      document.getElementById('routeProgress').classList.remove('d-none');
     }
+  }
 
-    calculateDistance(lat1,lon1,lat2,lon2){
-        const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-        const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-        return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  pauseTracking(){
+    this.isPaused=!this.isPaused;
+    if(this.isPaused){
+      navigator.geolocation.clearWatch(this.watchId);
+      document.getElementById('btnPause').textContent='▶️ RIPRENDI';
+      this.updateGPSIndicator(false);
+    } else {
+      this.startTracking();
+      document.getElementById('btnPause').textContent='⏸️ PAUSA';
     }
+  }
 
-    updateDisplay(){
-        this.updateTimer();
-        document.getElementById('distance').textContent=this.distance.toFixed(2);
-        const elapsedH=(new Date()-this.startTime)/3600000;
-        if(elapsedH>0 && this.distance>0){
-            const pace=(elapsedH*60)/this.distance;
-            const m=Math.floor(pace), s=Math.floor((pace-m)*60);
-            document.getElementById('pace').textContent=`${m}:${s.toString().padStart(2,'0')}`;
-            document.getElementById('speed').textContent=(this.distance/elapsedH).toFixed(1);
-        }
+  handleError(err){
+    const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+    modal.show();
+    this.updateGPSIndicator(false);
+  }
+
+  updateGPSIndicator(on){ const el=document.getElementById('gpsIndicator'); on?el.classList.add('gps-active'):el.classList.remove('gps-active'); }
+
+  async stopTracking(){
+    if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
+    clearInterval(this.timerInterval); this.isTracking=false;
+    this.updateGPSIndicator(false);
+
+    const sel=document.getElementById('routeSelect');
+    let route_id = sel.value || 1;
+
+    const duration=Math.round((new Date()-this.startTime)/1000);
+    const data={ route_id, duration, distance:this.distance, positions:this.positions, start_time:this.startTime.toISOString() };
+
+    try{
+      document.getElementById('statusMessage').innerHTML='<div class="alert alert-info">💾 Salvataggio...</div>';
+      const csrf=document.querySelector('meta[name="csrf-token"]').content;
+      const res=await fetch('/api/save-live-activity',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},body:JSON.stringify(data)});
+      const r=await res.json();
+      if(r.success){
+        document.getElementById('statusMessage').innerHTML='<div class="alert alert-success">✅ Attività salvata!</div>';
+        setTimeout(()=>window.location.href="{{ url_for('main.all_activities') }}",1500);
+      } else throw new Error(r.error);
+    } catch(e){
+      document.getElementById('statusMessage').innerHTML='<div class="alert alert-danger">Errore: '+e.message+'</div>';
     }
-
-    updateTimer(){
-        if(!this.startTime) return;
-        const e=new Date()-this.startTime,h=Math.floor(e/3600000),m=Math.floor((e%3600000)/60000),s=Math.floor((e%60000)/1000);
-        document.getElementById('timer').textContent=`${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    }
-
-    initMiniMap(){
-        if(this.miniMap) return; // evita "Map container is already initialized"
-        this.miniMap=L.map('miniMap').setView([42.35,13.395],13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(this.miniMap);
-        this.polyline=L.polyline([], {color:'red'}).addTo(this.miniMap);
-        this.miniMap.addControl(L.control.scale());
-    }
-
-    updateMap(pos){
-        if(!this.miniMap) return;
-        const ll=[pos.lat,pos.lng];
-        this.polyline.addLatLng(ll);
-        this.miniMap.setView(ll);
-    }
-
-    updateGPSIndicator(active){
-        const el=document.getElementById('gpsIndicator');
-        active?el.classList.add('gps-active'):el.classList.remove('gps-active');
-    }
-
-    updateRouteProgress(){
-        const sel=document.getElementById('routeSelect');
-        const opt=sel.options[sel.selectedIndex];
-        const rd=parseFloat(opt.getAttribute('data-distance'))||0;
-        if(rd>0){
-            const p=Math.min(100,(this.distance/rd)*100);
-            const bar=document.getElementById('routeProgress').querySelector('.progress-bar');
-            bar.style.width=p+'%';
-            bar.textContent=p.toFixed(0)+'%';
-            document.getElementById('routeProgress').style.display='block';
-        }
-    }
-
-    pauseTracking(){
-        this.isPaused=!this.isPaused;
-        if(this.isPaused){
-            navigator.geolocation.clearWatch(this.watchId);
-            document.getElementById('btnPause').innerHTML='▶️ RIPRENDI';
-            this.showStatus("Tracciamento in pausa","warning");
-            this.updateGPSIndicator(false);
-        } else {
-            this.startTracking();
-            document.getElementById('btnPause').innerHTML='⏸️ PAUSA';
-        }
-    }
-
-    handleError(err){
-        if(err.code===err.PERMISSION_DENIED){
-            const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-            modal.show();
-        } else {
-            let msg="Errore GPS sconosciuto";
-            if(err.code===err.POSITION_UNAVAILABLE) msg="Posizione non disponibile";
-            if(err.code===err.TIMEOUT) msg="Timeout GPS";
-            this.showStatus(msg,"danger");
-        }
-        this.updateGPSIndicator(false);
-    }
-
-    async stopTracking(){
-        if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
-        if(this.timerInterval) clearInterval(this.timerInterval);
-        this.isTracking=false;
-        this.updateGPSIndicator(false);
-
-        const sel=document.getElementById('routeSelect');
-        let route_id = sel.value;
-
-        // Se Modalità Libera selezionata, usa valore di default 1
-        if(!route_id) route_id = 1;
-
-        const duration = Math.max(1, Math.round((new Date()-this.startTime)/1000));
-        const distance = Math.max(0.1, this.distance);
-        const positions = Array.isArray(this.positions) ? this.positions : [];
-        const start_time = this.startTime ? this.startTime.toISOString() : new Date().toISOString();
-
-        const data = { route_id, duration, distance, positions, start_time };
-        console.log("Sending activity data:", data);
-        await this.saveActivity(data);
-    }
-
-
-    async saveActivity(data){
-        const statusEl=document.getElementById('statusMessage');
-        try{
-            statusEl.innerHTML=`<div class="alert alert-info">Salvataggio attività...</div>`;
-
-            // Recupera CSRF token se presente, altrimenti null
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            const csrfToken = csrfMeta ? csrfMeta.content : null;
-
-            const headers = { 'Content-Type':'application/json' };
-            if(csrfToken) headers['X-CSRFToken'] = csrfToken;
-
-            const res = await fetch('/api/save-live-activity',{
-                method:'POST',
-                headers: headers,
-                body:JSON.stringify(data),
-                credentials:'same-origin'
-            });
-
-            const contentType = res.headers.get("content-type") || "";
-            if(!res.ok){
-                const text = await res.text();
-                console.error("Server returned error or non-JSON:", text);
-                statusEl.innerHTML=`<div class="alert alert-danger">Errore server: ${res.status}</div>`;
-                return;
-            }
-
-            if(!contentType.includes("application/json")){
-                const text = await res.text();
-                console.error("Server returned non-JSON:", text);
-                statusEl.innerHTML=`<div class="alert alert-danger">Errore server: risposta non valida</div>`;
-                return;
-            }
-
-            const r = await res.json();
-            if(r.success){
-                statusEl.innerHTML=`<div class="alert alert-success">✅ ${r.message}</div>`;
-                setTimeout(()=>window.location.href="{{ url_for('main.all_activities') }}",2000);
-            } else {
-                statusEl.innerHTML=`<div class="alert alert-danger">Errore: ${r.error}</div>`;
-            }
-
-        } catch(e){
-            console.error("Fetch failed:", e);
-            statusEl.innerHTML=`<div class="alert alert-danger">Errore di connessione: ${e.message}</div>`;
-        }
-    }
-
-    showStatus(msg,type,timeout=5000){
-        const el=document.getElementById('statusMessage');
-        el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
-        if(timeout) setTimeout(()=>{el.innerHTML='';},timeout);
-    }
+  }
 }
 
-const tracker = new ActivityTracker();
+const tracker=new ActivityTracker();
 
-document.getElementById('btnStart').addEventListener('click', async ()=>{
-    if(!navigator.geolocation){ alert("GPS non supportato dal browser"); return; }
-    try{
-        await new Promise((resolve,reject)=>{
-            navigator.geolocation.getCurrentPosition(
-                pos=>resolve(pos),
-                err=>reject(err),
-                {enableHighAccuracy:true}
-            );
-        });
-        tracker.startTracking();
-    } catch(e){
-        const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-        modal.show();
-    }
+document.getElementById('btnStart').addEventListener('click',async()=>{
+  if(!navigator.geolocation){ alert("GPS non supportato"); return; }
+  try{
+    await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true}));
+    tracker.startTracking();
+  }catch{ new bootstrap.Modal(document.getElementById('gpsInstructionsModal')).show(); }
 });
 
 function stopTracking(){ tracker.stopTracking(); }
 function pauseTracking(){ tracker.pauseTracking(); }
-
-
-document.getElementById('btnStart').addEventListener('click',async ()=>{
-    if(!navigator.geolocation){ alert("GPS non supportato dal browser"); return; }
-    try{
-        await new Promise((resolve,reject)=>{
-            navigator.geolocation.getCurrentPosition(
-                pos=>resolve(pos),
-                err=>reject(err),
-                {enableHighAccuracy:true}
-            );
-        });
-        tracker.startTracking();
-    }catch(e){
-        const modal=new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-        modal.show();
-    }
-});
-
-function stopTracking(){tracker.stopTracking();}
-function pauseTracking(){tracker.pauseTracking();}
 </script>
 {% endblock %}
