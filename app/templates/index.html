@@ -265,273 +265,155 @@
                         </li>
                     </ul>
 
-                    <div class="tab-content d-lg-block"> <!-- d-lg-block mantiene le sezioni visibili su desktop -->
-                        <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel" aria-labelledby="leaderboards-tab">
-                            <!-- Sezione Classifiche Locali -->
-                            <div class="row my-4">
-                                <div class="col-md-6 mb-4">
-                                    <div class="card shadow-lg h-100 leaderboard-card">
-                                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
-                                            <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom"><i class="bi bi-globe me-1"></i>Vedi Globale</a>
-                                        </div>
-                                        <ul class="list-group list-group-flush" id="top-distance-list">
-                                            <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
-                                        </ul>
+                    <div class="tab-content d-lg-block">
+
+                    <!-- SEZIONE LEADERBOARDS -->
+                    <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel">
+                        <div class="row my-4">
+                            <!-- Eroi Locali: Distanza -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-lg h-100 leaderboard-card">
+                                    <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 text-truncate" title="Eroi Locali: Distanza"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
+                                        <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                            <i class="bi bi-globe me-1"></i>Vedi Globale
+                                        </a>
                                     </div>
+                                    <ul class="list-group list-group-small list-group-flush" id="top-distance-list">
+                                        <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                    </ul>
                                 </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card shadow-lg h-100 leaderboard-card">
-                                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
-                                            <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom"><i class="bi bi-globe me-1"></i>Vedi Globale</a>
-                                        </div>
-                                        <ul class="list-group list-group-flush" id="top-creators-list">
-                                            <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
-                                        </ul>
+                            </div>
+
+                            <!-- Eroi Locali: Percorsi Creati -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-lg h-100 leaderboard-card">
+                                    <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 text-truncate" title="Eroi Locali: Percorsi Creati"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
+                                        <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                            <i class="bi bi-globe me-1"></i>Vedi Globale
+                                        </a>
                                     </div>
+                                    <ul class="list-group list-group-small list-group-flush" id="top-creators-list">
+                                        <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEZIONE PERCORSI CLASSICI & SFIDE RECENTI -->
+                    <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel">
+
+                        <!-- Percorsi Classici -->
+                        <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
+                            <div class="card-header bg-secondary-custom text-white">
+                                <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
+                                <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
+                            </div>
+                            <div class="card-body">
+                                <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
+                                    <!-- Card percorsi caricate via JS -->
+                                </div>
+                                <div id="no-classic-routes" class="text-center p-3 d-none">
+                                    <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
+                                    <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel" aria-labelledby="challenges-tab">
-                            <!-- Sezione Percorsi Classici della Città -->
-                            <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
-                                <div class="card-header bg-secondary-custom text-white">
-                                    <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
-                                    <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
-                                </div>
-                                <div class="card-body">
-                                    <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
-                                        <!-- Le card dei percorsi verranno caricate qui dinamicamente via JavaScript -->
-                                    </div>
-                                    <div id="no-classic-routes" class="text-center p-3" style="display: none;">
-                                        <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
-                                        <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
-                                    </div>
-                                </div>
+                        <!-- Sfide Recenti -->
+                        <div class="card shadow-lg my-5">
+                            <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
+                                <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city or 'Vicino a te' }}</h3>
+                                <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
                             </div>
-
-                            <!-- Sezione Sfide Recenti -->
-                            <!-- Sezione Sfide Recenti -->
-                            <div class="card shadow-lg my-5">
-                                <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
-                                    {# Assumiamo che 'user_city' sia una variabile globale passata dal backend #}
-                                    <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city if user_city else 'Vicino a te' }}</h3> 
-                                    <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
-                                </div>
-                                <div class="card-body">
-                                    <div id="recent-challenges-list" class="list-group">
-                                        {# --- INIZIO CODICE JINJA PER MOSTRARE SFIDE --- #}
-                                        {% if recent_challenges_in_city %} {# Assicurati che questa variabile venga passata dal backend #}
-                                            {% for challenge in recent_challenges_in_city %}
-                                                {# Classe challenge-with-bet per stile CSS #}
-                                                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
-                                                class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
-                                                    
-                                                    <div>
-                                                        {# --- ICONA SCOMMESSA --- #}
-                                                        {% if challenge.bet_type != 'none' %}
-                                                            <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
-                                                                {% if challenge.bet_type == 'beer' %} 🍺
-                                                                {% elif challenge.bet_type == 'dinner' %} 🍝
-                                                                {% elif challenge.bet_type == 'coffee' %} ☕
-                                                                {% elif challenge.bet_type == 'custom' %} 🎁
-                                                                {% endif %}
-                                                            </span>
-                                                        {% endif %}
-                                                        {# --- Nome Sfida e Percorso --- #}
-                                                        <strong>{{ challenge.name }}</strong>
-                                                        <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
-                                                    </div>
-                                                    
-                                                    {# --- Stato e Data Fine --- #}
-                                                    <div class="text-end">
-                                                        {% if challenge.is_active %}
-                                                            <span class="badge bg-success me-2">Attiva</span>
-                                                        {% else %}
-                                                            <span class="badge bg-secondary me-2">Finita</span>
-                                                        {% endif %}
-                                                        <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
-                                                    </div>
-                                                    
-                                                    {# --- DETTAGLIO SCOMMESSA (se presente) --- #}
+                            <div class="card-body">
+                                <div id="recent-challenges-list" class="list-group">
+                                    {% if recent_challenges_in_city %}
+                                        {% for challenge in recent_challenges_in_city %}
+                                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                                            class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
+                                                <div>
                                                     {% if challenge.bet_type != 'none' %}
-                                                        <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
-                                                            <small class="text-muted">
-                                                                <i class="bi bi-currency-exchange"></i> 
-                                                                Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
-                                                            </small>
-                                                        </div>
+                                                        <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                                            {% if challenge.bet_type == 'beer' %}🍺{% elif challenge.bet_type == 'dinner' %}🍝{% elif challenge.bet_type == 'coffee' %}☕{% elif challenge.bet_type == 'custom' %}🎁{% endif %}
+                                                        </span>
                                                     {% endif %}
-                                                </a>
-                                            {% endfor %}
-                                        {% else %}
-                                            {# Messaggio se non ci sono sfide recenti nella città #}
-                                            <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
-                                        {% endif %}
-                                        {# --- FINE CODICE JINJA --- #}
-                                    </div>
-                                    <hr class="my-4">
-                                    <div class="text-center">
-                                        <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
-                                    </div>
-                                </div>
-                            </div>
-                                    <hr class="my-4">
-                                    <div class="text-center">
-                                        <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
-                                    </div>
-                                </div>
-                            </div>
-                                                        
-                            <!-- SEZIONE NEWS AGGIORNATA CON POST PERSONALIZZATI -->
-                            <div class="news-feed-card shadow-lg">
-                                <div class="card-header">
-                                    <h4><i class="bi bi-newspaper me-2"></i>Aggiornamenti dalla Community</h4>
-                                </div>
-                                <div class="card-body">
-                                    
-                                    {# --- Notizie da Attività Recenti --- #}
-                                    {% if recent_activities %}
-                                        {% for activity in recent_activities %}
-                                            <div class="news-item">
-                                                <div class="news-item-avatar">
-                                                    <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" alt="Avatar {{ activity.user_activity.username }}">
+                                                    <strong>{{ challenge.name }}</strong>
+                                                    <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
                                                 </div>
-                                                <div class="news-item-content">
-                                                    <p class="mb-1">
-                                                        <strong>{{ activity.user_activity.username }}</strong> ha appena completato un'attività:
-                                                        "{{ activity.activity_type }} di {{ "%.2f"|format(activity.distance) }} km su percorso '{{ activity.route_activity.name }}'."
-                                                        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="text-primary">Vedi Dettagli</a>
-                                                    </p>
-                                                    <div class="text-muted small">Pubblicato il {{ activity.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
-                                                    <div class="news-action-icons">
-                                                        {# Aggiungi qui logica per like/commenti se necessario per le attività #}
+                                                <div class="text-end">
+                                                    {% if challenge.is_active %}
+                                                        <span class="badge bg-success me-2">Attiva</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary me-2">Finita</span>
+                                                    {% endif %}
+                                                    <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
+                                                </div>
+                                                {% if challenge.bet_type != 'none' %}
+                                                    <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-currency-exchange"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
+                                                        </small>
                                                     </div>
-                                                </div>
-                                            </div>
+                                                {% endif %}
+                                            </a>
                                         {% endfor %}
-                                    {% endif %}
-
-                                    {# --- Notizie da Sfide Recenti --- #}
-                                    {% if active_challenges %}
-                                        {% for challenge in active_challenges %}
-                                            <div class="news-item">
-                                                {# Avatar del creatore omesso per ora #}
-                                                <div class="news-item-content">
-                                                    <p class="mb-1">
-                                                        È stata lanciata una nuova sfida:
-                                                        "<strong>{{ challenge.name }}</strong>" sul percorso '{{ challenge.route_info.name }}'. La sfida terminerà il {{ challenge.end_date.strftime('%d/%m/%Y') }}.
-                                                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="text-primary">Partecipa o Visualizza</a>
-                                                    </p>
-                                                    <div class="text-muted small">Creata il {{ challenge.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                    
-                                    {# --- NUOVI POST PERSONALIZZATI --- #}
-                                    {% if community_posts %}
-                                        {% for post in community_posts %}
-                                            <div class="news-item">
-                                                <div class="news-item-avatar">
-                                                    <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" alt="Avatar {{ post.user.username }}">
-                                                </div>
-                                                <div class="news-item-content">
-                                                    <p class="mb-1">
-                                                        <strong>{{ post.user.username }}</strong> ha pubblicato:
-                                                        {{ post.content | safe }} {# Usa |safe se il contenuto può contenere HTML #}
-                                                        {% if post.image_url %}
-                                                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mt-2" alt="Immagine Post">
-                                                        {% endif %}
-                                                        {% if post.post_type == 'link' and post.content %} {# Assumendo che il link sia nel content o in un campo separato #}
-                                                            <a href="{{ post.content }}" class="text-primary" target="_blank">Visita il Link</a>
-                                                        {% endif %}
-                                                    </p>
-                                                    <div class="text-muted small">Pubblicato il {{ post.created_at.strftime('%d/%m/%Y alle %H:%M') }}</div>
-                                                    <div class="news-action-icons">
-                                                        {# Qui dovrai implementare la logica per like/commenti sui post #}
-                                                        <a href="{{ url_for('main.toggle_post_like', post_id=post.id) }}" class="like-post-link" data-post-id="{{ post.id }}">
-                                                            <i class="bi {% if post.id in user_liked_post_ids %}bi-hand-thumbs-up-fill{% else %}bi-hand-thumbs-up{% endif %}"></i>
-                                                            <span class="like-count">{{ post.likes.count() }}</span> Likes
-                                                        </a>
-                                                        <a href="{{ url_for('main.post_detail', post_id=post.id) }}#comments">
-                                                            <i class="bi bi-chat-dots"></i> {{ post.comments.count() }}
-                                                        </a>
-
-                                                        <a href="#" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}"><i class="bi bi-share"></i> Condividi</a>
-                                                        
-                                                        {# Modale di Condivisione per ogni post #}
-                                                        <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
-                                                            <div class="modal-dialog">
-                                                                <div class="modal-content">
-                                                                    <div class="modal-header">
-                                                                        <h5 class="modal-title" id="shareModalLabel{{ post.id }}">Condividi questo post</h5>
-                                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
-                                                                    </div>
-                                                                    <div class="modal-body">
-                                                                        <p>Copia il link per condividere:</p>
-                                                                        <input type="text" class="form-control mb-2" value="{{ url_for('main.post_detail', post_id=post.id, _external=True) }}" readonly>
-                                                                        {# Qui potresti aggiungere pulsanti per condividere sui social #}
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-
-                                    {# Messaggio se non ci sono notizie #}
-                                    {% if not recent_activities and not active_challenges and not community_posts %}
-                                        <p class="text-center text-muted">Nessun aggiornamento dalla community al momento.</p>
-                                    {% endif %}
-
-                                </div>
-                                <div class="card-footer">
-                                    <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-primary btn-sm">Tutte le Attività</a>
-                                    <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-secondary btn-sm ms-2">Esplora le Sfide</a>
-                                    {# Pulsante per creare un nuovo post, visibile solo se l'utente è autenticato #}
-                                    {% if current_user.is_authenticated %} 
-                                        <a href="{{ url_for('main.create_post') }}" class="btn btn-outline-success btn-sm ms-2"><i class="bi bi-plus-circle me-1"></i>Crea Post</a>
+                                    {% else %}
+                                        <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
                                     {% endif %}
                                 </div>
-                            </div>
-
-                        </div>
-
-                        <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab">
-                            <!-- Feed Attività Recenti -->
-                            <div class="social-feed-section card shadow-lg my-5">
-                                <div class="card-header bg-info-custom text-white">
-                                    <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div id="recent-activities-list" class="list-group">
-                                        <p class="text-center text-muted">Caricamento attività...</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sezione Percorsi Disponibili -->
-                            <div class="routes-list-section card shadow-lg my-5">
-                                <div class="card-header bg-success-custom text-white">
-                                    <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div id="available-routes-list" class="list-group">
-                                        <p class="text-center text-muted">Caricamento percorsi...</p>
-                                    </div>
+                                <hr class="my-4">
+                                <div class="text-center">
+                                    <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
                                 </div>
                             </div>
                         </div>
-                    </div> <!-- /tab-content -->
+
+                        <!-- News Feed / Aggiornamenti Community -->
+                        <div class="news-feed-card shadow-lg">
+                            <div class="card-header"><h4><i class="bi bi-newspaper me-2"></i>Aggiornamenti dalla Community</h4></div>
+                            <div class="card-body">
+                                {% include 'partials/news_items.html' %}
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-primary btn-sm">Tutte le Attività</a>
+                                <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-secondary btn-sm ms-2">Esplora le Sfide</a>
+                                {% if current_user.is_authenticated %}
+                                    <a href="{{ url_for('main.create_post') }}" class="btn btn-outline-success btn-sm ms-2"><i class="bi bi-plus-circle me-1"></i>Crea Post</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
+                    <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">
+                        <div class="social-feed-section card shadow-lg my-5">
+                            <div class="card-header bg-info-custom text-white">
+                                <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="recent-activities-list" class="list-group">
+                                    <p class="text-center text-muted">Caricamento attività...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="routes-list-section card shadow-lg my-5">
+                            <div class="card-header bg-success-custom text-white">
+                                <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="available-routes-list" class="list-group">
+                                    <p class="text-center text-muted">Caricamento percorsi...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
             {% endif %}
             
             {% block content %}{% endblock %}

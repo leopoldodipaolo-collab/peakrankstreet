@@ -440,7 +440,18 @@ a:hover {
 .king-queen-highlight h5 { color: var(--text-color-dark); }
 .king-queen-highlight .user-link { color: var(--text-color-dark) !important; font-weight: bolder; text-decoration: underline; }
 .king-queen-highlight .trophy-icon { font-size: 1.5em; color: #daa520; }
-.list-group-small .list-group-item { padding: .5rem 1rem; font-size: .875em; }
+.list-group-small .list-group-item {
+    padding: .5rem 1rem;
+    font-size: .875em;
+    white-space: nowrap;     /* Impedisce line-break */
+    overflow: hidden;        /* Nasconde testo in eccesso */
+    text-overflow: ellipsis; /* Mostra "..." se troppo lungo */
+}
+.leaderboard-card {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;  /* Evita scroll orizzontale */
+}
 .list-group-small .profile-image-small { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; margin-right: 0.5em; border: 1px solid var(--brand-primary);}
 .leaderboard-entry-current-user { 
     background-color: #e6ffed; /* Light green for current user */
@@ -1315,3 +1326,4 @@ a:hover {
     margin-right: 0;
     text-align: center;
 }
+

@@ -5,74 +5,131 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>🏁 Sfide Terminate</h1>
-        <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary">
+        <h1 class="h3 fw-bold text-primary">🏁 Sfide Terminate</h1>
+        <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-primary btn-hover">
             ← Torna alle Sfide Attive
         </a>
     </div>
 
     {% if challenges %}
-        <div class="row">
+
+        <!-- Desktop: Due colonne -->
+        <div class="row d-none d-md-flex">
             {% for challenge in challenges %}
             <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-secondary text-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ challenge.name }}</h5>
-                            <span class="badge bg-dark">Terminata</span>
-                        </div>
+                <div class="card h-100 shadow-lg rounded-3 border-0" style="background: linear-gradient(135deg, #f0f8ff, #e6f7ff);">
+                    <div class="card-header d-flex justify-content-between align-items-center"
+                         style="background-color: {% if challenge.challenge_type == 'open' %}#28a745{% else %}#fd7e14{% endif %}; color: white;">
+                        <h5 class="mb-0">{{ challenge.name }}</h5>
+                        <span class="badge bg-dark">Terminata</span>
                     </div>
                     <div class="card-body">
-                        <p class="card-text">
-                            <strong>Percorso:</strong> {{ challenge.route_info.name }}<br>
-                            <strong>Periodo:</strong> {{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}<br>
-                            <strong>Creato da:</strong> {{ challenge.challenger.username }}<br>
-                            <strong>Tipo:</strong> 
-                            <span class="badge bg-{{ 'info' if challenge.challenge_type == 'open' else 'warning' }}">
-                                {{ 'Aperta' if challenge.challenge_type == 'open' else 'Chiusa' }}
-                            </span>
-                        </p>
-                        
-                        <!-- Statistiche -->
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>Percorso:</strong> {{ challenge.route_info.name }}</li>
+                            <li><strong>Periodo:</strong> {{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}</li>
+                            <li><strong>Creato da:</strong> {{ challenge.challenger.username }}</li>
+                            <li>
+                                <strong>Tipo:</strong>
+                                <span class="badge bg-{{ 'success' if challenge.challenge_type == 'open' else 'warning' }} text-dark">
+                                    {{ 'Aperta' if challenge.challenge_type == 'open' else 'Chiusa' }}
+                                </span>
+                            </li>
+                        </ul>
+
                         {% set challenge_activities = challenge.activities %}
                         <div class="mt-3">
-                            <h6>📊 Statistiche Finali</h6>
-                            <div class="row text-center">
+                            <h6 class="fw-semibold">📊 Statistiche Finali</h6>
+                            <div class="row text-center g-2">
                                 <div class="col-4">
-                                    <small>Partecipanti</small>
+                                    <i class="bi bi-people-fill text-primary fs-5"></i>
                                     <div class="fw-bold text-primary">{{ challenge_activities|length }}</div>
+                                    <small class="text-muted d-block">Partecipanti</small>
                                 </div>
                                 <div class="col-4">
-                                    <small>Attività</small>
+                                    <i class="bi bi-list-check text-success fs-5"></i>
                                     <div class="fw-bold text-success">{{ challenge_activities|length }}</div>
+                                    <small class="text-muted d-block">Attività</small>
                                 </div>
                                 <div class="col-4">
-                                    <small>Durata</small>
+                                    <i class="bi bi-clock-fill text-info fs-5"></i>
                                     <div class="fw-bold text-info">{{ (challenge.end_date - challenge.start_date).days }}g</div>
+                                    <small class="text-muted d-block">Durata</small>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer bg-light">
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
-                               class="btn btn-outline-primary btn-sm">
-                                📋 Dettagli
-                            </a>
-                            <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" 
-                               class="btn btn-outline-success btn-sm">
-                                🏆 Classifica
-                            </a>
-                        </div>
+                    <div class="card-footer bg-light d-flex justify-content-between">
+                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                           class="btn btn-outline-primary btn-hover btn-sm">
+                            📋 Dettagli
+                        </a>
+                        <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" 
+                           class="btn btn-outline-success btn-hover btn-sm">
+                            🏆 Classifica
+                        </a>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
+        <!-- Mobile: Card compatte -->
+        <!-- Mobile: Card compatte -->
+        <div class="d-md-none">
+            {% for challenge in challenges %}
+            <div class="card mb-3 shadow-sm rounded-3" 
+                style="background: linear-gradient(135deg, #f0f8ff, #e6f7ff); border-left: 4px solid {% if challenge.challenge_type == 'open' %}#28a745{% else %}#fd7e14{% endif %};">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold text-primary mb-1">{{ challenge.name }}</h6>
+                            <small class="text-muted">{{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}</small>
+                        </div>
+                        <span class="badge bg-dark align-self-start">Terminata</span>
+                    </div>
+                    <p class="mb-2">
+                        <strong>Percorso:</strong> {{ challenge.route_info.name }}<br>
+                        <strong>Creato da:</strong> {{ challenge.challenger.username }}<br>
+                        <strong>Tipo:</strong>
+                        <span class="badge bg-{{ 'success' if challenge.challenge_type == 'open' else 'warning' }} text-dark">
+                            {{ 'Aperta' if challenge.challenge_type == 'open' else 'Chiusa' }}
+                        </span>
+                    </p>
+                    {% set challenge_activities = challenge.activities %}
+                    <div class="d-flex justify-content-between text-center mt-2">
+                        <div>
+                            <i class="bi bi-people-fill text-primary"></i>
+                            <div class="fw-bold">{{ challenge_activities|length }}</div>
+                            <small class="text-muted">Partecipanti</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-list-check text-success"></i>
+                            <div class="fw-bold">{{ challenge_activities|length }}</div>
+                            <small class="text-muted">Attività</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-clock-fill text-info"></i>
+                            <div class="fw-bold">{{ (challenge.end_date - challenge.start_date).days }}g</div>
+                            <small class="text-muted">Durata</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="btn btn-outline-primary btn-hover btn-sm">
+                            📋 Dettagli
+                        </a>
+                        <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-outline-success btn-hover btn-sm">
+                            🏆 Classifica
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+
         <!-- Paginazione -->
         {% if pagination.pages > 1 %}
-        <nav aria-label="Paginazione sfide terminate">
+        <nav aria-label="Paginazione sfide terminate" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                     <a class="page-link" href="{{ url_for('main.finished_challenges', page=pagination.prev_num) }}">Precedente</a>
@@ -83,7 +140,7 @@
                             <a class="page-link" href="{{ url_for('main.finished_challenges', page=page_num) }}">{{ page_num }}</a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
                     {% endif %}
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
@@ -95,15 +152,21 @@
 
     {% else %}
         <div class="text-center py-5">
-            <div class="mb-3">
-                <i class="fas fa-flag-checkered fa-3x text-muted"></i>
-            </div>
+            <i class="bi bi-flag-checkered display-4 text-muted mb-3"></i>
             <h3 class="text-muted">Nessuna sfida terminata</h3>
             <p class="text-muted">Le sfide terminate appariranno qui automaticamente.</p>
-            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary mt-3">
+            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary btn-hover mt-3">
                 Vedi le Sfide Attive
             </a>
         </div>
     {% endif %}
 </div>
+
+<style>
+    .btn-hover:hover {
+        transform: translateY(-2px);
+        transition: all 0.2s;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+</style>
 {% endblock %}
