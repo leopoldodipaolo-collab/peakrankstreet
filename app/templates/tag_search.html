@@ -1,0 +1,27 @@
+`html
+{% extends "index.html" %}
+{% block title %}Post con #{{ tag.name }}{% endblock %}
+{% block content %}
+<div class="container mt-5 pt-5">
+<div class="row justify-content-center">
+<div class="col-lg-8">
+code
+Code
+<div class="pb-3 mb-4 border-bottom">
+            <h1 class="h2">#{{ tag.name }}</h1>
+            <p class="text-muted">{{ posts|length }} post trovati con questo hashtag.</p>
+        </div>
+
+        <div class="list-group list-group-flush">
+            {% for item in posts %}
+                {# Riusiamo il nostro "centralino" per visualizzare ogni post #}
+                {% include 'partials/_feed_item.html' %}
+            {% else %}
+                <p class="text-center text-muted">Nessun post trovato con questo hashtag.</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+</div>
+{% endblock %}

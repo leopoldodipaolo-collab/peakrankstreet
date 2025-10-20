@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike
+from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag 
 from app import db
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
@@ -1698,7 +1698,7 @@ def create_post():
     current_app.config['UPLOAD_FOLDER'] = upload_dir
 
     if request.method == 'POST':
-        content = request.form.get('content', '') # Default a stringa vuota per sicurezza
+        content = request.form.get('content', '')
         post_type = request.form.get('post_type', 'text')
         image_file = request.files.get('image')
         link = request.form.get('link')
@@ -1727,54 +1727,62 @@ def create_post():
                 flash('Formato immagine non valido. Usa PNG, JPG, JPEG o GIF.', 'danger')
                 return redirect(url_for('main.create_post'))
 
-        # --- LOGICA MENZIONI E NOTIFICHE ---
-        # 1. Analizziamo il contenuto per trovare menzioni e creare i link
-        processed_content, mentioned_users = parse_mentions(content)
-        # --- FINE LOGICA MENZIONI ---
+        # --- INIZIO LOGICA DI PARSING DEL CONTENUTO ---
+        
+        # 1. Analizziamo il contenuto per trovare le @menzioni e creare i relativi link
+        processed_content_mentions, mentioned_users = parse_mentions(content)
 
-        # Creazione del Post
+        # 2. Creiamo l'oggetto Post in memoria (senza aggiungerlo alla sessione)
+        #    Usiamo il contenuto già processato per le menzioni come base.
         new_post = Post(
             user_id=current_user.id,
-            content=processed_content,  # <-- Usiamo il contenuto processato!
+            content=processed_content_mentions, # Questo contenuto verrà sovrascritto tra poco
             image_url=image_filename,
             post_type=post_type,
-            # Se hai il campo 'post_category' nel tuo modello, assicurati di salvarlo
-            # post_category=request.form.get('post_category', 'user_post')
+            post_category=request.form.get('post_category', 'user_post')
         )
+
+        # 3. Analizziamo il contenuto per trovare gli #hashtag, salvarli,
+        #    associarli a `new_post` e aggiornare il testo con i link.
+        final_content = parse_and_link_hashtags(processed_content_mentions, new_post)
         
-        # Gestione del link (se il tuo modello ha un campo 'link')
-        # if post_type == 'link' and link:
-        #    new_post.link = link
+        # 4. Aggiorniamo il contenuto del post con la versione finale,
+        #    che ora include sia i link delle menzioni che quelli degli hashtag.
+        new_post.content = final_content
+        
+        # --- FINE LOGICA DI PARSING ---
 
         try:
+            # Aggiungiamo il post completo alla sessione del database
             db.session.add(new_post)
-            db.session.flush() # Ottiene l'ID del post prima del commit finale
+            # flush() assegna un ID a new_post, necessario per le notifiche
+            db.session.flush()
 
-            # --- CREAZIONE NOTIFICHE ---
-            # 2. Creiamo una notifica per ogni utente menzionato
+            # Creiamo le notifiche per ogni utente menzionato
             for user in mentioned_users:
                 if user.id != current_user.id:
                     notification = Notification(
                         recipient_id=user.id,
                         actor_id=current_user.id,
                         action='mention_in_post',
-                        object_id=new_post.id, # Usiamo l'ID appena ottenuto
+                        object_id=new_post.id,
                         object_type='post'
                     )
                     db.session.add(notification)
-            # --- FINE CREAZIONE NOTIFICHE ---
 
+            # Salviamo tutto in modo permanente nel database
             db.session.commit()
+            
             flash('Post creato con successo!', 'success')
             return redirect(url_for('main.index'))
+            
         except Exception as e:
             db.session.rollback()
             flash(f"Errore durante la creazione del post: {e}", 'danger')
             return redirect(url_for('main.create_post'))
 
-    # Metodo GET → mostra il form per creare un post
+    # Metodo GET
     return render_template('create_post.html', is_homepage=False)
-
 
 
 # --- Assicurati che la funzione allowed_file sia definita (probabilmente in routes.py o una utility) ---
@@ -2260,6 +2268,47 @@ def parse_mentions(content):
     print(f"-------------------------------------------\n")
     
     return processed_content, mentioned_users
+
+
+# In app/main/routes.py
+
+def parse_and_link_hashtags(content, post_object):
+    """
+    Analizza un testo, trova gli #hashtag, li salva nel DB,
+    li associa al post e li trasforma in link.
+    """
+    hashtag_pattern = r'#([a-zA-Z0-9_]+)'
+    hashtags_in_content = re.findall(hashtag_pattern, content)
+    
+    # Sostituisce il testo con il link PRIMA di elaborare i tag
+    def replace_hashtag(match):
+        tag_name = match.group(1)
+        link = f'<a href="{url_for("main.tag_search", tag_name=tag_name)}" class="hashtag-link">#{tag_name}</a>'
+        return link
+    processed_content = re.sub(hashtag_pattern, replace_hashtag, content)
+
+    if not hashtags_in_content:
+        return processed_content # Restituisce il contenuto (che potrebbe avere menzioni)
+
+    # Ora salva e associa i tag all'oggetto post
+    for tag_name in hashtags_in_content:
+        # Cerca se l'hashtag esiste già, ignorando maiuscole/minuscole
+        tag = Tag.query.filter(func.lower(Tag.name) == tag_name.lower()).first()
+        
+        # Se non esiste, lo creiamo
+        if not tag:
+            tag = Tag(name=tag_name)
+            db.session.add(tag)
+            # Usiamo flush per ottenere l'ID del nuovo tag prima del commit finale
+            # Questo è utile se altre operazioni dipendono da questo
+            db.session.flush()
+
+        # Associa il tag al post (se non è già associato)
+        # SQLAlchemy è abbastanza intelligente da gestire questo senza controlli duplicati
+        if tag not in post_object.tags:
+            post_object.tags.append(tag)
+            
+    return processed_content
 ###################################################################################################################################
 # ... (altri import e la definizione della route upload_gpx) ...
 @main.route('/upload-gpx', methods=['GET', 'POST'])
@@ -2548,3 +2597,26 @@ def like_activity(activity_id):
         'action': action,
         'likes_count': activity.likes.count()
     })
+
+
+# In app/main/routes.py
+
+@main.route('/tag/<string:tag_name>')
+def tag_search(tag_name):
+    """
+    Mostra tutti i post che contengono un determinato hashtag.
+    """
+    tag = Tag.query.filter(func.lower(Tag.name) == tag_name.lower()).first_or_404()
+    
+    # Accediamo ai post tramite la relazione di backref e li ordiniamo
+    posts = tag.posts.order_by(Post.created_at.desc()).all()
+    
+    # Arricchiamo i post con le info sui like (codice che già conosci)
+    if current_user.is_authenticated:
+        post_ids = [p.id for p in posts]
+        if post_ids:
+            liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
+            for post in posts:
+                post.current_user_liked = post.id in liked_post_ids
+    
+    return render_template('tag_search.html', tag=tag, posts=posts, is_homepage=False)
