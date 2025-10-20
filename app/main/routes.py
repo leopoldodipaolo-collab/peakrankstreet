@@ -19,6 +19,8 @@ from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione
 import traceback  # ⚠️ AGGIUNGI QUESTO IMPORT
 from app import csrf  # <-- IMPORT CORRETTO
 import json
+from .services import get_community_feed_items # Aggiungi l'import
+import re # <-- Aggiungi questo import all'inizio del file
 
 main = Blueprint('main', __name__)
 
@@ -64,7 +66,21 @@ def award_badge_if_earned(user, badge_name):
     if badge and not UserBadge.query.filter_by(user_id=user.id, badge_id=badge.id).first():
         user_badge = UserBadge(user_id=user.id, badge_id=badge.id)
         db.session.add(user_badge)
-        db.session.commit()
+        
+        # --- NUOVO CODICE AGGIUNTO QUI ---
+        # Creiamo un post automatico per celebrare il nuovo badge!
+        badge_post_content = f"🏅 Badge Sbloccato! {user.username} ha ottenuto il badge: '{badge.name}'!"
+
+        badge_post = Post(
+            user_id=user.id, # Il post è attribuito all'utente che ha ottenuto il badge
+            content=badge_post_content,
+            post_category='system_badge', # La nostra nuova categoria speciale!
+            post_type='text'
+        )
+        db.session.add(badge_post)
+        # --- FINE NUOVO CODICE ---
+        
+        db.session.commit() # Questo salverà sia UserBadge che il nuovo Post
         flash(f'Congratulazioni! Hai ottenuto il badge: "{badge.name}"!', 'info')
         return True
     return False
@@ -77,16 +93,53 @@ def allowed_file(filename):
 
 # In app/main/routes.py
 
-# In app/main/routes.py (route index)
+# Assicurati di avere questo import all'inizio del file
+from sqlalchemy import case, func
+
+# ... (gli altri import e le altre rotte) ...
+
 @main.route('/')
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
-    # --- Recupero Dati Esistenti ---
-    recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
+    # --- LOGICA FEED DELLA COMMUNITY (VERSIONE CORRETTA E COMPLETA) ---
     
-    # Rimuovi o commenta questa query se 'recent_challenges_in_city' la sostituirà nella visualizzazione home
-    # active_challenges = Challenge.query.filter(Challenge.end_date >= datetime.utcnow(), Challenge.is_active == True).order_by(Challenge.start_date.asc()).limit(3).all()
+    PER_PAGE = 5 # Quanti post per pagina
+    
+    # 1. Definiamo l'ordinamento speciale per mettere in evidenza i post admin
+    special_post_order = case(
+        (Post.post_category.in_(['admin_announcement', 'weekly_tip']), 0),
+        else_=1
+    )
+
+    # 2. Eseguiamo la query per la PRIMA PAGINA del feed con l'ordinamento speciale
+    posts_pagination = Post.query.options(joinedload(Post.user)).order_by(
+        special_post_order, 
+        Post.created_at.desc()
+    ).paginate(page=1, per_page=PER_PAGE, error_out=False)
+    
+    community_posts = posts_pagination.items # Questa è la lista dei primi 5 post (o meno)
+
+    # 3. Arricchiamo i post con le informazioni sui "Mi piace" dell'utente corrente
+    if current_user.is_authenticated:
+        post_ids = [p.id for p in community_posts]
+        if post_ids: # Esegui la query solo se ci sono post da controllare
+            liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
+            for post in community_posts:
+                post.current_user_liked = post.id in liked_post_ids
+        else: # Se non ci sono post, non c'è nulla da fare
+             for post in community_posts:
+                post.current_user_liked = False
+    else:
+        for post in community_posts:
+            post.current_user_liked = False
+
+    # --- FINE LOGICA FEED ---
+
+
+    # --- ALTRI DATI PER LA HOME PAGE (il tuo codice originale, che va bene) ---
+    
+    recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
     
     top_users_data = (
         db.session.query(User, func.sum(Activity.distance).label('total_distance'))
@@ -94,35 +147,29 @@ def index():
     )
     top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
     
-    community_posts = Post.query.join(User).order_by(Post.created_at.desc()).limit(5).all() 
-    
-    # --- NUOVA QUERY PER SFIDE RECENTI CON SCOMMESSA E PER CITTÀ ---
     recent_challenges_in_city = []
     if user_city:
-        # Query per sfide attive, filtrate per città (usando Route.classic_city) e che abbiano una scommessa
         challenges_query = db.session.query(Challenge).join(Route).filter(
-            Route.classic_city == user_city,       # Filtra per la città del percorso classico
-            Challenge.end_date >= datetime.utcnow(), # Solo sfide attive
+            Route.classic_city == user_city,
+            Challenge.end_date >= datetime.utcnow(),
             Challenge.is_active == True,
-            Challenge.bet_type != 'none'           # Solo sfide con una scommessa
+            Challenge.bet_type != 'none'
         ).order_by(Challenge.start_date.asc()).limit(3).all()
-        
         recent_challenges_in_city = challenges_query
         
+        
     # --- PASSAGGIO DATI AL TEMPLATE ---
-    # Assicurati di passare tutte le variabili necessarie.
-    # Ho incluso 'now' che potrebbe essere utile per confronti di date nel template.
     return render_template("index.html", 
                            user_city=user_city, 
                            is_homepage=True, 
                            recent_activities=recent_activities,
-                           # active_challenges=active_challenges, # Se usi solo le recenti per città, rimuovi questa
-                           recent_challenges_in_city=recent_challenges_in_city, # !!! QUESTA È LA VARIABILE CRUCIALE !!!
+                           recent_challenges_in_city=recent_challenges_in_city,
                            top_users=top_users,
-                           community_posts=community_posts,
-                           now=datetime.utcnow() # Utile per confronti di date nel template
+                           community_posts=community_posts, # Passiamo i post già pronti
+                           has_next_feed_page=posts_pagination.has_next, # Passiamo l'info per il pulsante
+                           total_posts=posts_pagination.total, # <-- AGGIUNGI QUESTO
+                           now=datetime.utcnow()
                            )
-
 @main.route('/feed')
 @login_required
 def feed():
@@ -131,7 +178,7 @@ def feed():
     pagination = activities_query.options(
         joinedload(Activity.user_activity),
         joinedload(Activity.route_activity),
-        joinedload(Activity.challenge_info)
+        joinedload(Activity.challenge)
     ).paginate(page=page, per_page=10, error_out=False)
     activities_on_page = pagination.items
     # NUOVA RIGA in feed
@@ -642,12 +689,37 @@ def record_activity():
             db.session.commit()
 
             current_record = RouteRecord.query.filter_by(route_id=target_route.id, activity_type=activity_type).order_by(RouteRecord.duration.asc()).first()
+            # --- MODIFICA QUESTO BLOCCO ---
             if not current_record or new_activity.duration < current_record.duration:
                 if current_record:
+                    # Se c'era un record precedente, lo rimuoviamo
                     db.session.delete(current_record)
                 
-                new_record = RouteRecord(route_id=target_route.id, user_id=current_user.id, activity_id=new_activity.id, activity_type=activity_type, duration=new_activity.duration)
+                # Creiamo il nuovo record
+                new_record = RouteRecord(
+                    route_id=target_route.id, 
+                    user_id=current_user.id, 
+                    activity_id=new_activity.id, 
+                    activity_type=activity_type, 
+                    duration=new_activity.duration
+                )
                 db.session.add(new_record)
+                
+                # --- NUOVO CODICE AGGIUNTO QUI ---
+                # Creiamo un post automatico per celebrare il nuovo record!
+                record_post_content = (
+                    f"🏆 Nuovo Record! {current_user.username} ha conquistato il percorso '{target_route.name}' "
+                    f"con un tempo eccezionale di {datetime.utcfromtimestamp(new_activity.duration).strftime('%H:%M:%S')}!"
+                )
+
+                record_post = Post(
+                    user_id=current_user.id, # Il post è attribuito all'utente che ha fatto il record
+                    content=record_post_content,
+                    post_category='system_record', # La nostra nuova categoria speciale!
+                    post_type='text' # È un post di solo testo
+                )
+                db.session.add(record_post)
+                # --- FINE NUOVO CODICE ---
                 db.session.commit()
                 award_badge_if_earned(current_user, "Re/Regina del Percorso")
             
@@ -782,7 +854,7 @@ def activity_detail(activity_id):
 @main.route("/activities")
 def all_activities():
     page = request.args.get('page', 1, type=int)
-    pagination = Activity.query.options(joinedload(Activity.user_activity), joinedload(Activity.route_activity), joinedload(Activity.challenge_info)).order_by(Activity.created_at.desc()).paginate(page=page, per_page=10, error_out=False)
+    pagination = Activity.query.options(joinedload(Activity.user_activity), joinedload(Activity.route_activity), joinedload(Activity.challenge)).order_by(Activity.created_at.desc()).paginate(page=page, per_page=10, error_out=False)
     # NUOVA RIGA in all_activities
     return render_template("all_activities.html", activities=pagination.items, pagination=pagination, is_homepage=False)
 
@@ -1013,6 +1085,21 @@ def notifications():
                 icon = "💸"
                 bg_color = "bg-danger"
         
+        # --- AGGIUNGI QUESTO BLOCCO ELIF ---
+        elif n.action == 'mention_in_comment':
+            post = Post.query.get(n.object_id)
+            if post:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento."
+                link = url_for('main.post_detail', post_id=post.id) + '#comments' # Linka direttamente ai commenti
+                icon = "💬"
+                bg_color = "bg-info"
+            else:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
+                icon = "💬"
+                bg_color = "bg-secondary"
+        # --- FINE BLOCCO AGGIUNTO ---
+
+
         notification_messages.append({
             'message': message,
             'link': link,
@@ -1605,25 +1692,25 @@ def allowed_file(filename):
 @main.route('/posts/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
-    # ✅ Imposta (o verifica) la cartella di upload
+    # Imposta la cartella di upload
     upload_dir = os.path.join(current_app.root_path, 'static', 'posts_images')
-    os.makedirs(upload_dir, exist_ok=True)  # crea se non esiste
+    os.makedirs(upload_dir, exist_ok=True)
     current_app.config['UPLOAD_FOLDER'] = upload_dir
 
     if request.method == 'POST':
-        content = request.form.get('content')
+        content = request.form.get('content', '') # Default a stringa vuota per sicurezza
         post_type = request.form.get('post_type', 'text')
         image_file = request.files.get('image')
-        link = request.form.get('link')  # opzionale per i post tipo "link"
+        link = request.form.get('link')
 
-        # --- VALIDAZIONE ---
-        if not content and not image_file and not link:
+        # Validazione
+        if not content.strip() and not image_file and not link:
             flash('Il post non può essere vuoto. Aggiungi testo, immagine o link.', 'warning')
             return redirect(url_for('main.create_post'))
 
         image_filename = None
 
-        # --- GESTIONE IMMAGINE ---
+        # Gestione Immagine
         if image_file and image_file.filename != '':
             if allowed_file(image_file.filename):
                 filename = secure_filename(image_file.filename)
@@ -1640,20 +1727,43 @@ def create_post():
                 flash('Formato immagine non valido. Usa PNG, JPG, JPEG o GIF.', 'danger')
                 return redirect(url_for('main.create_post'))
 
-        # --- CREAZIONE DEL POST ---
+        # --- LOGICA MENZIONI E NOTIFICHE ---
+        # 1. Analizziamo il contenuto per trovare menzioni e creare i link
+        processed_content, mentioned_users = parse_mentions(content)
+        # --- FINE LOGICA MENZIONI ---
+
+        # Creazione del Post
         new_post = Post(
             user_id=current_user.id,
-            content=content,
-            image_url=image_filename,  # salva solo il nome del file
+            content=processed_content,  # <-- Usiamo il contenuto processato!
+            image_url=image_filename,
             post_type=post_type,
+            # Se hai il campo 'post_category' nel tuo modello, assicurati di salvarlo
+            # post_category=request.form.get('post_category', 'user_post')
         )
-
-        # Se il post è un link, salvalo
-        if post_type == 'link' and link:
-            new_post.link = link
+        
+        # Gestione del link (se il tuo modello ha un campo 'link')
+        # if post_type == 'link' and link:
+        #    new_post.link = link
 
         try:
             db.session.add(new_post)
+            db.session.flush() # Ottiene l'ID del post prima del commit finale
+
+            # --- CREAZIONE NOTIFICHE ---
+            # 2. Creiamo una notifica per ogni utente menzionato
+            for user in mentioned_users:
+                if user.id != current_user.id:
+                    notification = Notification(
+                        recipient_id=user.id,
+                        actor_id=current_user.id,
+                        action='mention_in_post',
+                        object_id=new_post.id, # Usiamo l'ID appena ottenuto
+                        object_type='post'
+                    )
+                    db.session.add(notification)
+            # --- FINE CREAZIONE NOTIFICHE ---
+
             db.session.commit()
             flash('Post creato con successo!', 'success')
             return redirect(url_for('main.index'))
@@ -1664,6 +1774,7 @@ def create_post():
 
     # Metodo GET → mostra il form per creare un post
     return render_template('create_post.html', is_homepage=False)
+
 
 
 # --- Assicurati che la funzione allowed_file sia definita (probabilmente in routes.py o una utility) ---
@@ -1725,20 +1836,117 @@ def toggle_post_like(post_id):
     like = PostLike.query.filter_by(post_id=post_id, user_id=current_user.id).first()
     
     if like:
-        # Rimuovi il like
         db.session.delete(like)
         action = 'unliked'
     else:
-        # Aggiungi il like
         new_like = PostLike(user_id=current_user.id, post_id=post_id)
         db.session.add(new_like)
         action = 'liked'
         
     db.session.commit()
     
-    # Aggiorna il conteggio dei like e restituisci in formato JSON per aggiornamenti AJAX
-    # Questo è un esempio base; potresti voler restituire più dati
-    return jsonify({'status': 'success', 'action': action, 'new_like_count': len(post.likes)})
+    # Restituisce il conteggio usando il metodo .count() di SQLAlchemy
+    return jsonify({'status': 'success', 'action': action, 'new_like_count': post.likes.count()})
+
+
+@main.route('/api/post/<int:post_id>/add_comment', methods=['POST'])
+@login_required
+def add_comment_to_post_ajax(post_id):
+    """
+    API endpoint per aggiungere un commento a un post in modo asincrono.
+    """
+    post = Post.query.get_or_404(post_id)
+    content = request.form.get('content')
+    
+    # 1. Validazione
+    if not content or not content.strip():
+        return jsonify({'status': 'error', 'message': 'Il commento non può essere vuoto.'}), 400
+        
+    # --- NUOVA LOGICA QUI ---
+    # 1. Processiamo il contenuto per trovare menzioni e creare i link
+    processed_content, mentioned_users = parse_mentions(content)
+    # --- FINE NUOVA LOGICA ---
+
+    new_comment = PostComment(
+        user_id=current_user.id,
+        post_id=post_id,
+        content=processed_content # <-- Usiamo il contenuto processato!
+    )
+    db.session.add(new_comment)
+    
+    # --- NUOVA LOGICA PER LE NOTIFICHE ---
+    # 2. Creiamo una notifica per ogni utente menzionato (e che non sia se stesso)
+    for user in mentioned_users:
+        if user.id != current_user.id: # Non notificare te stesso
+            notification = Notification(
+                recipient_id=user.id,
+                actor_id=current_user.id,
+                action='mention_in_comment', # Nuova azione!
+                object_id=post.id, # L'oggetto è il post a cui appartiene il commento
+                object_type='post'
+            )
+            db.session.add(notification)
+    # --- FINE NUOVA LOGICA ---
+    
+    db.session.commit()
+    
+    # 3. Renderizzazione del solo HTML per il nuovo commento
+    # Passiamo l'oggetto 'comment' appena creato al nostro nuovo template parziale
+    comment_html = render_template('partials/feed_items/_comment.html', comment=new_comment)
+    
+    # 4. Restituzione di una risposta JSON di successo
+    return jsonify({
+        'status': 'success',
+        'message': 'Commento aggiunto!',
+        'comment_html': comment_html,
+        'new_comment_count': post.comments.count()
+    })
+
+@main.route('/api/feed')
+def api_feed():
+    """
+    API endpoint per restituire i post del feed in blocchi impaginati.
+    Accetta un parametro 'page' nella query string.
+    """
+    page = request.args.get('page', 1, type=int)
+    PER_PAGE = 5
+    
+    # --- MODIFICA QUI: APPLICHIAMO LO STESSO ORDINAMENTO SPECIALE ---
+    special_post_order = case(
+        (Post.post_category.in_(['admin_announcement', 'weekly_tip']), 0),
+        else_=1
+    )
+
+    posts_pagination = Post.query.options(joinedload(Post.user)).order_by(
+        special_post_order, 
+        Post.created_at.desc()
+    ).paginate(page=page, per_page=PER_PAGE, error_out=False)
+    # --- FINE MODIFICA ---
+    
+    posts = posts_pagination.items
+    
+    # Il resto della logica per arricchire con i "Mi piace" è corretto
+    if current_user.is_authenticated:
+        post_ids = [p.id for p in posts]
+        if post_ids:
+            liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
+            for post in posts:
+                post.current_user_liked = post.id in liked_post_ids
+        else:
+             for post in posts:
+                post.current_user_liked = False
+    else:
+        for post in posts:
+            post.current_user_liked = False
+
+    # Renderizziamo l'HTML del "pezzo" di feed
+    posts_html = render_template('partials/_feed_posts_chunk.html', posts=posts)
+    
+    # Restituiamo il JSON
+    return jsonify({
+        'html': posts_html,
+        'has_next_page': posts_pagination.has_next
+    })
 
 # TEST #####################################################################################################################################
 
@@ -1997,6 +2205,61 @@ def debug_bets_detailed():
             """
     
     return result
+
+
+def parse_mentions(content):
+    """
+    Analizza un testo, trova le @menzioni (ignorando maiuscole/minuscole), 
+    le trasforma in link e restituisce il testo processato e una lista di utenti menzionati.
+    """
+    print(f"\n--- DEBUG PARSE MENTIONS (Case-Insensitive) ---")
+    print(f"Contenuto originale: '{content}'")
+    
+    mention_pattern = r'@([a-zA-Z0-9_]+)'
+    usernames_from_regex = re.findall(mention_pattern, content)
+    
+    print(f"Usernames trovati dal regex: {usernames_from_regex}")
+
+    if not usernames_from_regex:
+        print("Nessun username trovato. Fine.")
+        return content, []
+
+    # --- CORREZIONE CHIAVE QUI ---
+    # Convertiamo tutti gli username in minuscolo per la ricerca
+    usernames_lower = [name.lower() for name in usernames_from_regex]
+    
+    # Eseguiamo una query case-insensitive confrontando i nomi in minuscolo
+    users = User.query.filter(func.lower(User.username).in_(usernames_lower)).all()
+    print(f"Utenti trovati nel database (case-insensitive): {users}")
+    # --- FINE CORREZIONE ---
+
+    # Creiamo una mappa con gli username in minuscolo per un match facile
+    user_map = {user.username.lower(): user for user in users}
+    mentioned_users = []
+
+    def replace_mention(match):
+        username_original = match.group(1)
+        username_lower = username_original.lower()
+        
+        if username_lower in user_map:
+            user = user_map[username_lower]
+            if user not in mentioned_users:
+                mentioned_users.append(user)
+            
+            # Usiamo l'username originale per il testo del link per preservare le maiuscole
+            link = f'<a href="{url_for("main.user_profile", user_id=user.id)}" class="mention-link">@{username_original}</a>'
+            print(f"DEBUG: Sostituzione trovata! Rimpiazzo '@{username_original}' con il link.")
+            return link
+            
+        return match.group(0)
+
+    processed_content = re.sub(mention_pattern, replace_mention, content)
+    
+    print(f"Contenuto processato: '{processed_content}'")
+    print(f"Utenti menzionati da notificare: {mentioned_users}")
+    print(f"-------------------------------------------\n")
+    
+    return processed_content, mentioned_users
 ###################################################################################################################################
 # ... (altri import e la definizione della route upload_gpx) ...
 @main.route('/upload-gpx', methods=['GET', 'POST'])

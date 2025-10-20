@@ -1,0 +1,22 @@
+{# Layout per un post automatico di tipo "Badge Sbloccato" #}
+<div class="list-group-item px-0 py-3">
+    <div class="card border-success shadow-sm">
+        <div class="card-body">
+            <div class="d-flex w-100 align-items-center">
+                <!-- Icona a medaglia/badge -->
+                <div class="me-3 fs-1 text-success">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+
+                <div class="flex-grow-1">
+                    <p class="h5 mb-0">
+                        {{ post.content | safe }}
+                    </p>
+                    <small class="text-muted timeago" datetime="{{ post.created_at.isoformat() }}Z">
+                        {{ post.created_at.strftime('%d %b %Y') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

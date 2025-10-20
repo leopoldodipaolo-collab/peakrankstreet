@@ -1,0 +1,44 @@
+{# ================================================================= #}
+{#      _feed_item.html: IL CENTRALINO PER I POST DEL FEED           #}
+{# ================================================================= #}
+{#                                                                   #}
+{# Questo file non contiene HTML di per sé, ma funge da "router".    #}
+{# Riceve un oggetto 'item' (che è un Post), ne controlla la         #}
+{# categoria e include il template corretto per la visualizzazione.  #}
+{#                                                                   #}
+{# ================================================================= #}
+
+
+{# Per chiarezza, assegniamo l'item a una variabile chiamata 'post' #}
+{% set post = item %}
+
+
+{# CONTROLLO 1: È un post speciale creato dall'amministratore? #}
+{% if post.post_category == 'admin_announcement' or post.post_category == 'weekly_tip' %}
+
+    {# Se la categoria è 'admin_announcement' o 'weekly_tip', usiamo il layout speciale #}
+    {% include 'partials/feed_items/_special_post.html' %}
+    
+{# --- AGGIUNGI QUESTO BLOCCO ELIF --- #}
+{% elif post.post_category == 'system_record' %}
+    {% include 'partials/feed_items/_system_record.html' %}
+{# --- FINE BLOCCO AGGIUNTO --- #}
+
+{# --- AGGIUNGI QUESTO BLOCCO ELIF --- #}
+{% elif post.post_category == 'system_badge' %}
+    {% include 'partials/feed_items/_system_badge.html' %}
+{# --- FINE BLOCCO AGGIUNTO --- #}
+
+
+{# CONTROLLO 2: È un post standard creato da un utente? #}
+{% elif post.post_category == 'user_post' %}
+
+    {# Se è un post utente standard, usiamo il layout normale #}
+    {% include 'partials/feed_items/_user_post.html' %}
+
+
+{# Puoi aggiungere altri blocchi 'elif' qui in futuro per nuove categorie di post #}
+{# Esempio: {% elif post.post_category == 'system_record' %} ... #}
+
+
+{% endif %}

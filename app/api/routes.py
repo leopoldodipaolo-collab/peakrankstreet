@@ -28,7 +28,7 @@ def get_map_data():
     all_activities_query = Activity.query.options(
         joinedload(Activity.user_activity),
         joinedload(Activity.route_activity),
-        joinedload(Activity.challenge_info)
+        joinedload(Activity.challenge)
     ).order_by(Activity.created_at.desc())
     
     if activity_type != 'all':
@@ -234,7 +234,7 @@ def get_map_data():
                 'route_id': activity.route_id,
                 'route_name': activity.route_activity.name,
                 'challenge_id': activity.challenge_id,
-                'challenge_name': activity.challenge_info.name if activity.challenge_info else None,
+                'challenge_name': activity.challenge.name if activity.challenge else None,
                 'distance': activity.distance,
                 'duration': activity.duration,
                 'avg_speed': activity.avg_speed,
@@ -366,7 +366,7 @@ def get_classic_routes(city):
             'estimated_time': route.estimated_time,
             'landmarks': route.landmarks,
             'featured_image': route.featured_image,
-            'total_activities': len(route.activities),
+            'total_activities': route.activities.count(),
             'record_holder': None,
             'top_5_times': []
         }

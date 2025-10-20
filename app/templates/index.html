@@ -267,152 +267,169 @@
 
                     <div class="tab-content d-lg-block">
 
-                    <!-- SEZIONE LEADERBOARDS -->
-                    <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel">
-                        <div class="row my-4">
-                            <!-- Eroi Locali: Distanza -->
-                            <div class="col-md-6 mb-4">
-                                <div class="card shadow-lg h-100 leaderboard-card">
-                                    <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 text-truncate" title="Eroi Locali: Distanza"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
-                                        <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
-                                            <i class="bi bi-globe me-1"></i>Vedi Globale
-                                        </a>
-                                    </div>
-                                    <ul class="list-group list-group-small list-group-flush" id="top-distance-list">
-                                        <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
-                                    </ul>
+                <!-- SEZIONE LEADERBOARDS -->
+                <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel">
+                    <div class="row my-4">
+                        <!-- Eroi Locali: Distanza -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-lg h-100 leaderboard-card">
+                                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-truncate" title="Eroi Locali: Distanza"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
+                                    <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                        <i class="bi bi-globe me-1"></i>Vedi Globale
+                                    </a>
                                 </div>
+                                <ul class="list-group list-group-small list-group-flush" id="top-distance-list">
+                                    <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                </ul>
                             </div>
+                        </div>
 
-                            <!-- Eroi Locali: Percorsi Creati -->
-                            <div class="col-md-6 mb-4">
-                                <div class="card shadow-lg h-100 leaderboard-card">
-                                    <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 text-truncate" title="Eroi Locali: Percorsi Creati"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
-                                        <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
-                                            <i class="bi bi-globe me-1"></i>Vedi Globale
-                                        </a>
-                                    </div>
-                                    <ul class="list-group list-group-small list-group-flush" id="top-creators-list">
-                                        <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
-                                    </ul>
+                        <!-- Eroi Locali: Percorsi Creati -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-lg h-100 leaderboard-card">
+                                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-truncate" title="Eroi Locali: Percorsi Creati"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
+                                    <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                        <i class="bi bi-globe me-1"></i>Vedi Globale
+                                    </a>
                                 </div>
+                                <ul class="list-group list-group-small list-group-flush" id="top-creators-list">
+                                    <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEZIONE PERCORSI CLASSICI & SFIDE RECENTI -->
+                <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel">
+
+                    <!-- Percorsi Classici -->
+                    <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
+                        <div class="card-header bg-secondary-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
+                            <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
+                        </div>
+                        <div class="card-body">
+                            <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
+                                <!-- Card percorsi caricate via JS -->
+                            </div>
+                            <div id="no-classic-routes" class="text-center p-3 d-none">
+                                <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
+                                <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SEZIONE PERCORSI CLASSICI & SFIDE RECENTI -->
-                    <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel">
-
-                        <!-- Percorsi Classici -->
-                        <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
-                            <div class="card-header bg-secondary-custom text-white">
-                                <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
-                                <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
-                            </div>
-                            <div class="card-body">
-                                <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
-                                    <!-- Card percorsi caricate via JS -->
-                                </div>
-                                <div id="no-classic-routes" class="text-center p-3 d-none">
-                                    <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
-                                    <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
-                                </div>
-                            </div>
+                    <!-- Sfide Recenti -->
+                    <div class="card shadow-lg my-5">
+                        <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city or 'Vicino a te' }}</h3>
+                            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
                         </div>
-
-                        <!-- Sfide Recenti -->
-                        <div class="card shadow-lg my-5">
-                            <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
-                                <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city or 'Vicino a te' }}</h3>
-                                <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
-                            </div>
-                            <div class="card-body">
-                                <div id="recent-challenges-list" class="list-group">
-                                    {% if recent_challenges_in_city %}
-                                        {% for challenge in recent_challenges_in_city %}
-                                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
-                                            class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
-                                                <div>
-                                                    {% if challenge.bet_type != 'none' %}
-                                                        <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
-                                                            {% if challenge.bet_type == 'beer' %}🍺{% elif challenge.bet_type == 'dinner' %}🍝{% elif challenge.bet_type == 'coffee' %}☕{% elif challenge.bet_type == 'custom' %}🎁{% endif %}
-                                                        </span>
-                                                    {% endif %}
-                                                    <strong>{{ challenge.name }}</strong>
-                                                    <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
-                                                </div>
-                                                <div class="text-end">
-                                                    {% if challenge.is_active %}
-                                                        <span class="badge bg-success me-2">Attiva</span>
-                                                    {% else %}
-                                                        <span class="badge bg-secondary me-2">Finita</span>
-                                                    {% endif %}
-                                                    <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
-                                                </div>
+                        <div class="card-body">
+                            <div id="recent-challenges-list" class="list-group">
+                                {% if recent_challenges_in_city %}
+                                    {% for challenge in recent_challenges_in_city %}
+                                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                                        class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
+                                            <div>
                                                 {% if challenge.bet_type != 'none' %}
-                                                    <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
-                                                        <small class="text-muted">
-                                                            <i class="bi bi-currency-exchange"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
-                                                        </small>
-                                                    </div>
+                                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                                        {% if challenge.bet_type == 'beer' %}🍺{% elif challenge.bet_type == 'dinner' %}🍝{% elif challenge.bet_type == 'coffee' %}☕{% elif challenge.bet_type == 'custom' %}🎁{% endif %}
+                                                    </span>
                                                 {% endif %}
-                                            </a>
-                                        {% endfor %}
-                                    {% else %}
-                                        <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
-                                    {% endif %}
-                                </div>
-                                <hr class="my-4">
-                                <div class="text-center">
-                                    <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- News Feed / Aggiornamenti Community -->
-                        <div class="news-feed-card shadow-lg">
-                            <div class="card-header"><h4><i class="bi bi-newspaper me-2"></i>Aggiornamenti dalla Community</h4></div>
-                            <div class="card-body">
-                                {% include 'partials/news_items.html' %}
-                            </div>
-                            <div class="card-footer">
-                                <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-primary btn-sm">Tutte le Attività</a>
-                                <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-secondary btn-sm ms-2">Esplora le Sfide</a>
-                                {% if current_user.is_authenticated %}
-                                    <a href="{{ url_for('main.create_post') }}" class="btn btn-outline-success btn-sm ms-2"><i class="bi bi-plus-circle me-1"></i>Crea Post</a>
+                                                <strong>{{ challenge.name }}</strong>
+                                                <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
+                                            </div>
+                                            <div class="text-end">
+                                                {% if challenge.is_active %}
+                                                    <span class="badge bg-success me-2">Attiva</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary me-2">Finita</span>
+                                                {% endif %}
+                                                <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
+                                            </div>
+                                            {% if challenge.bet_type != 'none' %}
+                                                <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-currency-exchange"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
                                 {% endif %}
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
-                    <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">
-                        <div class="social-feed-section card shadow-lg my-5">
-                            <div class="card-header bg-info-custom text-white">
-                                <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
-                            </div>
-                            <div class="card-body">
-                                <div id="recent-activities-list" class="list-group">
-                                    <p class="text-center text-muted">Caricamento attività...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="routes-list-section card shadow-lg my-5">
-                            <div class="card-header bg-success-custom text-white">
-                                <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
-                            </div>
-                            <div class="card-body">
-                                <div id="available-routes-list" class="list-group">
-                                    <p class="text-center text-muted">Caricamento percorsi...</p>
-                                </div>
+                            <hr class="my-4">
+                            <div class="text-center">
+                                <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
                             </div>
                         </div>
                     </div>
 
+                    <!-- ================================================================ -->
+                    <!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
+                    <!-- ================================================================ -->
+
+                    {# 1. Importiamo la nostra macro per le card riutilizzabili #}
+                    {% from 'macros/_cards.html' import feed_card %}
+
+                    {# 2. Definiamo dinamicamente i link che andranno nel footer della card #}
+                    {% set community_footer_links = [
+                        {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
+                        {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
+                    ] %}
+
+                    {% if current_user.is_authenticated %}
+                        {% do community_footer_links.append({
+                            'url': url_for('main.create_post'), 
+                            'text': '<i class="bi bi-plus-circle me-1"></i>Crea Post', 
+                            'class': 'btn-outline-success'
+                        }) %}
+                    {% endif %}
+
+                    {# 3. Chiamiamo la macro usando la sintassi corretta {{ ... }} #}
+                    {# Questo commento è fuori e va bene #}
+                    {{ feed_card(
+                        id='community-feed',
+                        title='Aggiornamenti dalla Community',
+                        icon_class='bi-newspaper',
+                        items=community_posts,
+                        footer_links=community_footer_links,
+                        current_user=current_user,
+                        has_next_feed_page=has_next_feed_page
+                    ) }}
+
+                <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
+                <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">
+                    <div class="social-feed-section card shadow-lg my-5">
+                        <div class="card-header bg-info-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-activities-list" class="list-group">
+                                <p class="text-center text-muted">Caricamento attività...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="routes-list-section card shadow-lg my-5">
+                        <div class="card-header bg-success-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="available-routes-list" class="list-group">
+                                <p class="text-center text-muted">Caricamento percorsi...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+            </div>
 
             {% endif %}
             
@@ -472,51 +489,107 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
 
-    {% block scripts %}
-    {# Script per gestire i like dei post (AJAX) #}
+{% block scripts %}
+    {# NON usare super() qui perché questo è il template base #}
+    
+    <!-- 1. Includiamo le librerie JS necessarie -->
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
+
+    <!-- 2. Tutto il nostro codice custom va in un unico script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Gestione Like per i Post
-            document.querySelectorAll('.like-post-link').forEach(link => {
-                link.addEventListener('click', async function(event) {
-                    event.preventDefault(); // Previene il comportamento predefinito del link
-                    const postId = this.dataset.postId;
-                    const url = this.href; // L'URL dalla route Flask
-                    const likeButton = this;
-                    const likeCountSpan = likeButton.querySelector('.like-count');
+            
+            // --- LOGICA TIMEAGO ---
+            // Funzione helper per applicare timeago
+            function applyTimeago(container) {
+                const elements = container.querySelectorAll('.timeago:not(.timeago-applied)');
+                if (elements.length > 0) {
+                    timeago.render(elements, 'it');
+                }
+            }
+            
+            // Applica timeago agli elementi già presenti nella pagina
+            applyTimeago(document.body);
+
+
+            // --- LOGICA PER "MI PIACE" ---
+            const csrfToken = '{{ csrf_token() }}';
+
+            document.body.addEventListener('click', function(event) {
+                const likeButton = event.target.closest('.like-button');
+                if (likeButton) {
+                    event.preventDefault();
+                    const postId = likeButton.dataset.postId;
+                    const apiUrl = `/post/${postId}/like`;
                     
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                // Aggiungi header CSRF se necessario, es:
-                                // 'X-CSRFToken': '{{ csrf_token() }}' 
+                    fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const icon = likeButton.querySelector('i');
+                            const countSpan = likeButton.querySelector('.like-count');
+                            countSpan.textContent = data.new_like_count;
+                            
+                            if (data.action === 'liked') {
+                                likeButton.classList.remove('text-muted');
+                                likeButton.classList.add('text-danger');
+                                icon.classList.remove('bi-heart');
+                                icon.classList.add('bi-heart-fill');
+                            } else {
+                                likeButton.classList.remove('text-danger');
+                                likeButton.classList.add('text-muted');
+                                icon.classList.remove('bi-heart-fill');
+                                icon.classList.add('bi-heart');
                             }
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.status === 'success') {
-                            // Aggiorna l'icona e il conteggio
-                            likeButton.classList.toggle('text-primary');
-                            const likeIcon = likeButton.querySelector('i');
-                            likeIcon.classList.toggle('bi-hand-thumbs-up-fill');
-                            likeIcon.classList.toggle('bi-hand-thumbs-up');
-                            likeCountSpan.textContent = result.new_like_count;
-                        } else {
-                            alert('Errore nel processare il like.');
                         }
-                    } catch (error) {
-                        console.error('Errore fetch:', error);
-                        alert('Errore di rete durante il processo di like.');
-                    }
-                });
+                    });
+                }
             });
 
-            // Altri script specifici della pagina se necessari...
+
+            // --- LOGICA PER "CARICA ALTRI" ---
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const postsContainer = document.getElementById('feed-posts-container');
+
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    loadMoreBtn.style.display = 'none';
+                    loadingSpinner.style.display = 'block';
+
+                    const nextPage = this.dataset.nextPage;
+
+                    fetch(`/api/feed?page=${nextPage}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Aggiungi i nuovi post
+                            postsContainer.insertAdjacentHTML('beforeend', data.html);
+
+                            // Applica timeago ai nuovi post appena aggiunti
+                            applyTimeago(postsContainer);
+
+                            if (data.has_next_page) {
+                                loadMoreBtn.dataset.nextPage = parseInt(nextPage) + 1;
+                                loadMoreBtn.style.display = 'block';
+                            } else {
+                                // Se non ci sono più post, il pulsante non riappare più
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Errore nel caricare altri post:', error);
+                            loadMoreBtn.style.display = 'block';
+                        })
+                        .finally(() => {
+                            loadingSpinner.style.display = 'none';
+                        });
+                });
+            }
         });
     </script>
-    {% endblock %}
+{% endblock %}
 </body>
 </html>

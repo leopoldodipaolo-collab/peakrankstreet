@@ -1,0 +1,13 @@
+{# Questo template sa come renderizzare un singolo oggetto 'comment' #}
+<div class="comment mb-3 d-flex align-items-start">
+    <a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}">
+        <img src="{{ url_for('static', filename='profile_pics/' + comment.user.profile_image) }}" class="rounded-circle me-3" alt="Avatar {{ comment.user.username }}" style="width:40px; height:40px; object-fit:cover;">
+    </a>
+    <div class="flex-grow-1 bg-light p-3 rounded">
+        <div class="comment-header mb-1 d-flex justify-content-between">
+            <strong><a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}" class="text-dark text-decoration-none">{{ comment.user.username }}</a></strong>
+            <span class="text-muted small" title="{{ comment.created_at.isoformat() }}">{{ comment.created_at.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <p class="comment-content mb-0">{{ comment.content | safe }}</p>
+    </div>
+</div>

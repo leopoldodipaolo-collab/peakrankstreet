@@ -1,0 +1,24 @@
+{# Layout per un post automatico di tipo "Nuovo Record" #}
+<div class="list-group-item px-0 py-3">
+    <div class="card border-warning shadow-sm">
+        <div class="card-body">
+            <div class="d-flex w-100 align-items-center">
+                <!-- Icona a trofeo -->
+                <div class="me-3 fs-1 text-warning">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+
+                <div class="flex-grow-1">
+                    <p class="h5 mb-0">
+                        {# Riusiamo il contenuto generato automaticamente dal backend #}
+                        {# Il tag 'safe' è importante se in futuro vorrai aggiungere link #}
+                        {{ post.content | safe }}
+                    </p>
+                    <small class="text-muted timeago" datetime="{{ post.created_at.isoformat() }}Z">
+                        {{ post.created_at.strftime('%d %b %Y') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

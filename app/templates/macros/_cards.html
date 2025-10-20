@@ -1,0 +1,55 @@
+{# File: app/templates/macros/_cards.html #}
+
+{% macro feed_card(id, title, icon_class, items, footer_links=[], current_user=None, has_next_feed_page=False) %}
+
+<div class="card shadow-sm mb-4" id="{{ id }}">
+    <div class="card-header bg-white border-bottom-0">
+        <h4 class="h5 mb-0 d-flex align-items-center">
+            <i class="bi {{ icon_class }} me-2 text-primary"></i>
+            {{ title }}
+        </h4>
+    </div>
+    
+    <div class="card-body pt-2">
+        {# Questo div è il nostro contenitore per i post. #}
+        <div class="list-group list-group-flush" id="feed-posts-container">
+            {# --- MODIFICA CHIAVE QUI --- #}
+            {# Eseguiamo il ciclo direttamente qui, sui 'items' che riceviamo #}
+            {% for item in items %}
+                {# Passiamo il contesto per far funzionare current_user #}
+                {% include 'partials/_feed_item.html' with context %}
+            {% endfor %}
+        </div>
+
+        {# Messaggio da mostrare se non ci sono post INIZIALI #}
+        {% if not items %}
+            <div id="no-posts-message" class="text-center text-muted p-3">
+                <p class="mb-0">Nessun aggiornamento recente da mostrare. 🚀</p>
+            </div>
+        {% endif %}
+    
+        <div id="load-more-container" class="text-center mt-3">
+            {# Mostriamo il pulsante SOLO se la rotta ci dice che ci sono altre pagine #}
+            {% if has_next_feed_page %}
+                <button id="load-more-btn" class="btn btn-outline-primary" data-next-page="2">
+                    Carica Altri
+                </button>
+            {% endif %}
+            
+            <div id="loading-spinner" style="display: none;">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Caricamento...
+            </div>
+        </div>
+    </div>
+    
+    {# Il footer della card rimane invariato #}
+    {% if footer_links %}
+    <div class="card-footer bg-light d-flex flex-wrap justify-content-start align-items-center">
+        {% for link in footer_links %}
+            <a href="{{ link.url }}" class="btn {{ link.class }} btn-sm me-2 mb-1">{{ link.text | safe }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}

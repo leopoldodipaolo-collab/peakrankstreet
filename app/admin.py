@@ -4,6 +4,8 @@ from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from wtforms import fields, validators
+from wtforms.fields import SelectField # <-- AGGIUNGI QUESTO IMPORT
+from flask_admin.model.fields import AjaxSelectField
 
 # --- Vista Indice Personalizzata e Protetta ---
 class SecureAdminIndexView(AdminIndexView):
@@ -164,14 +166,17 @@ admin = Admin(
     endpoint='admin'
 )
 
-def setup_admin_views(admin_instance, db): # <-- AGGIUNTO db
+
+def setup_admin_views(admin_instance, db):
     """Importa i modelli SOLO quando viene chiamata questa funzione"""
+    # 1. Assicurati che TUTTI i modelli necessari siano importati qui
     from app.models import (User, Route, Activity, Challenge, ChallengeInvitation,
                           Comment, Like, Badge, UserBadge, Notification,
-                          RouteRecord, ActivityLike)
+                          RouteRecord, ActivityLike,
+                          Post, PostComment, PostLike) # <-- Inclusi i nuovi modelli
     
     try:
-        # === AGGIUNGI TUTTE LE VISTE CON ENDPOINT UNIVOCI ===
+        # === VISTE ORIGINALI (DEVONO RIMANERE) ===
         admin.add_view(UserAdminView(User, db.session, name='Utenti', endpoint='admin_users'))
         admin.add_view(RouteAdminView(Route, db.session, name='Percorsi', endpoint='admin_routes'))
         admin.add_view(ActivityAdminView(Activity, db.session, name='Attività', endpoint='admin_activities'))
@@ -185,7 +190,83 @@ def setup_admin_views(admin_instance, db): # <-- AGGIUNTO db
         admin.add_view(UserBadgeAdminView(UserBadge, db.session, name='Badge Utenti', endpoint='admin_user_badges'))
         admin.add_view(NotificationAdminView(Notification, db.session, name='Notifiche', endpoint='admin_notifications'))
 
+        # === NUOVE VISTE PER I POST (AGGIUNTE CORRETTAMENTE) ===
+        admin.add_view(PostAdminView(Post, db.session, name='Post del Feed', category='Community', endpoint='admin_posts'))
+        admin.add_view(PostCommentAdminView(PostComment, db.session, name='Commenti dei Post', category='Community', endpoint='admin_post_comments'))
+        admin.add_view(PostLikeAdminView(PostLike, db.session, name='Like dei Post', category='Community', endpoint='admin_post_likes'))
+
         print("✅ Admin panel COMPLETO configurato con successo!")
         
     except Exception as e:
         print(f"❌ Errore durante la configurazione dell'Admin Panel: {e}")
+
+# --- NUOVA CLASSE: VISTA ADMIN PER I POST ---
+# In admin.py
+# ... (assicurati di avere `from wtforms.fields import SelectField`) ...
+
+class PostAdminView(SecureModelView):
+    # Colonne da mostrare nella lista principale
+    column_list = ('id', 'user', 'post_category', 'post_type', 'content', 'created_at')
+    
+    # ... (le altre impostazioni come column_searchable_list, column_filters, etc. rimangono invariate) ...
+    
+    # --- MODIFICA FONDAMENTALE QUI ---
+
+    # 1. Rimuoviamo 'user' da form_columns perché lo gestiremo in modo speciale
+    form_columns = ('post_category', 'content', 'image_url', 'meta_data', 'post_type', 'user')
+    
+    # 2. Diciamo a Flask-Admin di usare un campo AJAX per la relazione 'user'
+    form_ajax_refs = {
+        'user': {
+            # Campi su cui l'utente admin può cercare (es. username o email)
+            'fields': ('username', 'email'),
+            'placeholder': 'Inizia a digitare per cercare un utente...',
+            'minimum_input_length': 2, # Inizia la ricerca dopo 2 caratteri
+        }
+    }
+    
+    # 3. Rimuoviamo 'user' dai form_overrides se presente
+    # La nostra vecchia personalizzazione
+    form_overrides = {
+        'post_type': SelectField,
+        'post_category': SelectField
+    }
+
+    # Gli argomenti del form rimangono gli stessi, assicurati che 'user' non sia qui
+    form_args = {
+        'post_category': {
+            'label': 'Categoria del Post (Scopo)',
+            'choices': [
+                ('user_post', 'Post Utente (Standard)'),
+                ('admin_announcement', 'Annuncio Admin (in evidenza)'),
+                ('weekly_tip', 'Consiglio della Settimana'),
+            ],
+            'description': "Scegli lo scopo del post. 'Annuncio' e 'Consiglio' avranno una visualizzazione speciale."
+        },
+        'post_type': {
+            'label': 'Formato del Post',
+            'choices': [
+                ('text', 'Solo Testo'),
+                ('image', 'Testo con Immagine'),
+                ('link', 'Link Esterno')
+            ]
+        },
+        'meta_data': {
+            'label': 'Dati Extra (Formato JSON)',
+            'description': 'Per post di tipo "Link", inserire qui l`URL. Esempio: {"url": "https://www.esempio.com"}'
+        }
+    }
+
+# Ricorda di aggiungere questa vista (e quelle per commenti/like) alla funzione setup_admin_views,
+# come mostrato nella risposta precedente. Se lo hai già fatto, non devi cambiare nulla lì.
+
+# --- Viste semplici per Commenti e Like dei Post ---
+class PostCommentAdminView(SecureModelView):
+    column_list = ('id', 'post_id', 'user', 'content', 'created_at')
+    column_filters = ('created_at',)
+
+class PostLikeAdminView(SecureModelView):
+    column_list = ('id', 'post_id', 'user', 'created_at')
+    column_filters = ('created_at',)
+
+
