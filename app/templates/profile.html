@@ -84,11 +84,11 @@
                 <div class="d-flex flex-wrap justify-content-center">
                     {% for user_badge in user.user_badges %}
                         <div class="text-center m-2 p-2 border rounded shadow-sm" style="width: 120px;">
-                            <!-- 'static' non cambia -->
-                            <img src="{{ url_for('static', filename='badges/' + user_badge.badge_info.image_url) }}" class="img-fluid mb-1" alt="{{ user_badge.badge_info.name }}" style="width: 60px; height: 60px; object-fit: contain;">
-                            <p class="fw-bold mb-0">{{ user_badge.badge_info.name }}</p>
+                            <!-- CORREZIONE APPLICATA QUI -->
+                            <img src="{{ url_for('static', filename='badges/' + user_badge.badge.image_url) }}" class="img-fluid mb-1" alt="{{ user_badge.badge.name }}" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p class="fw-bold mb-0">{{ user_badge.badge.name }}</p>
                             <small class="text-muted">{{ user_badge.awarded_at.strftime('%d/%m/%Y') }}</small>
-                            <span class="d-block badge bg-info mt-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ user_badge.badge_info.description }}">Info</span>
+                            <span class="d-block badge bg-info mt-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ user_badge.badge.description }}">Info</span>
                         </div>
                     {% endfor %}
                 </div>
@@ -172,13 +172,13 @@
             <!-- Tab Navigation -->
             <ul class="nav nav-tabs mb-3" id="betsTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" 
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab"
                             data-bs-target="#active" type="button" role="tab">
                         ⏳ Attive ({{ (bets_won|selectattr('status', 'equalto', 'pending')|list|length) + (bets_lost|selectattr('status', 'equalto', 'pending')|list|length) }})
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" 
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab"
                             data-bs-target="#history" type="button" role="tab">
                         📚 Storico ({{ (bets_won|selectattr('status', 'equalto', 'paid')|list|length) + (bets_lost|selectattr('status', 'equalto', 'paid')|list|length) }})
                     </button>
@@ -197,7 +197,7 @@
                             <div class="mt-2">
                                 {% for bet in pending_won %}
                                 <small class="d-block text-muted">
-                                    <strong>{{ bet.bet_value }}</strong> da 
+                                    <strong>{{ bet.bet_value }}</strong> da
                                     <a href="{{ url_for('main.user_profile', user_id=bet.loser.id) }}">
                                         {{ bet.loser.username }}
                                     </a>
@@ -208,7 +208,7 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <h6>💸 Devi Pagare</h6>
                             {% set pending_lost = bets_lost|selectattr('status', 'equalto', 'pending')|list %}
@@ -216,12 +216,12 @@
                             <div class="mt-2">
                                 {% for bet in pending_lost %}
                                 <small class="d-block text-muted">
-                                    <strong>{{ bet.bet_value }}</strong> a 
+                                    <strong>{{ bet.bet_value }}</strong> a
                                     <a href="{{ url_for('main.user_profile', user_id=bet.winner.id) }}">
                                         {{ bet.winner.username }}
                                     </a>
-                                    <a href="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}" 
-                                    class="badge bg-primary btn-sm" 
+                                    <a href="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}"
+                                    class="badge bg-primary btn-sm"
                                     onclick="return confirm('Segnare come pagata?')">
                                         Segna come pagato
                                     </a>
@@ -231,7 +231,7 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <h6>⚖️ Saldo Attivo</h6>
                             {% set active_balance = pending_won|length - pending_lost|length %}
@@ -271,7 +271,7 @@
                                 {% endfor %}
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <h6>💳 Pagate</h6>
                             {% set paid_lost = bets_lost|selectattr('status', 'equalto', 'paid')|list %}
@@ -290,7 +290,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Statistiche Totali -->
             <div class="row mt-3 text-center border-top pt-3">
                 <div class="col-4">
