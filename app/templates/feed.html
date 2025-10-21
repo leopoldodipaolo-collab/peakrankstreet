@@ -38,10 +38,15 @@
 
                     <!-- Body -->
                     <div class="card-body">
+                        <!-- CORREZIONE APPLICATA QUI -->
                         <p class="feed-activity-title">
                             Ha completato 
                             <strong>
-                                <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="user-link text-success">{{ activity.route_activity.name }}</a>
+                                {% if activity.route_activity %}
+                                    <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="user-link text-success">{{ activity.route_activity.name }}</a>
+                                {% else %}
+                                    <span class="text-muted">un'attività manuale.</span>
+                                {% endif %}
                             </strong>
                         </p>
                         <div class="activity-stats d-flex justify-content-around text-center my-3">
@@ -171,4 +176,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 {% endblock %}
-
