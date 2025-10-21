@@ -372,7 +372,10 @@ def route_detail(route_id):
     route = Route.query.options(joinedload(Route.creator)).get_or_404(route_id)
     route_geojson_data = json.dumps(json.loads(route.coordinates)) if route.coordinates else "{}"
 
-    challenges_for_route = Challenge.query.filter(Challenge.route_id == route.id, Challenge.end_date >= datetime.utcnow()).order_by(Challenge.start_date).all()
+    challenges_for_route = Challenge.query.filter(
+        Challenge.route_id == route.id,
+        Challenge.end_date >= datetime.utcnow()
+    ).order_by(Challenge.start_date).all()
 
     if request.method == "POST":
         if not current_user.is_authenticated:
@@ -390,35 +393,32 @@ def route_detail(route_id):
         flash('Commento aggiunto con successo!', 'success')
         return redirect(url_for('main.route_detail', route_id=route.id))
 
-    # --- INIZIO BLOCCO MODIFICATO ---
-
-    # 1. Query dei commenti senza 'selectinload(Comment.likes)'
+    # Commenti e info like
     comments = Comment.query.options(joinedload(Comment.author)).filter_by(route_id=route.id).order_by(Comment.created_at.desc()).all()
-    
-    # 2. Calcolo delle informazioni sui like in modo compatibile con lazy='dynamic'
     comments_with_like_info = []
     for c in comments:
         has_liked = False
-        # Controlliamo se l'utente ha messo "Mi piace" solo se è loggato
-        if current_user.is_authenticated:
-            # Eseguiamo una piccola query per vedere se esiste un like di questo utente per questo commento
-            if c.likes.filter_by(user_id=current_user.id).first():
-                has_liked = True
-
+        if current_user.is_authenticated and c.likes.filter_by(user_id=current_user.id).first():
+            has_liked = True
         comments_with_like_info.append({
             'comment': c,
-            'like_count': c.likes.count(),  # Usiamo il metodo .count() che è compatibile e corretto
+            'like_count': c.likes.count(),
             'has_liked': has_liked
         })
-        
-    # --- FINE BLOCCO MODIFICATO ---
-    
+
     route_record = RouteRecord.query.filter_by(route_id=route.id).order_by(RouteRecord.duration.asc()).first()
     top_5_activities_for_route = Activity.query.filter_by(route_id=route.id).order_by(Activity.duration.asc()).limit(5).all()
 
-    return render_template("route_detail.html", route=route, route_geojson_data=route_geojson_data,
-                           challenges_for_route=challenges_for_route, comments_with_like_info=comments_with_like_info,
-                           route_record=route_record, top_5_activities_for_route=top_5_activities_for_route, is_homepage=False)
+    return render_template(
+        "route_detail.html",
+        route=route,
+        route_geojson_data=route_geojson_data,
+        challenges_for_route=challenges_for_route,
+        comments_with_like_info=comments_with_like_info,
+        route_record=route_record,
+        top_5_activities_for_route=top_5_activities_for_route,
+        is_homepage=False
+    )
 
 @main.route("/comment/<int:comment_id>/like", methods=["POST"])
 @login_required
@@ -433,7 +433,14 @@ def toggle_like(comment_id):
         db.session.add(new_like)
         action = "liked"
     db.session.commit()
-    return jsonify({'status': 'success', 'action': action, 'new_like_count': len(comment.likes), 'comment_id': comment_id})
+    
+    return jsonify({
+        'status': 'success',
+        'action': action,
+        'new_like_count': comment.likes.count(),  # <--- usa .count()
+        'comment_id': comment_id
+    })
+
 
 # --- Route per Sfide (Challenges) e Attività (Activities) ---
 
