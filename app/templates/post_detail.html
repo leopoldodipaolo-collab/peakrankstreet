@@ -99,31 +99,22 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = '{{ csrf_token() }}';
-
-    // ===============================================================
-    // GESTORE DI EVENTI GLOBALE PER CLICK E SUBMIT
-    // ===============================================================
+    const mainPostId = {{ post.id }};
 
     document.body.addEventListener('click', function(event) {
 
-        // --- GESTIONE "MI PIACE" ---
         const likeButton = event.target.closest('.like-button');
         if (likeButton) {
             event.preventDefault();
             const postId = likeButton.dataset.postId;
             const apiUrl = `/post/${postId}/like`;
-            
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken }
-            })
+            fetch(apiUrl, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
                     const icon = likeButton.querySelector('i');
                     const countSpan = likeButton.querySelector('.like-count');
                     countSpan.textContent = data.new_like_count;
-                    
                     if (data.action === 'liked') {
                         likeButton.classList.remove('text-muted');
                         likeButton.classList.add('text-danger');
@@ -139,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // --- GESTIONE ELIMINA COMMENTO ---
         const deleteBtn = event.target.closest('.delete-comment-btn');
         if (deleteBtn) {
             event.preventDefault();
@@ -157,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- GESTIONE CLICK SU "MODIFICA" COMMENTO ---
         const editBtn = event.target.closest('.edit-comment-btn');
         if (editBtn) {
             event.preventDefault();
@@ -165,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentDiv = document.getElementById(`comment-${commentId}`);
             const contentContainer = commentDiv.querySelector('.comment-content-container');
             const originalContentP = contentContainer.querySelector('.comment-content');
-            if (originalContentP) { // Evita di aprire più form
+            if (originalContentP) {
                 const originalContent = originalContentP.innerHTML;
                 const editFormHTML = `
                     <form class="edit-comment-form" action="/post-comment/${commentId}/edit" method="POST">
@@ -178,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- GESTIONE ANNULLA MODIFICA ---
         const cancelBtn = event.target.closest('.cancel-edit-btn');
         if (cancelBtn) {
             const commentDiv = cancelBtn.closest('.comment');
@@ -186,11 +174,37 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalContent = cancelBtn.closest('form').querySelector('textarea').defaultValue;
             contentContainer.innerHTML = `<p class="comment-content mb-0">${originalContent}</p>`;
         }
+        
+        const replyBtn = event.target.closest('.reply-btn');
+        if (replyBtn) {
+            event.preventDefault();
+            const commentId = replyBtn.dataset.commentId;
+            const formContainer = document.getElementById(`reply-form-for-${commentId}`);
+            if (formContainer.style.display === 'block') {
+                formContainer.style.display = 'none';
+                formContainer.innerHTML = '';
+                return;
+            }
+            const actionUrl = `/api/post/${mainPostId}/add_comment`;
+            const replyFormHTML = `
+                <form method="POST" action="${actionUrl}" class="comment-form-reply">
+                    <input type="hidden" name="csrf_token" value="${csrfToken}"/>
+                    <input type="hidden" name="parent_id" value="${commentId}"/>
+                    <div class="d-flex">
+                        <textarea class="form-control me-2" name="content" rows="2" placeholder="Rispondi..." required></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm align-self-start"><i class="bi bi-send-fill"></i></button>
+                    </div>
+                </form>
+            `;
+            formContainer.innerHTML = replyFormHTML;
+            formContainer.style.display = 'block';
+            formContainer.querySelector('textarea').focus();
+        }
     });
 
     document.body.addEventListener('submit', function(event) {
-        // --- GESTIONE INVIO NUOVO COMMENTO ---
-        const commentForm = event.target.closest('#comment-form');
+        
+        const commentForm = event.target.closest('#comment-form, .comment-form-reply');
         if (commentForm) {
             event.preventDefault();
             const formData = new FormData(commentForm);
@@ -200,17 +214,25 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    document.getElementById('comments-list').insertAdjacentHTML('afterbegin', data.comment_html);
-                    commentTextarea.value = '';
+                    const parentId = formData.get('parent_id');
+                    if (parentId) {
+                        document.getElementById(`replies-for-${parentId}`).insertAdjacentHTML('beforeend', data.comment_html);
+                        commentForm.parentElement.style.display = 'none';
+                        commentForm.parentElement.innerHTML = '';
+                    } else {
+                        document.getElementById('comments-list').insertAdjacentHTML('afterbegin', data.comment_html);
+                        if(commentTextarea) commentTextarea.value = '';
+                    }
                     document.getElementById('comment-count').textContent = data.new_comment_count;
                     document.getElementById('comment-count-link').textContent = data.new_comment_count;
-                    const noCommentsMessage = document.getElementById('no-comments-message');
-                    if (noCommentsMessage) { noCommentsMessage.remove(); }
-                } else { alert('Errore: ' + data.message); }
+                    const noCommentsMsg = document.getElementById('no-comments-message');
+                    if (noCommentsMsg) noCommentsMsg.remove();
+                } else {
+                    alert('Errore: ' + data.message);
+                }
             });
         }
-
-        // --- GESTIONE SALVATAGGIO MODIFICA COMMENTO ---
+        
         const editForm = event.target.closest('.edit-comment-form');
         if (editForm) {
             event.preventDefault();

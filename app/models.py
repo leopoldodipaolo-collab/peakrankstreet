@@ -190,10 +190,25 @@ class PostComment(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
+    # --- NUOVI CAMPI PER LE RISPOSTE ---
+    
+    # 1. Aggiungiamo una colonna per memorizzare l'ID del commento genitore.
+    #    È nullable=True perché i commenti di primo livello non hanno un genitore.
+    parent_id = db.Column(db.Integer, db.ForeignKey('post_comments.id'), nullable=True)
+
+    # 2. Creiamo la relazione per accedere facilmente alle risposte.
+    #    'replies' ci darà tutti i figli di un commento.
+    replies = db.relationship('PostComment',
+                              backref=db.backref('parent', remote_side=[id]),
+                              lazy='dynamic',
+                              cascade='all, delete-orphan')
+    
+    # --- FINE NUOVI CAMPI ---
+
     user = db.relationship('User', backref='post_comments')
     
     def __repr__(self):
-        return f'<PostComment {self.id}>'
+        return f'<PostComment {self.id} on Post {self.post_id}>'
 
 
 class PostLike(db.Model):

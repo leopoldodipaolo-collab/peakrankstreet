@@ -1124,6 +1124,30 @@ def notifications():
                 bg_color = "bg-secondary"
         # --- FINE BLOCCO AGGIUNTO ---
 
+        # --- BLOCCHI NUOVI E COMPLETI PER LE MENZIONI ---
+        
+        elif n.action == 'mention_in_post':
+            post = Post.query.get(n.object_id)
+            if post:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un post."
+                link = url_for('main.post_detail', post_id=post.id)
+                icon = "📣"
+                bg_color = "bg-info"
+            else:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un post che è stato rimosso."
+        
+        elif n.action == 'mention_in_comment':
+            post = Post.query.get(n.object_id)
+            if post:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento."
+                link = url_for('main.post_detail', post_id=post.id) + '#comments-section'
+                icon = "💬"
+                bg_color = "bg-info"
+            else:
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
+                
+        # --- FINE BLOCCHI NUOVI ---
+
 
         notification_messages.append({
             'message': message,
@@ -1821,7 +1845,10 @@ def post_detail(post_id):
     post = Post.query.get_or_404(post_id)
     
     # Recupera i commenti per questo post
-    post_comments = PostComment.query.filter_by(post_id=post_id).join(User).order_by(PostComment.created_at.asc()).all()
+    post_comments = PostComment.query.filter_by(
+        post_id=post_id, 
+        parent_id=None # <-- FILTRO CRUCIALE
+    ).join(User).order_by(PostComment.created_at.asc()).all()
     
     # Recupera i like per questo post
     post_likes = PostLike.query.filter_by(post_id=post_id).join(User).all()
@@ -1838,6 +1865,7 @@ def post_detail(post_id):
                            post_comments=post_comments, 
                            post_likes=post_likes,
                            user_liked_post=user_liked_post,
+                           PostComment=PostComment, # <-- AGGIUNGI QUESTA RIGA
                            is_homepage=False)
 
 # --- Esempi di route per commenti e like (da aggiungere) ---
@@ -1847,6 +1875,10 @@ def post_detail(post_id):
 def add_comment_to_post(post_id):
     post = Post.query.get_or_404(post_id)
     content = request.form.get('content')
+
+    # --- NUOVA RIGA: RECUPERA IL PARENT_ID DAL FORM ---
+    parent_id = request.form.get('parent_id', type=int)
+    # --- FINE NUOVA RIGA ---
     
     if not content:
         flash('Il commento non può essere vuoto.', 'warning')
@@ -1855,7 +1887,8 @@ def add_comment_to_post(post_id):
     new_comment = PostComment(
         user_id=current_user.id,
         post_id=post_id,
-        content=content
+        content=content,
+        parent_id=parent_id
     )
     db.session.add(new_comment)
     db.session.commit()
@@ -1925,7 +1958,13 @@ def add_comment_to_post_ajax(post_id):
     
     # 3. Renderizzazione del solo HTML per il nuovo commento
     # Passiamo l'oggetto 'comment' appena creato al nostro nuovo template parziale
-    comment_html = render_template('partials/feed_items/_comment.html', comment=new_comment)
+    # --- MODIFICA QUESTA RIGA ---
+    comment_html = render_template(
+        'partials/feed_items/_comment.html', 
+        comment=new_comment,
+        PostComment=PostComment # <-- AGGIUNGI QUESTA RIGA
+    )
+    # --- FINE MODIFICA ---
     
     # 4. Restituzione di una risposta JSON di successo
     return jsonify({
