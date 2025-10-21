@@ -1,44 +1,30 @@
-{# ================================================================= #}
-{#      _feed_item.html: IL CENTRALINO PER I POST DEL FEED           #}
-{# ================================================================= #}
-{#                                                                   #}
-{# Questo file non contiene HTML di per sé, ma funge da "router".    #}
-{# Riceve un oggetto 'item' (che è un Post), ne controlla la         #}
-{# categoria e include il template corretto per la visualizzazione.  #}
-{#                                                                   #}
-{# ================================================================= #}
+{# Questo file è il "centralino" intelligente per ogni elemento del feed #}
 
+{% if item.__class__.__name__ == 'Post' %}
+    {# È un oggetto di tipo Post. Ora controlliamo la sua categoria. #}
 
-{# Per chiarezza, assegniamo l'item a una variabile chiamata 'post' #}
-{% set post = item %}
+    {% set post = item %} {# Rinominiamo per chiarezza #}
 
-
-{# CONTROLLO 1: È un post speciale creato dall'amministratore? #}
-{% if post.post_category == 'admin_announcement' or post.post_category == 'weekly_tip' %}
-
-    {# Se la categoria è 'admin_announcement' o 'weekly_tip', usiamo il layout speciale #}
-    {% include 'partials/feed_items/_special_post.html' %}
+    {% if post.post_category == 'user_post' %}
+        {# È un post standard di un utente #}
+        {% include 'partials/feed_items/_user_post.html' with context %}
+        
+    {% elif post.post_category == 'admin_announcement' or post.post_category == 'weekly_tip' %}
+        {# È un annuncio o un consiglio speciale #}
+        {% include 'partials/feed_items/_special_post.html' with context %}
+        
+    {% elif post.post_category == 'system_record' %}
+        {# È un post automatico per un nuovo record #}
+        {% include 'partials/feed_items/_system_record.html' with context %}
+        
+    {% elif post.post_category == 'system_badge' %}
+        {# È un post automatico per un nuovo badge #}
+        {% include 'partials/feed_items/_system_badge.html' with context %}
+        
+    {% endif %}
     
-{# --- AGGIUNGI QUESTO BLOCCO ELIF --- #}
-{% elif post.post_category == 'system_record' %}
-    {% include 'partials/feed_items/_system_record.html' %}
-{# --- FINE BLOCCO AGGIUNTO --- #}
-
-{# --- AGGIUNGI QUESTO BLOCCO ELIF --- #}
-{% elif post.post_category == 'system_badge' %}
-    {% include 'partials/feed_items/_system_badge.html' %}
-{# --- FINE BLOCCO AGGIUNTO --- #}
-
-
-{# CONTROLLO 2: È un post standard creato da un utente? #}
-{% elif post.post_category == 'user_post' %}
-
-    {# Se è un post utente standard, usiamo il layout normale #}
-    {% include 'partials/feed_items/_user_post.html' %}
-
-
-{# Puoi aggiungere altri blocchi 'elif' qui in futuro per nuove categorie di post #}
-{# Esempio: {% elif post.post_category == 'system_record' %} ... #}
-
+{% elif item.__class__.__name__ == 'Activity' %}
+    {# È un oggetto di tipo Activity #}
+    {% include 'partials/feed_items/_activity_feed_item.html' with context %}
 
 {% endif %}

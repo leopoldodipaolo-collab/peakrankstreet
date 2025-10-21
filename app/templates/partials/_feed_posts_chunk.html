@@ -1,7 +1,6 @@
 {# Questo file sa solo come renderizzare una lista di post. #}
 {# Riceve una variabile 'posts'. #}
 
-{% for item in posts %}
-    {# Riusiamo il nostro "centralino" _feed_item.html per ogni post! #}
+{% for item in items %}
     {% include 'partials/_feed_item.html' %}
 {% endfor %}

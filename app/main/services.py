@@ -4,16 +4,67 @@ from app.models import Post, PostLike
 from sqlalchemy.orm import joinedload
 from flask_login import current_user
 
-def get_community_feed_items(limit: int = 5):
-    posts = Post.query.options(joinedload(Post.user)).order_by(Post.created_at.desc()).limit(limit).all()
+# In app/main/services.py
 
+from sqlalchemy import union_all, select, literal_column
+from app.models import Post, Activity, ActivityLike # Assicurati di importare entrambi
+
+def get_unified_feed_items(page=1, per_page=5):
+    """
+    Recupera una lista unificata e impaginata di Post e Activity,
+    ordinata per data di creazione.
+    """
+    # 1. Creiamo una query per i Post, selezionando solo le colonne per l'ordinamento e l'identificazione
+    posts_query = db.session.query(
+        Post.id.label('item_id'),
+        Post.created_at.label('timestamp'),
+        literal_column("'post'").label('item_type')
+    ).filter(Post.post_category.in_(['user_post', 'system_record', 'system_badge'])) # Filtriamo i post che vogliamo nel feed
+
+    # 2. Creiamo una query simile per le Activity
+    activities_query = db.session.query(
+        Activity.id.label('item_id'),
+        Activity.created_at.label('timestamp'),
+        literal_column("'activity'").label('item_type')
+    )
+
+    # 3. Uniamo le due query. `union_all` è più veloce di `union`.
+    unified_query = union_all(posts_query, activities_query).alias('unified')
+
+    # 4. Ordiniamo i risultati uniti e applichiamo la paginazione
+    paginated_ids = db.session.query(unified_query).order_by(
+        unified_query.c.timestamp.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
+
+    # 5. Ora abbiamo una lista di ID e tipi. Dobbiamo "idratare" questi dati,
+    #    cioè recuperare gli oggetti completi.
+    post_ids_to_fetch = [item.item_id for item in paginated_ids.items if item.item_type == 'post']
+    activity_ids_to_fetch = [item.item_id for item in paginated_ids.items if item.item_type == 'activity']
+
+    posts = Post.query.filter(Post.id.in_(post_ids_to_fetch)).all()
+    # --- MODIFICA QUESTA RIGA ---
+    activities = Activity.query.options(
+        joinedload(Activity.user_activity),
+        joinedload(Activity.route_activity)
+    ).filter(Activity.id.in_(activity_ids_to_fetch)).all()
+    # --- FINE MODIFICA ---
+
+    # Uniamo gli oggetti in un'unica mappa per un recupero veloce
+    items_map = {f'post_{p.id}': p for p in posts}
+    items_map.update({f'activity_{a.id}': a for a in activities})
+
+    # 6. Ricostruiamo la lista finale nell'ordine corretto
+    final_items = [items_map[f'{item.item_type}_{item.item_id}'] for item in paginated_ids.items]
+
+    # Arricchiamo i post con le informazioni sui like (codice che già hai)
+    # (Questa logica può essere ottimizzata ulteriormente, ma per ora va bene)
     if current_user.is_authenticated:
-        post_ids = [p.id for p in posts]
-        liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
-        for post in posts:
-            post.current_user_liked = post.id in liked_post_ids
-    else:
-        for post in posts:
-            post.current_user_liked = False
-            
-    return posts
+        for item in final_items:
+            if isinstance(item, Post):
+                # La logica dei like per i Post
+                item.current_user_liked = PostLike.query.filter_by(user_id=current_user.id, post_id=item.id).first() is not None
+            elif isinstance(item, Activity):
+                # La logica dei like per le Activity
+                item.current_user_liked = ActivityLike.query.filter_by(user_id=current_user.id, activity_id=item.id).first() is not None
+    
+    return final_items, paginated_ids.has_next

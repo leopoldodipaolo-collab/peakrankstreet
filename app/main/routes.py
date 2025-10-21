@@ -19,7 +19,7 @@ from flask_wtf.csrf import validate_csrf, CSRFError # Importa per la validazione
 import traceback  # ⚠️ AGGIUNGI QUESTO IMPORT
 from app import csrf  # <-- IMPORT CORRETTO
 import json
-from .services import get_community_feed_items # Aggiungi l'import
+from .services import get_unified_feed_items
 import re # <-- Aggiungi questo import all'inizio del file
 
 main = Blueprint('main', __name__)
@@ -157,6 +157,9 @@ def index():
         ).order_by(Challenge.start_date.asc()).limit(3).all()
         recent_challenges_in_city = challenges_query
         
+    # --- NUOVA LOGICA FEED UNIFICATO ---
+    community_items, has_next_feed_page = get_unified_feed_items(page=1, per_page=5)
+    # --- FINE NUOVA LOGICA ---
         
     # --- PASSAGGIO DATI AL TEMPLATE ---
     return render_template("index.html", 
@@ -1934,50 +1937,16 @@ def add_comment_to_post_ajax(post_id):
 
 @main.route('/api/feed')
 def api_feed():
-    """
-    API endpoint per restituire i post del feed in blocchi impaginati.
-    Accetta un parametro 'page' nella query string.
-    """
     page = request.args.get('page', 1, type=int)
-    PER_PAGE = 5
+    items, has_next = get_unified_feed_items(page=page, per_page=5)
     
-    # --- MODIFICA QUI: APPLICHIAMO LO STESSO ORDINAMENTO SPECIALE ---
-    special_post_order = case(
-        (Post.post_category.in_(['admin_announcement', 'weekly_tip']), 0),
-        else_=1
-    )
-
-    posts_pagination = Post.query.options(joinedload(Post.user)).order_by(
-        special_post_order, 
-        Post.created_at.desc()
-    ).paginate(page=page, per_page=PER_PAGE, error_out=False)
-    # --- FINE MODIFICA ---
+    # Ora il template parziale riceverà una lista mista di Post e Activity
+    items_html = render_template('partials/_feed_posts_chunk.html', items=items)
     
-    posts = posts_pagination.items
-    
-    # Il resto della logica per arricchire con i "Mi piace" è corretto
-    if current_user.is_authenticated:
-        post_ids = [p.id for p in posts]
-        if post_ids:
-            liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
-            for post in posts:
-                post.current_user_liked = post.id in liked_post_ids
-        else:
-             for post in posts:
-                post.current_user_liked = False
-    else:
-        for post in posts:
-            post.current_user_liked = False
-
-    # Renderizziamo l'HTML del "pezzo" di feed
-    posts_html = render_template('partials/_feed_posts_chunk.html', posts=posts)
-    
-    # Restituiamo il JSON
     return jsonify({
-        'html': posts_html,
-        'has_next_page': posts_pagination.has_next
+        'html': items_html,
+        'has_next_page': has_next
     })
-
 # TEST #####################################################################################################################################
 
 @main.route("/test/create_test_bet_leo_marco")

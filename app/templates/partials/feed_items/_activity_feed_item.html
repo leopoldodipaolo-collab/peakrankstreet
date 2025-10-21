@@ -1,0 +1,31 @@
+{# Layout per un'attività nel feed #}
+{% set activity = item %}
+<div class="list-group-item px-0 py-3">
+    <div class="d-flex w-100 align-items-center">
+        <!-- Icona dell'attività -->
+        <div class="me-3 fs-2 text-info">
+            {% if activity.activity_type == 'Corsa' %}
+                <i class="bi bi-person-running"></i>
+            {% elif activity.activity_type == 'Bici' %}
+                <i class="bi bi-bicycle"></i>
+            {% else %}
+                <i class="bi bi-activity"></i>
+            {% endif %}
+        </div>
+        
+        <div class="flex-grow-1">
+            <p class="mb-0">
+                {# --- CORREZIONE QUI --- #}
+                <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="fw-bold text-dark text-decoration-none">{{ activity.user_activity.username }}</a>
+                ha completato un'attività di <strong>{{ '%.2f'|format(activity.distance) }} km</strong>
+                {# --- E ANCHE QUI (se applicabile) --- #}
+                {% if activity.route_activity %}
+                    sul percorso <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}">'{{ activity.route_activity.name }}'</a>.
+                {% endif %}
+            </p>
+            <small class="text-muted timeago" datetime="{{ activity.created_at.isoformat() }}Z">{{ activity.created_at.strftime('%d %b %Y') }}</small>
+        </div>
+        
+        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="btn btn-sm btn-outline-info">Vedi</a>
+    </div>
+</div>
