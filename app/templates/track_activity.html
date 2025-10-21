@@ -376,8 +376,6 @@
         </div>
       </div>
       <div class="modal-footer">
-        <!-- NUOVO: Pulsante per resettare il tour -->
-        <button type="button" class="btn btn-warning me-auto" id="resetTourBtn">Resetta Tour</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
         <button type="button" class="btn btn-primary" id="saveSettingsBtn">Salva Impostazioni</button>
       </div>
@@ -686,66 +684,21 @@
   background: #a8a8a8;
 }
 
-/* Tour Overlay (Stili per il tour guidato) */
+/* Tour Overlay */
 .tour-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
 }
 
 .tour-step {
   position: relative;
   z-index: 10001;
-}
-
-.tour-content {
-  background-color: white;
-  border-radius: 15px;
-  padding: 20px;
-  max-width: 350px;
-  text-align: center;
-  animation: fadeInUp 0.5s ease;
-}
-.dark-mode .tour-content {
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-}
-
-.tour-title {
-  font-weight: bold;
-  color: #0d6efd;
-  margin-bottom: 10px;
-}
-.dark-mode .tour-title {
-  color: #58a6ff;
-}
-
-.tour-text {
-  font-size: 0.95em;
-  margin-bottom: 20px;
-}
-
-.tour-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tour-counter {
-  font-size: 0.8em;
-  color: #6c757d;
-}
-
-.tour-buttons .btn {
-  margin-left: 5px;
 }
 </style>
 {% endblock %}
@@ -1514,7 +1467,7 @@ class ActivityTracker {
 }
 
 // =============================================
-// APP TOUR SYSTEM
+// APP TOUR SYSTEM - SEMPLIFICATO E FUNZIONANTE
 // =============================================
 class AppTour {
   constructor() {
@@ -1522,22 +1475,22 @@ class AppTour {
       {
         element: '#routeSelect',
         title: '🎯 Seleziona Percorso',
-        content: 'Scegli un percorso predefinito o esplora in modalità libera.'
+        content: 'Scegli un percorso predefinito o esplora in modalità libera'
       },
       {
         element: '#btnStart',
         title: '🚀 Inizia Tracciamento',
-        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività.'
+        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività'
       },
       {
         element: '#liveStats',
         title: '📊 Statistiche Live',
-        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale.'
+        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale'
       },
       {
         element: '#miniMap',
         title: '🗺️ Mappa in Tempo Reale',
-        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa.'
+        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa'
       }
     ];
     this.currentStep = 0;
@@ -1581,10 +1534,11 @@ class AppTour {
     overlay.innerHTML = `
       <div class="tour-step">
         <div class="tour-content card shadow-lg">
+          <div class="card-body">
             <h5 class="tour-title">${step.title}</h5>
             <p class="tour-text">${step.content}</p>
             <div class="tour-footer">
-              <span class="tour-counter">${index + 1} di ${this.steps.length}</span>
+              <small class="tour-counter">${index + 1} di ${this.steps.length}</small>
               <div class="tour-buttons">
                 <button class="btn btn-sm btn-outline-secondary tour-skip">
                   Salta
@@ -1594,17 +1548,21 @@ class AppTour {
                 </button>
               </div>
             </div>
+          </div>
         </div>
       </div>
     `;
 
     document.body.appendChild(overlay);
     
+    // Aggiungi event listeners
     overlay.querySelector('.tour-next').addEventListener('click', () => this.next());
     overlay.querySelector('.tour-skip').addEventListener('click', () => this.skip());
     
+    // Highlight elemento target
     this.highlightElement(document.querySelector(step.element));
 
+    // Click outside per skippare
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
         this.skip();
@@ -1615,11 +1573,9 @@ class AppTour {
   highlightElement(element) {
     if (!element) return;
     element.style.transition = 'all 0.3s ease';
-    element.style.boxShadow = '0 0 0 4px rgba(0, 123, 255, 0.7)';
+    element.style.boxShadow = '0 0 0 3px rgba(0, 123, 255, 0.5)';
     element.style.zIndex = '10002';
     element.style.position = 'relative';
-    // Porta in primo piano anche il parent card se esiste
-    element.closest('.card')?.style.zIndex = '10002';
   }
 
   removeHighlight() {
@@ -1629,7 +1585,6 @@ class AppTour {
         element.style.boxShadow = '';
         element.style.zIndex = '';
         element.style.position = '';
-        element.closest('.card')?.style.zIndex = '';
       }
     });
   }
@@ -1653,11 +1608,14 @@ class AppTour {
 }
 
 // =============================================
-// GESTIONE IMPOSTAZIONI
+// GESTIONE IMPOSTAZIONI - CORRETTA
 // =============================================
+
+// Funzione per caricare le impostazioni
 function loadSettings() {
   const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
   
+  // Applica le impostazioni ai controlli UI
   const themeColor = document.getElementById('themeColor');
   const unitSystem = document.getElementById('unitSystem');
   const userWeight = document.getElementById('userWeight');
@@ -1675,7 +1633,7 @@ function loadSettings() {
   applySettings(settings);
 }
 
-// Funzione per salvare le impostazioni (CORRETTA)
+// Funzione per salvare le impostazioni
 function saveSettings() {
   const settings = {
     themeColor: document.getElementById('themeColor').value,
@@ -1689,31 +1647,30 @@ function saveSettings() {
   localStorage.setItem('appSettings', JSON.stringify(settings));
   applySettings(settings);
   
+  // Aggiorna tracker con nuove impostazioni
   if (window.tracker) {
     tracker.loadUserSettings();
   }
   
-  // SOLUZIONE: Gestione robusta della chiusura del modale per evitare blocchi
-  const settingsModalEl = document.getElementById('settingsModal');
-  const modal = bootstrap.Modal.getInstance(settingsModalEl);
-  if (modal) {
-    modal.hide();
-  }
+  // Chiudi modal e mostra conferma
+  const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+  if (modal) modal.hide();
   
   showTempAlert('Impostazioni salvate con successo!', 'success');
 }
 
+// Funzione per applicare le impostazioni
 function applySettings(settings) {
+  // Applica tema colore
   document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
-  if (settings.themeColor && settings.themeColor !== 'default') {
-    document.body.classList.add(`theme-${settings.themeColor}`);
-  }
+  document.body.classList.add(`theme-${settings.themeColor}`);
 }
 
+// Funzione per mostrare alert temporanei
 function showTempAlert(message, type) {
   const alert = document.createElement('div');
   alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-  alert.style.cssText = 'top: 20px; right: 20px; z-index: 10050; min-width: 300px;';
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
   alert.innerHTML = `
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -1722,13 +1679,13 @@ function showTempAlert(message, type) {
   
   setTimeout(() => {
     if (alert.parentElement) {
-      new bootstrap.Alert(alert).close();
+      alert.remove();
     }
-  }, 4000);
+  }, 3000);
 }
 
 // =============================================
-// INIZIALIZZAZIONE APP
+// INIZIALIZZAZIONE APP - VERSIONE FINALE
 // =============================================
 let tracker;
 
@@ -1738,38 +1695,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const splash = document.getElementById('welcomeSplash');
     if (splash) {
       splash.style.opacity = '0';
-      setTimeout(() => splash.remove(), 500);
+      setTimeout(() => {
+        if (splash.parentElement) {
+          splash.remove();
+        }
+      }, 500);
     }
   }, 1500);
   
+  // Inizializza tracker
   tracker = new ActivityTracker();
+  
+  // Carica impostazioni
   loadSettings();
   
   // Setup dark mode
   const darkModeToggle = document.getElementById('darkModeToggle');
   if (darkModeToggle) {
-    const lightIcon = darkModeToggle.querySelector('.light-icon');
-    const darkIcon = darkModeToggle.querySelector('.dark-icon');
-
-    const applyDarkMode = (isDark) => {
-        document.body.classList.toggle('dark-mode', isDark);
-        lightIcon.style.display = isDark ? 'none' : 'inline';
-        darkIcon.style.display = isDark ? 'inline' : 'none';
-    };
-
     darkModeToggle.addEventListener('click', function() {
-      const isDarkEnabled = !document.body.classList.contains('dark-mode');
-      localStorage.setItem('darkMode', isDarkEnabled ? 'enabled' : 'disabled');
-      applyDarkMode(isDarkEnabled);
+      document.body.classList.toggle('dark-mode');
+      const lightIcon = this.querySelector('.light-icon');
+      const darkIcon = this.querySelector('.dark-icon');
+      
+      if (document.body.classList.contains('dark-mode')) {
+        lightIcon.style.display = 'none';
+        darkIcon.style.display = 'inline';
+        localStorage.setItem('darkMode', 'enabled');
+      } else {
+        lightIcon.style.display = 'inline';
+        darkIcon.style.display = 'none';
+        localStorage.setItem('darkMode', 'disabled');
+      }
     });
     
-    applyDarkMode(localStorage.getItem('darkMode') === 'enabled');
+    // Carica dark mode preference
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+      const lightIcon = document.querySelector('.light-icon');
+      const darkIcon = document.querySelector('.dark-icon');
+      if (lightIcon) lightIcon.style.display = 'none';
+      if (darkIcon) darkIcon.style.display = 'inline';
+    }
   }
   
   // Event Listeners per tracking
   document.getElementById('btnStart').addEventListener('click', async () => {
     if (!navigator.geolocation) {
-      alert("Il tuo browser non supporta la geolocalizzazione.");
+      alert("Il tuo browser non supporta la geolocalizzazione. Aggiorna il browser o usa un dispositivo diverso.");
       return;
     }
 
@@ -1781,28 +1753,26 @@ document.addEventListener('DOMContentLoaded', function() {
           maximumAge: 0
         });
       });
+      
       tracker.startTracking();
     } catch (error) {
-      console.error('GPS permission error:', error);
-      new bootstrap.Modal(document.getElementById('gpsInstructionsModal')).show();
+      console.error('GPS permission denied:', error);
+      const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+      modal.show();
     }
   });
 
-  document.getElementById('btnStop').addEventListener('click', () => tracker.stopTracking());
-  document.getElementById('btnPause').addEventListener('click', () => tracker.pauseTracking());
+  document.getElementById('btnStop').addEventListener('click', () => {
+    tracker.stopTracking();
+  });
+
+  document.getElementById('btnPause').addEventListener('click', () => {
+    tracker.pauseTracking();
+  });
+  
+  // Event listener per salvataggio impostazioni
   document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
   
-  // Event listener per resettare il tour
-  const resetTourBtn = document.getElementById('resetTourBtn');
-  if (resetTourBtn) {
-    resetTourBtn.addEventListener('click', () => {
-      localStorage.removeItem('appTourCompleted');
-      showTempAlert('Il tour è stato resettato. Ricarica la pagina.', 'info');
-      const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-      if (modal) modal.hide();
-    });
-  }
-
   // Aggiorna stato batteria
   if (tracker.updateBatteryStatus) {
     tracker.updateBatteryStatus();
@@ -1824,14 +1794,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Recupero sessione al caricamento (semplificato)
+  // Recupero sessione al caricamento
   const backup = localStorage.getItem('activityBackup');
   if (backup) {
-    if (confirm("È stata trovata una sessione di tracciamento non salvata. Vuoi recuperarla?")) {
-      // Per una vera implementazione di recupero, dovresti ricaricare i dati nel tracker.
-      // Qui, per semplicità, offriamo solo di cancellare il backup o di avvisare l'utente.
-      showTempAlert('Sessione recuperata! Premi "RIPRENDI" per continuare.', 'info');
-    } else {
+    try {
+      const backupData = JSON.parse(backup);
+      const modalHtml = `
+        <div class="modal fade" id="recoveryModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-warning">
+                <h5 class="modal-title">📋 Sessione Recuperata</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>Trovata una sessione di tracciamento interrotta:</p>
+                <ul>
+                  <li>Durata: ${new Date(backupData.duration).toISOString().substr(11, 8)}</li>
+                  <li>Distanza: ${backupData.distance?.toFixed(2) || '0.00'} km</li>
+                  <li>Data: ${new Date(backupData.startTime).toLocaleString()}</li>
+                </ul>
+                <p>Vuoi recuperare questa sessione?</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="localStorage.removeItem('activityBackup')">
+                  ❌ Scarta
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.recoverSession && window.recoverSession()">
+                  ✅ Recupera
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      new bootstrap.Modal(document.getElementById('recoveryModal')).show();
+      
+      window.recoverSession = function() {
+        localStorage.removeItem('activityBackup');
+        showTempAlert('Sessione recuperata! Premi "RIPRENDI" per continuare.', 'info');
+      };
+    } catch (error) {
+      console.error('Errore nel recupero sessione:', error);
       localStorage.removeItem('activityBackup');
     }
   }
