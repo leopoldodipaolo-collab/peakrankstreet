@@ -377,7 +377,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-        <button type="button" class="btn btn-primary" onclick="saveSettings()">Salva Impostazioni</button>
+        <button type="button" class="btn btn-primary" id="saveSettingsBtn">Salva Impostazioni</button>
       </div>
     </div>
   </div>
@@ -1467,7 +1467,7 @@ class ActivityTracker {
 }
 
 // =============================================
-// APP TOUR SYSTEM - MOBILE FIXED
+// APP TOUR SYSTEM - SEMPLIFICATO E FUNZIONANTE
 // =============================================
 class AppTour {
   constructor() {
@@ -1475,26 +1475,22 @@ class AppTour {
       {
         element: '#routeSelect',
         title: '🎯 Seleziona Percorso',
-        content: 'Scegli un percorso predefinito o esplora in modalità libera',
-        position: 'bottom'
+        content: 'Scegli un percorso predefinito o esplora in modalità libera'
       },
       {
         element: '#btnStart',
         title: '🚀 Inizia Tracciamento',
-        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività',
-        position: 'top'
+        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività'
       },
       {
         element: '#liveStats',
         title: '📊 Statistiche Live',
-        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale',
-        position: 'top'
+        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale'
       },
       {
         element: '#miniMap',
         title: '🗺️ Mappa in Tempo Reale',
-        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa',
-        position: 'top'
+        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa'
       }
     ];
     this.currentStep = 0;
@@ -1506,8 +1502,7 @@ class AppTour {
     }
 
     this.currentStep = 0;
-    // Aspetta che il DOM sia completamente renderizzato
-    setTimeout(() => this.showStep(this.currentStep), 100);
+    setTimeout(() => this.showStep(this.currentStep), 500);
   }
 
   showStep(index) {
@@ -1520,54 +1515,24 @@ class AppTour {
     this.currentStep = index;
     const step = this.steps[index];
     
-    // Aspetta che l'elemento target sia disponibile
-    const checkElement = () => {
-      const targetElement = document.querySelector(step.element);
-      if (targetElement && targetElement.offsetParent !== null) {
-        this.createStepOverlay(step, index);
-      } else {
-        setTimeout(checkElement, 100);
-      }
-    };
-    
-    checkElement();
-  }
-
-  createStepOverlay(step, index) {
-    this.removeOverlay();
-    
     const targetElement = document.querySelector(step.element);
     if (!targetElement) {
       this.showStep(index + 1);
       return;
     }
 
-    // Scrolla l'elemento nella vista
-    targetElement.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'center',
-      inline: 'center'
-    });
+    this.createStepOverlay(step, index);
+  }
 
+  createStepOverlay(step, index) {
+    this.removeOverlay();
+    
     const overlay = document.createElement('div');
     overlay.id = 'tourOverlay';
     overlay.className = 'tour-overlay';
     
-    // Calcola posizione ottimale
-    const positioning = this.calculateOptimalPosition(targetElement, step.position);
-    
     overlay.innerHTML = `
-      <div class="tour-step" style="
-        position: fixed;
-        ${positioning.top !== null ? `top: ${positioning.top}px;` : ''}
-        ${positioning.bottom !== null ? `bottom: ${positioning.bottom}px;` : ''}
-        ${positioning.left !== null ? `left: ${positioning.left}px;` : ''}
-        ${positioning.right !== null ? `right: ${positioning.right}px;` : ''}
-        transform: ${positioning.transform};
-        max-width: ${this.isMobile() ? 'calc(100vw - 40px)' : '400px'};
-        z-index: 10001;
-        pointer-events: auto;
-      ">
+      <div class="tour-step">
         <div class="tour-content card shadow-lg">
           <div class="card-body">
             <h5 class="tour-title">${step.title}</h5>
@@ -1585,7 +1550,6 @@ class AppTour {
             </div>
           </div>
         </div>
-        <div class="tour-arrow" style="${this.getArrowPosition(step.position, positioning)}"></div>
       </div>
     `;
 
@@ -1596,7 +1560,7 @@ class AppTour {
     overlay.querySelector('.tour-skip').addEventListener('click', () => this.skip());
     
     // Highlight elemento target
-    this.highlightElement(targetElement);
+    this.highlightElement(document.querySelector(step.element));
 
     // Click outside per skippare
     overlay.addEventListener('click', (e) => {
@@ -1606,127 +1570,21 @@ class AppTour {
     });
   }
 
-  calculateOptimalPosition(element, preferredPosition) {
-    const rect = element.getBoundingClientRect();
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-    
-    const isMobile = this.isMobile();
-    const tourHeight = 180; // Altezza approssimativa del tour
-    const tourWidth = isMobile ? viewport.width - 40 : 400;
-    const safeMargin = 20;
-
-    // Calcola spazio disponibile sopra e sotto
-    const spaceAbove = rect.top;
-    const spaceBelow = viewport.height - rect.bottom;
-
-    // Determina la posizione migliore
-    let position;
-    if (isMobile) {
-      // Su mobile, preferisci sempre il basso se c'è spazio
-      if (spaceBelow > tourHeight + safeMargin || spaceBelow > spaceAbove) {
-        position = {
-          top: rect.bottom + safeMargin,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          arrow: 'top'
-        };
-      } else {
-        position = {
-          bottom: viewport.height - rect.top + safeMargin,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          arrow: 'bottom'
-        };
-      }
-    } else {
-      // Su desktop, usa la posizione preferita
-      if (preferredPosition === 'top' && spaceAbove > tourHeight + safeMargin) {
-        position = {
-          bottom: viewport.height - rect.top + safeMargin,
-          left: rect.left,
-          transform: 'none',
-          arrow: 'bottom'
-        };
-      } else {
-        position = {
-          top: rect.bottom + safeMargin,
-          left: rect.left,
-          transform: 'none',
-          arrow: 'top'
-        };
-      }
-    }
-
-    // Correggi se esce dallo schermo lateralmente
-    if (position.left !== '50%') {
-      const left = typeof position.left === 'number' ? position.left : parseInt(position.left);
-      if (left + tourWidth > viewport.width - safeMargin) {
-        position.left = viewport.width - tourWidth - safeMargin;
-      }
-      if (left < safeMargin) {
-        position.left = safeMargin;
-      }
-    }
-
-    return position;
-  }
-
-  getArrowPosition(preferredPosition, positioning) {
-    if (this.isMobile()) {
-      return `
-        top: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 0 10px 10px 10px;
-        border-color: transparent transparent white transparent;
-      `;
-    }
-
-    if (positioning.arrow === 'top') {
-      return `
-        bottom: 100%;
-        left: 20px;
-        border-width: 0 10px 10px 10px;
-        border-color: transparent transparent white transparent;
-      `;
-    } else {
-      return `
-        top: 100%;
-        left: 20px;
-        border-width: 10px 10px 0 10px;
-        border-color: white transparent transparent transparent;
-      `;
-    }
-  }
-
   highlightElement(element) {
+    if (!element) return;
     element.style.transition = 'all 0.3s ease';
     element.style.boxShadow = '0 0 0 3px rgba(0, 123, 255, 0.5)';
     element.style.zIndex = '10002';
     element.style.position = 'relative';
-    
-    // Salva lo stile originale per il cleanup
-    if (!element.dataset.originalStyle) {
-      element.dataset.originalStyle = JSON.stringify({
-        boxShadow: element.style.boxShadow,
-        zIndex: element.style.zIndex,
-        position: element.style.position
-      });
-    }
   }
 
   removeHighlight() {
     this.steps.forEach(step => {
       const element = document.querySelector(step.element);
-      if (element && element.dataset.originalStyle) {
-        const originalStyle = JSON.parse(element.dataset.originalStyle);
-        element.style.boxShadow = originalStyle.boxShadow;
-        element.style.zIndex = originalStyle.zIndex;
-        element.style.position = originalStyle.position;
-        delete element.dataset.originalStyle;
+      if (element) {
+        element.style.boxShadow = '';
+        element.style.zIndex = '';
+        element.style.position = '';
       }
     });
   }
@@ -1747,212 +1605,68 @@ class AppTour {
     this.removeOverlay();
     localStorage.setItem('appTourCompleted', 'true');
   }
-
-  isMobile() {
-    return window.innerWidth <= 768;
-  }
 }
 
 // =============================================
-// STILI CSS PER IL TOUR - MOBILE FIXED
+// GESTIONE IMPOSTAZIONI - CORRETTA
 // =============================================
-const tourStyles = `
-.tour-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: rgba(0, 0, 0, 0.7) !important;
-  z-index: 10000 !important;
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: center !important;
-  padding-top: 20vh;
-  pointer-events: auto !important;
-}
-
-.tour-step {
-  position: fixed !important;
-  z-index: 10001 !important;
-  animation: tourFadeIn 0.3s ease-out !important;
-  pointer-events: auto !important;
-}
-
-.tour-content {
-  background: white !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-  pointer-events: auto !important;
-}
-
-.tour-title {
-  margin: 0 0 0.5rem 0 !important;
-  color: #333 !important;
-  font-size: 1.1rem !important;
-  font-weight: 600 !important;
-}
-
-.tour-text {
-  margin: 0 0 1rem 0 !important;
-  color: #666 !important;
-  line-height: 1.4 !important;
-  font-size: 0.95rem !important;
-}
-
-.tour-footer {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-}
-
-.tour-counter {
-  color: #999 !important;
-  font-size: 0.8rem !important;
-}
-
-.tour-buttons {
-  display: flex !important;
-  gap: 0.5rem !important;
-}
-
-.tour-arrow {
-  width: 0 !important;
-  height: 0 !important;
-  position: absolute !important;
-  border-style: solid !important;
-  pointer-events: none !important;
-}
-
-@keyframes tourFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Ottimizzazioni mobile per il tour */
-@media (max-width: 768px) {
-  .tour-overlay {
-    padding: 20px !important;
-    align-items: flex-start !important;
-    padding-top: 10vh !important;
-  }
-  
-  .tour-step {
-    position: fixed !important;
-    max-width: calc(100vw - 40px) !important;
-    left: 20px !important;
-    right: 20px !important;
-    margin: 0 !important;
-  }
-  
-  .tour-content {
-    margin: 0 !important;
-    font-size: 14px !important;
-  }
-  
-  .tour-title {
-    font-size: 1rem !important;
-  }
-  
-  .tour-text {
-    font-size: 0.9rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  .tour-buttons .btn {
-    padding: 6px 12px !important;
-    font-size: 0.8rem !important;
-  }
-  
-  .tour-footer {
-    flex-direction: column !important;
-    gap: 0.5rem !important;
-    align-items: stretch !important;
-  }
-  
-  .tour-counter {
-    text-align: center !important;
-  }
-  
-  .tour-buttons {
-    justify-content: center !important;
-  }
-}
-
-/* Scrolling sicuro per mobile */
-@media (max-width: 768px) {
-  .tour-content {
-    max-height: 60vh !important;
-    overflow-y: auto !important;
-  }
-  
-  body.tour-active {
-    overflow: hidden !important;
-  }
-}
-
-/* Highlight per elementi del tour */
-.tour-highlight {
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5) !important;
-  z-index: 10002 !important;
-  position: relative !important;
-  transition: all 0.3s ease !important;
-}
-`;
-
-// Aggiungi gli stili al documento
-if (!document.getElementById('tour-styles')) {
-  const styleSheet = document.createElement('style');
-  styleSheet.id = 'tour-styles';
-  styleSheet.textContent = tourStyles;
-  document.head.appendChild(styleSheet);
-}
-
-// =============================================
-// INIZIALIZZAZIONE APP - VERSIONE CORRETTA
-// =============================================
-let tracker;
 
 // Funzione per caricare le impostazioni
 function loadSettings() {
   const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
   
-  // Applica le impostazioni ai controlli UI se esistono
-  if (document.getElementById('themeColor')) {
-    document.getElementById('themeColor').value = settings.themeColor || 'default';
-  }
-  if (document.getElementById('unitSystem')) {
-    document.getElementById('unitSystem').value = settings.unitSystem || 'metric';
-  }
-  if (document.getElementById('userWeight')) {
-    document.getElementById('userWeight').value = settings.userWeight || 70;
-  }
-  if (document.getElementById('audioToggle')) {
-    document.getElementById('audioToggle').checked = settings.audioEnabled !== false;
-  }
-  if (document.getElementById('notificationsToggle')) {
-    document.getElementById('notificationsToggle').checked = settings.notificationsEnabled || false;
-  }
-  if (document.getElementById('privacyMode')) {
-    document.getElementById('privacyMode').checked = settings.privacyMode || false;
-  }
+  // Applica le impostazioni ai controlli UI
+  const themeColor = document.getElementById('themeColor');
+  const unitSystem = document.getElementById('unitSystem');
+  const userWeight = document.getElementById('userWeight');
+  const audioToggle = document.getElementById('audioToggle');
+  const notificationsToggle = document.getElementById('notificationsToggle');
+  const privacyMode = document.getElementById('privacyMode');
+  
+  if (themeColor) themeColor.value = settings.themeColor || 'default';
+  if (unitSystem) unitSystem.value = settings.unitSystem || 'metric';
+  if (userWeight) userWeight.value = settings.userWeight || 70;
+  if (audioToggle) audioToggle.checked = settings.audioEnabled !== false;
+  if (notificationsToggle) notificationsToggle.checked = settings.notificationsEnabled || false;
+  if (privacyMode) privacyMode.checked = settings.privacyMode || false;
   
   applySettings(settings);
 }
 
+// Funzione per salvare le impostazioni
+function saveSettings() {
+  const settings = {
+    themeColor: document.getElementById('themeColor').value,
+    unitSystem: document.getElementById('unitSystem').value,
+    userWeight: parseInt(document.getElementById('userWeight').value) || 70,
+    audioEnabled: document.getElementById('audioToggle').checked,
+    notificationsEnabled: document.getElementById('notificationsToggle').checked,
+    privacyMode: document.getElementById('privacyMode').checked
+  };
+  
+  localStorage.setItem('appSettings', JSON.stringify(settings));
+  applySettings(settings);
+  
+  // Aggiorna tracker con nuove impostazioni
+  if (window.tracker) {
+    tracker.loadUserSettings();
+  }
+  
+  // Chiudi modal e mostra conferma
+  const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+  if (modal) modal.hide();
+  
+  showTempAlert('Impostazioni salvate con successo!', 'success');
+}
+
+// Funzione per applicare le impostazioni
 function applySettings(settings) {
   // Applica tema colore
   document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
   document.body.classList.add(`theme-${settings.themeColor}`);
 }
 
+// Funzione per mostrare alert temporanei
 function showTempAlert(message, type) {
   const alert = document.createElement('div');
   alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
@@ -1969,6 +1683,11 @@ function showTempAlert(message, type) {
     }
   }, 3000);
 }
+
+// =============================================
+// INIZIALIZZAZIONE APP - VERSIONE FINALE
+// =============================================
+let tracker;
 
 document.addEventListener('DOMContentLoaded', function() {
   // Nascondi splash screen
@@ -2051,16 +1770,19 @@ document.addEventListener('DOMContentLoaded', function() {
     tracker.pauseTracking();
   });
   
+  // Event listener per salvataggio impostazioni
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+  
   // Aggiorna stato batteria
   if (tracker.updateBatteryStatus) {
     tracker.updateBatteryStatus();
     setInterval(() => tracker.updateBatteryStatus(), 60000);
   }
   
-  // Avvia tour dopo un breve delay - VERSIONE CORRETTA
+  // Avvia tour
   setTimeout(() => {
-    window.tour = new AppTour();
-    window.tour.start();
+    const tour = new AppTour();
+    tour.start();
   }, 1000);
   
   // Prevenzione uscita accidentale
