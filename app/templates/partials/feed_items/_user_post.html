@@ -1,21 +1,40 @@
 {# Layout per un post standard di un utente #}
-<div class="list-group-item px-0 py-3">
+<div class="list-group-item px-0 py-3" id="post-{{ post.id }}"> {# <-- AGGIUNGI L'ID QUI #}
     <div class="d-flex w-100">
-        <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}">
+        <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="flex-shrink-0">
             <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" alt="{{ post.user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
         </a>
         <div class="flex-grow-1">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0">
-                    <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="text-dark text-decoration-none">{{ post.user.username }}</a>
+                    <a href="..." class="text-dark text-decoration-none">{{ post.user.username }}</a>
                 </h6>
                 
-                <small class="text-muted timeago" datetime="{{ post.created_at.isoformat() }}Z">
-                    {{ post.created_at.strftime('%d %b %Y') }}
-                </small>
+                <div class="d-flex align-items-center">
+                    <small class="text-muted timeago me-2" datetime="{{ post.created_at.isoformat() }}Z">
+                        {{ post.created_at.strftime('%d %b %Y') }}
+                    </small>
+
+                    {# --- NUOVO MENU A TENDINA PER I POST --- #}
+                    {% if current_user.is_authenticated and current_user.id == post.user.id %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item edit-post-btn" href="#" data-post-id="{{ post.id }}">Modifica</a></li>
+                            <li><a class="dropdown-item delete-post-btn text-danger" href="#" data-post-id="{{ post.id }}" data-delete-url="{{ url_for('main.delete_post', post_id=post.id) }}">Elimina</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {# --- FINE NUOVO MENU --- #}
+                </div>
             </div>
 
-            <p class="mt-2 mb-2">{{ post.content | safe }}</p>
+            {# Contenitore per il contenuto del post #}
+            <div class="post-content-container mt-2 mb-2">
+                <p class="post-content-text mb-0">{{ post.content | safe }}</p>
+            </div>
 
             {% if post.image_url %}
             <a href="{{ url_for('main.post_detail', post_id=post.id) }}" class="d-block mt-2">

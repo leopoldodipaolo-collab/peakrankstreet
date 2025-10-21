@@ -2642,3 +2642,88 @@ def tag_search(tag_name):
                 post.current_user_liked = post.id in liked_post_ids
     
     return render_template('tag_search.html', tag=tag, posts=posts, is_homepage=False)
+
+
+
+# ... (le tue altre rotte) ...
+
+@main.route('/post-comment/<int:comment_id>/edit', methods=['POST'])
+@login_required
+def edit_post_comment(comment_id):
+    comment = PostComment.query.get_or_404(comment_id)
+    
+    # Sicurezza: l'utente può modificare solo i propri commenti
+    if comment.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 403
+
+    new_content = request.form.get('content')
+    if not new_content or not new_content.strip():
+        return jsonify({'status': 'error', 'message': 'Il commento non può essere vuoto.'}), 400
+    
+    # Processiamo di nuovo il contenuto per eventuali nuove menzioni/hashtag
+    processed_content, _ = parse_mentions(new_content)
+    # Potresti voler ri-eseguire anche il parsing degli hashtag qui
+    # final_content = parse_and_link_hashtags(processed_content, comment.post)
+    
+    comment.content = processed_content # o final_content
+    db.session.commit()
+    
+    return jsonify({'status': 'success', 'new_content': comment.content})
+
+
+@main.route('/post-comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_post_comment(comment_id):
+    comment = PostComment.query.get_or_404(comment_id)
+    
+    # Sicurezza: l'utente può eliminare solo i propri commenti
+    if comment.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 403
+        
+    post = comment.post # Salva il post di riferimento prima di eliminare
+    db.session.delete(comment)
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success', 
+        'message': 'Commento eliminato',
+        'new_comment_count': post.comments.count()
+    })
+
+
+@main.route('/post/<int:post_id>/edit', methods=['POST'])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    # Sicurezza: solo il proprietario può modificare
+    if post.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 403
+
+    new_content = request.form.get('content')
+    if not new_content or not new_content.strip():
+        return jsonify({'status': 'error', 'message': 'Il post non può essere vuoto.'}), 400
+    
+    # Riapplichiamo il parsing per menzioni e hashtag sul nuovo contenuto
+    processed_content_mentions, _ = parse_mentions(new_content)
+    final_content = parse_and_link_hashtags(processed_content_mentions, post)
+    
+    post.content = final_content
+    db.session.commit()
+    
+    return jsonify({'status': 'success', 'new_content': post.content})
+
+
+@main.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    # Sicurezza: solo il proprietario può eliminare
+    if post.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Non autorizzato'}), 403
+        
+    db.session.delete(post)
+    db.session.commit()
+    
+    return jsonify({'status': 'success', 'message': 'Post eliminato'})

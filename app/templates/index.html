@@ -490,33 +490,24 @@
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
 
 {% block scripts %}
-    {# NON usare super() qui perché questo è il template base #}
-    
-    <!-- 1. Includiamo le librerie JS necessarie -->
     <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
 
-    <!-- 2. Tutto il nostro codice custom va in un unico script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             
-            // --- LOGICA TIMEAGO ---
-            // Funzione helper per applicare timeago
             function applyTimeago(container) {
                 const elements = container.querySelectorAll('.timeago:not(.timeago-applied)');
                 if (elements.length > 0) {
                     timeago.render(elements, 'it');
                 }
             }
-            
-            // Applica timeago agli elementi già presenti nella pagina
             applyTimeago(document.body);
 
-
-            // --- LOGICA PER "MI PIACE" ---
             const csrfToken = '{{ csrf_token() }}';
 
             document.body.addEventListener('click', function(event) {
+                
                 const likeButton = event.target.closest('.like-button');
                 if (likeButton) {
                     event.preventDefault();
@@ -548,35 +539,85 @@
                         }
                     });
                 }
+
+                const deletePostBtn = event.target.closest('.delete-post-btn');
+                if (deletePostBtn) {
+                    event.preventDefault();
+                    if (confirm('Sei sicuro di voler eliminare questo post?')) {
+                        const url = deletePostBtn.dataset.deleteUrl;
+                        fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                document.getElementById(`post-${deletePostBtn.dataset.postId}`).remove();
+                            } else { alert('Errore: ' + data.message); }
+                        });
+                    }
+                }
+
+                const editPostBtn = event.target.closest('.edit-post-btn');
+                if (editPostBtn) {
+                    event.preventDefault();
+                    const postId = editPostBtn.dataset.postId;
+                    const postDiv = document.getElementById(`post-${postId}`);
+                    const contentContainer = postDiv.querySelector('.post-content-container');
+                    const originalContentP = contentContainer.querySelector('.post-content-text');
+                    
+                    if (originalContentP) {
+                        const originalContent = originalContentP.innerHTML;
+                        const editFormHTML = `
+                            <form class="edit-post-form" action="/post/${postId}/edit" method="POST">
+                                <textarea class="form-control mb-2" name="content" rows="4">${originalContent.replace(/<br\s*[\/]?>/gi, "")}</textarea>
+                                <button type="submit" class="btn btn-primary btn-sm">Salva</button>
+                                <button type="button" class="btn btn-secondary btn-sm cancel-edit-post-btn">Annulla</button>
+                            </form>
+                        `;
+                        contentContainer.innerHTML = editFormHTML;
+                    }
+                }
+
+                const cancelPostBtn = event.target.closest('.cancel-edit-post-btn');
+                if (cancelPostBtn) {
+                    const contentContainer = cancelPostBtn.closest('.post-content-container');
+                    const originalContent = cancelPostBtn.closest('form').querySelector('textarea').defaultValue;
+                    contentContainer.innerHTML = `<p class="post-content-text mb-0">${originalContent}</p>`;
+                }
             });
 
+            document.body.addEventListener('submit', function(event) {
+                const editPostForm = event.target.closest('.edit-post-form');
+                if (editPostForm) {
+                    event.preventDefault();
+                    const url = editPostForm.getAttribute('action');
+                    const formData = new FormData(editPostForm);
+                    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            editPostForm.parentElement.innerHTML = `<p class="post-content-text mb-0">${data.new_content}</p>`;
+                        } else { alert('Errore: ' + data.message); }
+                    });
+                }
+            });
 
-            // --- LOGICA PER "CARICA ALTRI" ---
             const loadMoreBtn = document.getElementById('load-more-btn');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const postsContainer = document.getElementById('feed-posts-container');
-
             if (loadMoreBtn) {
+                const loadingSpinner = document.getElementById('loading-spinner');
+                const postsContainer = document.getElementById('feed-posts-container');
+                
                 loadMoreBtn.addEventListener('click', function() {
                     loadMoreBtn.style.display = 'none';
                     loadingSpinner.style.display = 'block';
-
                     const nextPage = this.dataset.nextPage;
 
                     fetch(`/api/feed?page=${nextPage}`)
                         .then(response => response.json())
                         .then(data => {
-                            // Aggiungi i nuovi post
                             postsContainer.insertAdjacentHTML('beforeend', data.html);
-
-                            // Applica timeago ai nuovi post appena aggiunti
                             applyTimeago(postsContainer);
-
                             if (data.has_next_page) {
                                 loadMoreBtn.dataset.nextPage = parseInt(nextPage) + 1;
                                 loadMoreBtn.style.display = 'block';
-                            } else {
-                                // Se non ci sono più post, il pulsante non riappare più
                             }
                         })
                         .catch(error => {
