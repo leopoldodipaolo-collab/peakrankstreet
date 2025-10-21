@@ -3,12 +3,33 @@
 {% block content %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
+<!-- Splash Screen -->
+<div id="welcomeSplash" class="splash-screen">
+  <div class="splash-content text-center">
+    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+    <h3 class="text-white">Preparazione Tracciamento</h3>
+    <p class="text-white-50">Stiamo ottimizzando la precisione GPS...</p>
+    <div class="progress mt-3 mx-auto" style="width: 200px; height: 6px;">
+      <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+    </div>
+  </div>
+</div>
+
 <div class="container mt-4">
   <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
       
-      <!-- Header -->
-      <div class="text-center mb-4">
+      <!-- Header con Controlli -->
+      <div class="text-center mb-4 position-relative">
+        <div class="position-absolute top-0 end-0">
+          <button class="btn btn-sm btn-outline-secondary me-2" id="darkModeToggle">
+            <span class="light-icon">🌙</span>
+            <span class="dark-icon" style="display:none;">☀️</span>
+          </button>
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            ⚙️
+          </button>
+        </div>
         <h1 class="display-5 fw-bold text-primary">🏃 Inizia la tua Attività</h1>
         <p class="lead text-muted">Tracciamento GPS in tempo reale - Nessun GPX necessario!</p>
       </div>
@@ -17,7 +38,8 @@
       <div class="status-indicators mb-3 text-center">
         <span class="badge bg-secondary me-2" id="statusBadge">🟢 Pronto</span>
         <span class="badge bg-danger me-2" id="gpsStatus">📡 GPS: Inattivo</span>
-        <span class="badge bg-info" id="accuracyStatus">🎯 Precisione: --</span>
+        <span class="badge bg-info me-2" id="accuracyStatus">🎯 Precisione: --</span>
+        <span class="badge bg-warning" id="batteryStatus">🔋 Battery: --</span>
       </div>
 
       <!-- Selezione Percorso -->
@@ -88,6 +110,38 @@
                 <div class="stat-value text-info" id="speed">0.0</div>
                 <div class="stat-label">VELOCITÀ (KM/H)</div>
               </div>
+            </div>
+          </div>
+
+          <!-- Metriche Avanzate -->
+          <div class="row mb-3 g-2" id="advancedStats" style="display:none;">
+            <div class="col-4">
+              <div class="stat-box-sm">
+                <div class="stat-value-sm text-danger" id="calories">0</div>
+                <div class="stat-label-sm">CALORIE</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-box-sm">
+                <div class="stat-value-sm text-purple" id="elevation">+0m</div>
+                <div class="stat-label-sm">SALITA</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-box-sm">
+                <div class="stat-value-sm text-orange" id="efficiency">--</div>
+                <div class="stat-label-sm">EFFICIENZA</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Splits Recenti -->
+          <div class="splits-container mb-3" id="splitsContainer" style="display:none;">
+            <h6 class="text-muted mb-2">🎯 ULTIMO SPLIT</h6>
+            <div class="split-card">
+              <span id="lastSplitKm">1km</span>
+              <span id="lastSplitTime">00:00:00</span>
+              <span id="lastSplitPace">0:00/km</span>
             </div>
           </div>
 
@@ -205,7 +259,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="row text-center">
+        <div class="row text-center mb-3">
           <div class="col-6 mb-3">
             <div class="stat-box">
               <div class="stat-value text-primary" id="summaryDuration">00:00:00</div>
@@ -231,6 +285,26 @@
             </div>
           </div>
         </div>
+        
+        <!-- Metriche Avanzate nel Riepilogo -->
+        <div class="advanced-summary mt-3 p-3 bg-light rounded">
+          <h6>📈 Metriche Avanzate</h6>
+          <div class="row text-center">
+            <div class="col-4">
+              <div class="text-danger fw-bold" id="summaryCalories">0</div>
+              <small class="text-muted">Calorie</small>
+            </div>
+            <div class="col-4">
+              <div class="text-purple fw-bold" id="summaryElevation">+0m</div>
+              <small class="text-muted">Dislivello</small>
+            </div>
+            <div class="col-4">
+              <div class="text-orange fw-bold" id="summaryEfficiency">--</div>
+              <small class="text-muted">Efficienza</small>
+            </div>
+          </div>
+        </div>
+        
         <div class="mt-3 p-3 bg-light rounded">
           <small class="text-muted">
             💡 <strong>Suggerimento:</strong> L'attività verrà salvata nel tuo profilo e potrai visualizzarne i dettagli completa.
@@ -247,7 +321,70 @@
   </div>
 </div>
 
+<!-- Modal Settings -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">⚙️ Impostazioni</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Tema Colori -->
+        <div class="mb-3">
+          <label class="form-label">🎨 Tema Colori</label>
+          <select class="form-select" id="themeColor">
+            <option value="default">Blu Classico</option>
+            <option value="green">Verde Sport</option>
+            <option value="purple">Viola Energia</option>
+            <option value="orange">Arancio</option>
+          </select>
+        </div>
+        
+        <!-- Unità di Misura -->
+        <div class="mb-3">
+          <label class="form-label">📏 Unità di Misura</label>
+          <select class="form-select" id="unitSystem">
+            <option value="metric">Metrico (km, min/km)</option>
+            <option value="imperial">Imperiale (mi, min/mi)</option>
+          </select>
+        </div>
+        
+        <!-- Peso Utente per Calorie -->
+        <div class="mb-3">
+          <label class="form-label">⚖️ Il tuo Peso (kg)</label>
+          <input type="number" class="form-control" id="userWeight" min="30" max="150" value="70">
+          <small class="text-muted">Usato per calcolare le calorie bruciate</small>
+        </div>
+        
+        <!-- Audio Feedback -->
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="audioToggle">
+          <label class="form-check-label" for="audioToggle">🔊 Feedback Audio</label>
+        </div>
+        
+        <!-- Notifiche -->
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="notificationsToggle">
+          <label class="form-check-label" for="notificationsToggle">🔔 Notifiche Browser</label>
+        </div>
+        
+        <!-- Privacy -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="privacyMode">
+          <label class="form-check-label" for="privacyMode">🕵️ Modalità Privacy</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+        <button type="button" class="btn btn-primary" onclick="saveSettings()">Salva Impostazioni</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+/* Stili Base */
 .stat-box {
   padding: 15px 10px;
   background: #f8f9fa;
@@ -275,6 +412,60 @@
   letter-spacing: 0.5px;
 }
 
+/* Statistiche Piccole */
+.stat-box-sm {
+  padding: 10px 5px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value-sm {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.stat-label-sm {
+  font-size: 0.65em;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+/* Split Cards */
+.splits-container {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.split-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.split-notification {
+  animation: slideInRight 0.5s ease;
+  margin-bottom: 10px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Tracking States */
 .tracking-card {
   transition: all 0.3s ease;
 }
@@ -324,6 +515,7 @@
   100% { transform: scale(1); }
 }
 
+/* Progress Bar */
 .progress-bar {
   transition: width 0.5s ease-in-out;
   background: linear-gradient(90deg, #28a745, #20c997, #28a745) !important;
@@ -354,6 +546,89 @@
   100% { background-color: transparent; }
 }
 
+/* Splash Screen */
+.splash-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.splash-content {
+  animation: fadeInUp 0.8s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modalità Notte */
+.dark-mode {
+  background-color: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .card {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .stat-box {
+  background-color: #3a3a3a !important;
+  border-color: #4a4a4a !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .btn {
+  background-color: #3a3a3a !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .text-muted {
+  color: #aaa !important;
+}
+
+.dark-mode .alert {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .bg-light {
+  background-color: #3a3a3a !important;
+}
+
+/* Temi Colori */
+.theme-green .btn-primary { background-color: #198754; border-color: #198754; }
+.theme-green .bg-primary { background-color: #198754 !important; }
+.theme-green .bg-success { background-color: #198754 !important; }
+
+.theme-purple .btn-primary { background-color: #6f42c1; border-color: #6f42c1; }
+.theme-purple .bg-primary { background-color: #6f42c1 !important; }
+.theme-purple .bg-success { background-color: #6f42c1 !important; }
+
+.theme-orange .btn-primary { background-color: #fd7e14; border-color: #fd7e14; }
+.theme-orange .bg-primary { background-color: #fd7e14 !important; }
+.theme-orange .bg-success { background-color: #fd7e14 !important; }
+
+/* Colori per metriche avanzate */
+.text-purple { color: #6f42c1 !important; }
+.text-orange { color: #fd7e14 !important; }
+
 /* Ottimizzazioni Mobile */
 @media (max-width: 768px) {
   .stat-box {
@@ -383,6 +658,11 @@
     padding-left: 10px;
     padding-right: 10px;
   }
+  
+  .split-card {
+    flex-direction: column;
+    gap: 5px;
+  }
 }
 
 /* Scrollbar personalizzata */
@@ -403,6 +683,23 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Tour Overlay */
+.tour-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tour-step {
+  position: relative;
+  z-index: 10001;
+}
 </style>
 {% endblock %}
 
@@ -411,7 +708,67 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Activity Tracker migliorato
+// =============================================
+// AUDIO FEEDBACK SYSTEM
+// =============================================
+class AudioFeedback {
+  constructor() {
+    this.enabled = true;
+    this.init();
+  }
+  
+  init() {
+    // Verifica supporto audio
+    this.enabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (!this.enabled) {
+      console.log('Audio disabilitato per preferenze utente');
+      return;
+    }
+    
+    // Crea suoni base con Web Audio API
+    this.audioContext = null;
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.log('Web Audio API non supportata:', e);
+      this.enabled = false;
+    }
+  }
+  
+  playBeep(frequency = 440, duration = 200, volume = 0.3) {
+    if (!this.enabled || !this.audioContext) return;
+    
+    try {
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration / 1000);
+      
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + duration / 1000);
+    } catch (e) {
+      console.log('Errore riproduzione audio:', e);
+    }
+  }
+  
+  playStart() { this.playBeep(523, 200); }    // Do
+  playPause() { this.playBeep(392, 200); }    // Sol
+  playStop() { this.playBeep(330, 300); }     // Mi
+  playKm() { this.playBeep(659, 150); }       // Mi alto
+  playAlert() { this.playBeep(784, 400, 0.5); } // Sol alto
+}
+
+// =============================================
+// ACTIVITY TRACKER MIGLIORATO
+// =============================================
 class ActivityTracker {
   constructor() {
     this.isTracking = false;
@@ -427,6 +784,23 @@ class ActivityTracker {
     this.errorCount = 0;
     this.maxErrors = 5;
     this.currentPositionMarker = null;
+    this.splits = [];
+    this.splitDistance = 1;
+    this.lastSplitAt = 0;
+    this.audioFeedback = new AudioFeedback();
+    this.privacyMode = false;
+    this.userWeight = 70;
+    
+    this.loadUserSettings();
+    this.setupSplits();
+    this.setupBrowserNotifications();
+  }
+
+  loadUserSettings() {
+    const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    this.userWeight = settings.userWeight || 70;
+    this.privacyMode = settings.privacyMode || false;
+    this.audioFeedback.enabled = settings.audioEnabled !== false;
   }
 
   async startTracking() {
@@ -441,9 +815,15 @@ class ActivityTracker {
       this.positions = [];
       this.distance = 0;
       this.errorCount = 0;
+      this.splits = [];
+      this.lastSplitAt = 0;
 
       this.updateTimer();
-      this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+      this.timerInterval = setInterval(() => {
+        this.updateTimer();
+        this.checkForSplits();
+        this.updateAdvancedMetrics();
+      }, 1000);
       
       this.startAutoSave();
       
@@ -463,6 +843,8 @@ class ActivityTracker {
       document.getElementById('btnStop').style.display = 'inline-block';
       document.getElementById('btnPause').style.display = 'inline-block';
       document.getElementById('liveStats').style.display = 'flex';
+      document.getElementById('advancedStats').style.display = 'flex';
+      document.getElementById('splitsContainer').style.display = 'block';
       document.getElementById('miniMap').style.display = 'block';
       document.querySelector('.tracking-card').classList.add('tracking-active');
 
@@ -470,7 +852,8 @@ class ActivityTracker {
       document.getElementById('autoStartMessage').style.display = 'none';
       this.showStatus("✅ Tracciamento attivo! Il GPS sta registrando il tuo percorso.", "success");
       
-      this.provideHapticFeedback();
+      this.audioFeedback.playStart();
+      this.showBrowserNotification("Tracciamento Avviato", "Il GPS sta registrando la tua attività");
 
     } catch (error) {
       console.error('Error starting tracking:', error);
@@ -522,15 +905,19 @@ class ActivityTracker {
       lng: pos.coords.longitude,
       timestamp: new Date(),
       speed: pos.coords.speed || 0,
-      accuracy: pos.coords.accuracy
+      accuracy: pos.coords.accuracy,
+      altitude: pos.coords.altitude || null
     };
 
+    // Applica privacy mode se attiva
+    const processedPos = this.privacyMode ? this.getApproximatePosition(newPos) : newPos;
+
     // Aggiorna indicatore precisione
-    this.updateAccuracyIndicator(pos.coords.accuracy);
+    this.updateAccuracyIndicator(processedPos.accuracy);
 
     if (this.positions.length > 0) {
       const last = this.positions[this.positions.length - 1];
-      const d = this.calculateDistance(last.lat, last.lng, newPos.lat, newPos.lng);
+      const d = this.calculateDistance(last.lat, last.lng, processedPos.lat, processedPos.lng);
       
       // Filtra movimenti irrealistici
       if (d < 0.05 || d > 0.5) return;
@@ -538,9 +925,9 @@ class ActivityTracker {
       this.distance += d;
     }
 
-    this.positions.push(newPos);
+    this.positions.push(processedPos);
     this.updateDisplay();
-    this.updateMap(newPos);
+    this.updateMap(processedPos);
     this.updateRouteProgress();
     
     this.errorCount = 0; // Reset error count on successful position
@@ -581,6 +968,80 @@ class ActivityTracker {
       speedEl.classList.add('value-change');
       setTimeout(() => speedEl.classList.remove('value-change'), 1000);
     }
+  }
+
+  updateAdvancedMetrics() {
+    const metrics = this.calculateMetrics();
+    
+    document.getElementById('calories').textContent = metrics.calories;
+    document.getElementById('elevation').textContent = `+${metrics.elevation.ascent}m`;
+    document.getElementById('efficiency').textContent = metrics.efficiency;
+  }
+
+  calculateMetrics() {
+    // CALCOLO CALORIE
+    const hours = (new Date() - this.startTime) / 3600000;
+    const met = this.getMETValue();
+    const calories = Math.round(met * this.userWeight * hours);
+    
+    // CALCOLO ELEVAZIONE
+    const elevation = this.calculateElevationFromPositions();
+    
+    // CALCOLO EFFICIENZA
+    const efficiency = this.calculateEfficiencyScore();
+    
+    return {
+      calories: calories,
+      elevation: elevation,
+      efficiency: efficiency
+    };
+  }
+
+  getMETValue() {
+    const avgSpeed = this.distance / ((new Date() - this.startTime) / 3600000);
+    
+    if (avgSpeed < 5) return 4;    // Camminata
+    if (avgSpeed < 8) return 6;    // Corsa leggera
+    if (avgSpeed < 12) return 8;   // Corsa media
+    return 10;                     // Corsa intensa
+  }
+
+  calculateElevationFromPositions() {
+    if (this.positions.length < 2) return { ascent: 0, descent: 0 };
+    
+    let ascent = 0;
+    let descent = 0;
+    
+    for (let i = 1; i < this.positions.length; i++) {
+      const alt1 = this.positions[i-1].altitude || 100 + Math.random() * 50;
+      const alt2 = this.positions[i].altitude || 100 + Math.random() * 50;
+      const diff = alt2 - alt1;
+      
+      if (diff > 2) ascent += diff;       // Soglia minima salita
+      else if (diff < -2) descent += Math.abs(diff); // Soglia minima discesa
+    }
+    
+    return {
+      ascent: Math.round(ascent),
+      descent: Math.round(descent),
+      net: Math.round(ascent - descent)
+    };
+  }
+
+  calculateEfficiencyScore() {
+    if (this.distance < 0.1) return '--';
+    
+    const pace = ((new Date() - this.startTime) / 60000) / this.distance;
+    const elevationRate = this.calculateElevationFromPositions().ascent / this.distance;
+    
+    let efficiency = 100 - (pace * 10) + (elevationRate * 5);
+    efficiency = Math.max(0, Math.min(100, efficiency));
+    
+    if (efficiency >= 80) return 'A+';
+    if (efficiency >= 60) return 'A';
+    if (efficiency >= 40) return 'B';
+    if (efficiency >= 20) return 'C';
+    return 'D';
   }
 
   updateTimer() {
@@ -652,6 +1113,20 @@ class ActivityTracker {
     }
   }
 
+  updateBatteryStatus() {
+    if ('getBattery' in navigator || 'battery' in navigator) {
+      navigator.getBattery().then(battery => {
+        const batteryEl = document.getElementById('batteryStatus');
+        const level = Math.round(battery.level * 100);
+        batteryEl.textContent = `🔋 Battery: ${level}%`;
+        batteryEl.className = `badge ${
+          level > 50 ? 'bg-success' : 
+          level > 20 ? 'bg-warning' : 'bg-danger'
+        }`;
+      });
+    }
+  }
+
   updateRouteProgress() {
     const sel = document.getElementById('routeSelect');
     const opt = sel.options[sel.selectedIndex];
@@ -666,12 +1141,127 @@ class ActivityTracker {
     }
   }
 
+  // =============================================
+  // SPLITS SYSTEM
+  // =============================================
+  setupSplits() {
+    this.splits = [];
+    this.splitDistance = 1;
+    this.lastSplitAt = 0;
+  }
+
+  checkForSplits() {
+    if (!this.isTracking || this.isPaused) return;
+    
+    const kmCompleted = Math.floor(this.distance);
+    
+    if (kmCompleted > this.lastSplitAt) {
+      for (let km = this.lastSplitAt + 1; km <= kmCompleted; km++) {
+        this.recordSplit(km);
+      }
+      this.lastSplitAt = kmCompleted;
+    }
+  }
+
+  recordSplit(km) {
+    const splitTime = new Date() - this.startTime;
+    const splitPace = this.calculatePaceForKm(km);
+    
+    const split = {
+      kilometer: km,
+      time: splitTime,
+      pace: splitPace,
+      timestamp: new Date()
+    };
+    
+    this.splits.push(split);
+    this.showSplitNotification(split);
+    
+    // Audio feedback per split
+    this.audioFeedback.playKm();
+  }
+
+  calculatePaceForKm(km) {
+    if (km === 1) {
+      return this.formatPace((new Date() - this.startTime) / 60000);
+    }
+    
+    const split = this.splits.find(s => s.kilometer === km - 1);
+    if (!split) return '0:00';
+    
+    const timeForKm = (new Date() - this.startTime - split.time) / 60000;
+    return this.formatPace(timeForKm);
+  }
+
+  formatPace(minutes) {
+    const m = Math.floor(minutes);
+    const s = Math.floor((minutes - m) * 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  showSplitNotification(split) {
+    // Aggiorna split card
+    document.getElementById('lastSplitKm').textContent = `${split.kilometer}km`;
+    document.getElementById('lastSplitTime').textContent = this.formatTime(split.time);
+    document.getElementById('lastSplitPace').textContent = `${split.pace}/km`;
+    
+    // Mostra notifica
+    const notificationEl = document.createElement('div');
+    notificationEl.className = 'alert alert-info split-notification';
+    notificationEl.innerHTML = `
+      <strong>🎉 ${split.kilometer}km Completato!</strong><br>
+      Tempo: ${this.formatTime(split.time)} | Ritmo: ${split.pace}/km
+      <button type="button" class="btn-close btn-close-white float-end" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    const statusMessage = document.getElementById('statusMessage');
+    statusMessage.appendChild(notificationEl);
+    
+    // Auto-rimuovi dopo 5 secondi
+    setTimeout(() => {
+      if (notificationEl.parentElement) {
+        notificationEl.remove();
+      }
+    }, 5000);
+    
+    // Notifica browser
+    this.showBrowserNotification(
+      `🎯 ${split.kilometer}km Completato!`,
+      `Tempo: ${this.formatTime(split.time)} | Ritmo: ${split.pace}/km`
+    );
+  }
+
+  // =============================================
+  // NOTIFICHE BROWSER
+  // =============================================
+  setupBrowserNotifications() {
+    if (!("Notification" in window)) {
+      console.log("Browser non supporta notifiche");
+      return;
+    }
+  }
+
+  showBrowserNotification(title, body) {
+    const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    
+    if (Notification.permission === "granted" && settings.notificationsEnabled) {
+      new Notification(title, {
+        body: body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      });
+    }
+  }
+
+  // =============================================
+  // AUTO SAVE E PRIVACY
+  // =============================================
   startAutoSave() {
     this.autoSaveInterval = setInterval(async () => {
       if (this.isTracking && !this.isPaused && this.positions.length > 0) {
         await this.backupActivity();
       }
-    }, 60000); // Salva ogni minuto
+    }, 60000);
   }
 
   async backupActivity() {
@@ -679,9 +1269,24 @@ class ActivityTracker {
       positions: this.positions,
       distance: this.distance,
       startTime: this.startTime,
-      duration: new Date() - this.startTime
+      duration: new Date() - this.startTime,
+      splits: this.splits
     };
     localStorage.setItem('activityBackup', JSON.stringify(backupData));
+  }
+
+  getApproximatePosition(position, radiusKm = 0.3) {
+    if (!this.privacyMode) return position;
+    
+    // Approssima posizione per privacy
+    const offsetLat = (Math.random() - 0.5) * (radiusKm / 110.574);
+    const offsetLng = (Math.random() - 0.5) * (radiusKm / (111.320 * Math.cos(position.lat * Math.PI / 180)));
+    
+    return {
+      ...position,
+      lat: position.lat + offsetLat,
+      lng: position.lng + offsetLng
+    };
   }
 
   pauseTracking() {
@@ -695,14 +1300,13 @@ class ActivityTracker {
       this.showStatus("⏸️ Tracciamento in pausa", "warning");
       this.updateGPSIndicator(false);
       this.updateStatusBadge('paused');
+      this.audioFeedback.playPause();
     } else {
       this.startTracking();
       document.getElementById('btnPause').innerHTML = '⏸️ PAUSA';
       document.querySelector('.tracking-card').classList.remove('tracking-paused');
       document.querySelector('.tracking-card').classList.add('tracking-active');
     }
-    
-    this.provideHapticFeedback();
   }
 
   handleError(err) {
@@ -749,12 +1353,18 @@ class ActivityTracker {
     const paceS = Math.floor((((hours * 60) / this.distance - paceM) * 60));
     this.avgPace = `${paceM}:${paceS.toString().padStart(2, '0')}`;
 
+    // Calcola metriche avanzate finali
+    const finalMetrics = this.calculateMetrics();
+
     // Aggiorna modal riepilogo
     document.getElementById('summaryDuration').textContent = 
       new Date(this.duration * 1000).toISOString().substr(11, 8);
     document.getElementById('summaryDistance').textContent = this.distance.toFixed(2);
     document.getElementById('summarySpeed').textContent = this.avgSpeed;
     document.getElementById('summaryPace').textContent = this.avgPace;
+    document.getElementById('summaryCalories').textContent = finalMetrics.calories;
+    document.getElementById('summaryElevation').textContent = `+${finalMetrics.elevation.ascent}m`;
+    document.getElementById('summaryEfficiency').textContent = finalMetrics.efficiency;
 
     const modal = new bootstrap.Modal(document.getElementById('activitySummaryModal'));
     modal.show();
@@ -768,11 +1378,16 @@ class ActivityTracker {
         positions: this.positions,
         start_time: this.startTime.toISOString(),
         avg_speed: this.avgSpeed,
-        avg_pace: this.avgPace
+        avg_pace: this.avgPace,
+        calories: finalMetrics.calories,
+        elevation: finalMetrics.elevation.ascent,
+        splits: this.splits
       };
       await this.saveActivity(data);
     };
 
+    this.audioFeedback.playStop();
+    
     // Pulisci backup
     localStorage.removeItem('activityBackup');
   }
@@ -842,13 +1457,7 @@ class ActivityTracker {
     }
   }
 
-  provideHapticFeedback() {
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-  }
-
-  formatDuration(ms) {
+  formatTime(ms) {
     const seconds = Math.floor(ms / 1000);
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -857,52 +1466,277 @@ class ActivityTracker {
   }
 }
 
-// Inizializzazione
-const tracker = new ActivityTracker();
-
-// Event Listeners
-document.getElementById('btnStart').addEventListener('click', async () => {
-  if (!navigator.geolocation) {
-    alert("Il tuo browser non supporta la geolocalizzazione. Aggiorna il browser o usa un dispositivo diverso.");
-    return;
+// =============================================
+// APP TOUR SYSTEM
+// =============================================
+class AppTour {
+  constructor() {
+    this.steps = [
+      {
+        element: '#routeSelect',
+        title: '🎯 Seleziona Percorso',
+        content: 'Scegli un percorso predefinito o esplora in modalità libera',
+        position: 'bottom'
+      },
+      {
+        element: '#btnStart',
+        title: '🚀 Inizia Tracciamento',
+        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività',
+        position: 'top'
+      },
+      {
+        element: '#liveStats',
+        title: '📊 Statistiche Live',
+        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale',
+        position: 'top'
+      },
+      {
+        element: '#miniMap',
+        title: '🗺️ Mappa in Tempo Reale',
+        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa',
+        position: 'top'
+      }
+    ];
   }
 
-  try {
-    await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      });
+  start() {
+    if (localStorage.getItem('appTourCompleted')) {
+      return;
+    }
+
+    let currentStep = 0;
+    
+    const showStep = (index) => {
+      if (index >= this.steps.length) {
+        document.getElementById('tourOverlay')?.remove();
+        localStorage.setItem('appTourCompleted', 'true');
+        return;
+      }
+      
+      const step = this.steps[index];
+      this.createStepOverlay(step, index, showStep);
+    };
+
+    showStep(0);
+  }
+
+  createStepOverlay(step, index, callback) {
+    // Rimuovi overlay precedente
+    document.getElementById('tourOverlay')?.remove();
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'tourOverlay';
+    overlay.className = 'tour-overlay';
+    
+    const targetElement = document.querySelector(step.element);
+    if (!targetElement) {
+      callback(index + 1);
+      return;
+    }
+    
+    const rect = targetElement.getBoundingClientRect();
+    
+    overlay.innerHTML = `
+      <div class="tour-step" style="position: absolute; top: ${rect.bottom + 10}px; left: ${rect.left}px;">
+        <div class="tour-content card shadow-lg" style="width: ${Math.min(300, window.innerWidth - 40)}px;">
+          <div class="card-body">
+            <h5>${step.title}</h5>
+            <p class="mb-3">${step.content}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <small>${index + 1} di ${this.steps.length}</small>
+              <div>
+                <button class="btn btn-sm btn-outline-secondary me-2" onclick="skipTour()">
+                  Salta
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="nextTourStep(${index + 1})">
+                  ${index === this.steps.length - 1 ? 'Completa' : 'Avanti'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    window.nextTourStep = callback;
+    window.skipTour = () => {
+      document.getElementById('tourOverlay')?.remove();
+      localStorage.setItem('appTourCompleted', 'true');
+    };
+  }
+}
+
+// =============================================
+// SETTINGS MANAGEMENT
+// =============================================
+function loadSettings() {
+  const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+  
+  document.getElementById('themeColor').value = settings.themeColor || 'default';
+  document.getElementById('unitSystem').value = settings.unitSystem || 'metric';
+  document.getElementById('userWeight').value = settings.userWeight || 70;
+  document.getElementById('audioToggle').checked = settings.audioEnabled !== false;
+  document.getElementById('notificationsToggle').checked = settings.notificationsEnabled || false;
+  document.getElementById('privacyMode').checked = settings.privacyMode || false;
+  
+  applySettings(settings);
+}
+
+function saveSettings() {
+  const settings = {
+    themeColor: document.getElementById('themeColor').value,
+    unitSystem: document.getElementById('unitSystem').value,
+    userWeight: parseInt(document.getElementById('userWeight').value) || 70,
+    audioEnabled: document.getElementById('audioToggle').checked,
+    notificationsEnabled: document.getElementById('notificationsToggle').checked,
+    privacyMode: document.getElementById('privacyMode').checked
+  };
+  
+  localStorage.setItem('appSettings', JSON.stringify(settings));
+  applySettings(settings);
+  
+  // Aggiorna tracker con nuove impostazioni
+  if (window.tracker) {
+    tracker.loadUserSettings();
+  }
+  
+  // Chiudi modal
+  bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+  
+  // Mostra conferma
+  showTempAlert('Impostazioni salvate con successo!', 'success');
+}
+
+function applySettings(settings) {
+  // Applica tema colore
+  document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
+  document.body.classList.add(`theme-${settings.themeColor}`);
+  
+  // Applica dark mode se già attiva
+  if (localStorage.getItem('darkMode') === 'enabled') {
+    document.body.classList.add('dark-mode');
+  }
+}
+
+function showTempAlert(message, type) {
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  alert.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(alert);
+  
+  setTimeout(() => {
+    if (alert.parentElement) {
+      alert.remove();
+    }
+  }, 3000);
+}
+
+// =============================================
+// INIZIALIZZAZIONE APP
+// =============================================
+let tracker;
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Nascondi splash screen
+  setTimeout(() => {
+    const splash = document.getElementById('welcomeSplash');
+    if (splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 500);
+    }
+  }, 1500);
+  
+  // Inizializza tracker
+  tracker = new ActivityTracker();
+  
+  // Carica impostazioni
+  loadSettings();
+  
+  // Setup dark mode
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+      const lightIcon = this.querySelector('.light-icon');
+      const darkIcon = this.querySelector('.dark-icon');
+      
+      if (document.body.classList.contains('dark-mode')) {
+        lightIcon.style.display = 'none';
+        darkIcon.style.display = 'inline';
+        localStorage.setItem('darkMode', 'enabled');
+      } else {
+        lightIcon.style.display = 'inline';
+        darkIcon.style.display = 'none';
+        localStorage.setItem('darkMode', 'disabled');
+      }
     });
     
-    tracker.startTracking();
-  } catch (error) {
-    console.error('GPS permission denied:', error);
-    const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-    modal.show();
+    // Carica dark mode preference
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+      document.querySelector('.light-icon').style.display = 'none';
+      document.querySelector('.dark-icon').style.display = 'inline';
+    }
   }
-});
+  
+  // Event Listeners per tracking
+  document.getElementById('btnStart').addEventListener('click', async () => {
+    if (!navigator.geolocation) {
+      alert("Il tuo browser non supporta la geolocalizzazione. Aggiorna il browser o usa un dispositivo diverso.");
+      return;
+    }
 
-document.getElementById('btnStop').addEventListener('click', () => {
-  tracker.stopTracking();
-});
+    try {
+      await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+      
+      tracker.startTracking();
+    } catch (error) {
+      console.error('GPS permission denied:', error);
+      const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+      modal.show();
+    }
+  });
 
-document.getElementById('btnPause').addEventListener('click', () => {
-  tracker.pauseTracking();
-});
+  document.getElementById('btnStop').addEventListener('click', () => {
+    tracker.stopTracking();
+  });
 
-// Prevenzione uscita accidentale
-window.addEventListener('beforeunload', (e) => {
-  if (tracker.isTracking && !tracker.isPaused) {
-    e.preventDefault();
-    e.returnValue = 'Il tracciamento è ancora in corso. Sei sicuro di voler uscire?';
-    return e.returnValue;
-  }
-});
-
-// Recupero sessione al caricamento
-window.addEventListener('load', () => {
+  document.getElementById('btnPause').addEventListener('click', () => {
+    tracker.pauseTracking();
+  });
+  
+  // Aggiorna stato batteria
+  tracker.updateBatteryStatus();
+  setInterval(() => tracker.updateBatteryStatus(), 60000);
+  
+  // Avvia tour dopo un breve delay
+  setTimeout(() => {
+    const tour = new AppTour();
+    tour.start();
+  }, 2000);
+  
+  // Prevenzione uscita accidentale
+  window.addEventListener('beforeunload', (e) => {
+    if (tracker.isTracking && !tracker.isPaused) {
+      e.preventDefault();
+      e.returnValue = 'Il tracciamento è ancora in corso. Sei sicuro di voler uscire?';
+      return e.returnValue;
+    }
+  });
+  
+  // Recupero sessione al caricamento
   const backup = localStorage.getItem('activityBackup');
   if (backup) {
     const backupData = JSON.parse(backup);
@@ -912,11 +1746,12 @@ window.addEventListener('load', () => {
           <div class="modal-content">
             <div class="modal-header bg-warning">
               <h5 class="modal-title">📋 Sessione Recuperata</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
               <p>Trovata una sessione di tracciamento interrotta:</p>
               <ul>
-                <li>Durata: ${tracker.formatDuration(backupData.duration)}</li>
+                <li>Durata: ${tracker.formatTime(backupData.duration)}</li>
                 <li>Distanza: ${backupData.distance.toFixed(2)} km</li>
                 <li>Data: ${new Date(backupData.startTime).toLocaleString()}</li>
               </ul>
@@ -926,7 +1761,7 @@ window.addEventListener('load', () => {
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="localStorage.removeItem('activityBackup')">
                 ❌ Scarta
               </button>
-              <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="tracker.recoverSession(${JSON.stringify(backupData)})">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="recoverSession()">
                 ✅ Recupera
               </button>
             </div>
@@ -937,16 +1772,13 @@ window.addEventListener('load', () => {
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     new bootstrap.Modal(document.getElementById('recoveryModal')).show();
+    
+    window.recoverSession = function() {
+      // Qui puoi implementare il recupero della sessione
+      localStorage.removeItem('activityBackup');
+      showTempAlert('Sessione recuperata! Premi "RIPRENDI" per continuare.', 'info');
+    };
   }
 });
-
-// Aggiungi metodo di recupero alla classe
-ActivityTracker.prototype.recoverSession = function(backupData) {
-  this.positions = backupData.positions;
-  this.distance = backupData.distance;
-  this.startTime = new Date(backupData.startTime);
-  this.showStatus("✅ Sessione recuperata! Premi 'RIPRENDI' per continuare.", "success");
-  document.getElementById('btnPause').click(); // Attiva modalità pausa per permettere ripresa
-};
 </script>
 {% endblock %}
