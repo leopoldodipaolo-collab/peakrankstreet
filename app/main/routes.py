@@ -848,7 +848,6 @@ def activity_detail(activity_id):
     print(f"\n=== DEBUG activity_detail (Activity ID: {activity.id}) ===")
     
     # --- GESTIONE GEOJSON DEL PERCORSO ---
-    # Anche qui potremmo usare una funzione simile se il formato potesse variare
     route_geojson_data = None
     if activity.route_activity and activity.route_activity.coordinates:
         try:
@@ -856,7 +855,7 @@ def activity_detail(activity_id):
         except Exception as e:
             print(f"Error parsing route coordinates: {e}")
     
-    # --- GESTIONE GEOJSON DELL'ATTIVITÀ CON LA NUOVA FUNZIONE ---
+    # --- GESTIONE GEOJSON DELL'ATTIVITÀ ---
     print("Parsing activity GPS track...")
     activity_geojson_data = parse_gps_to_geojson(activity.gps_track)
     
@@ -867,14 +866,19 @@ def activity_detail(activity_id):
         
     print("=======================\n")
     
-    return render_template("activity_detail.html",
-                           activity=activity, 
-                           user=activity.user_activity, 
-                           route=activity.route_activity,
-                           challenge=activity.challenge_info,
-                           activity_geojson_data=activity_geojson_data, 
-                           route_geojson_data=route_geojson_data, 
-                           is_homepage=False)
+    # --- CORRETTA GESTIONE DELLA SFIDA ---
+    challenge = Challenge.query.get(activity.challenge_id) if activity.challenge_id else None
+    
+    return render_template(
+        "activity_detail.html",
+        activity=activity, 
+        user=activity.user_activity, 
+        route=activity.route_activity,
+        challenge=challenge,  # ✅ usa la variabile giusta
+        activity_geojson_data=activity_geojson_data, 
+        route_geojson_data=route_geojson_data, 
+        is_homepage=False
+    )
 
 @main.route("/activities")
 def all_activities():
