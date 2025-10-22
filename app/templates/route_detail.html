@@ -1,97 +1,274 @@
 {% extends "index.html" %}
 
-{% block title %}Dettaglio Percorso: {{ route.name }}{% endblock %}
+{% block title %}Dettaglio Percorso: {{ route.name }} | RunHub{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+<div class="container-fluid py-4">
+    <!-- Header con Breadcrumb corretto -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ route.name }}</li>
+        </ol>
+    </nav>
 
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-success text-white">
-        <h2 class="mb-0">{{ route.name }}</h2>
-    </div>
-    <div class="card-body">
-        <p><strong>Descrizione:</strong> {{ route.description or "Nessuna descrizione." }}</p>
-        <p><strong>Distanza:</strong> {% if route.distance_km %}{{ "%.2f"|format(route.distance_km) }} km{% else %}N/D{% endif %}</p>
-        <p><strong>Creato da:</strong> 
-            <a href="{{ url_for('main.user_profile', user_id=route.creator.id) }}" class="user-link">{{ route.creator.username }}</a> 
-            il {{ route.created_at.strftime('%d/%m/%Y %H:%M') }}
-        </p>
-
-        <!-- Mappa -->
-        <h3 class="mt-4">Mappa del Percorso</h3>
-        <div id="routeDetailMap" style="height:500px;width:100%;border:1px solid #ddd;border-radius:5px;"></div>
-
-        <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
-            <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-primary">Registra Attività per questo Percorso</a>
-        </div>
-    </div>
-</div>
-
-<!-- Post (Esempio) -->
-<div class="card my-4 shadow-sm">
-    <div class="card-header bg-info text-white">
-        <h3 class="mb-0">Post sul Percorso</h3>
-    </div>
-    <div class="card-body">
-        <div class="card-body">
-    {% for post in posts %}
-        <p>ID: {{ post.id }} - Content: {{ post.content }}</p>
-    {% else %}
-        <p>Nessun post trovato</p>
-    {% endfor %}
-</div>
-
-    </div>
-</div>
-
-<!-- Commenti -->
-<div class="card my-4 shadow-sm">
-    <div class="card-header bg-secondary text-white">
-        <h3 class="mb-0">Commenti</h3>
-    </div>
-    <div class="card-body">
-        {% if current_user.is_authenticated %}
-            <form method="POST" id="commentForm" class="needs-validation" novalidate>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="mb-3">
-                    <label for="comment_content" class="form-label">Aggiungi un commento:</label>
-                    <textarea id="comment_content" name="comment_content" rows="3" class="form-control" required></textarea>
-                    <div class="invalid-feedback">Il commento non può essere vuoto.</div>
+    <div class="row">
+        <!-- Colonna principale -->
+        <div class="col-lg-8">
+            <!-- Card Informazioni Percorso -->
+            <div class="card mb-4 border-0 shadow-lg">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="h3 mb-0">{{ route.name }}</h1>
+                        <span class="badge bg-light text-dark fs-6">
+                            {% if route.distance_km %}{{ "%.2f"|format(route.distance_km) }} km{% else %}N/D{% endif %}
+                        </span>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Invia Commento</button>
-            </form>
-        {% else %}
-            <p class="text-center text-muted">Accedi per aggiungere un commento. <a href="{{ url_for('auth.login') }}">Login</a></p>
-        {% endif %}
-
-        {% if comments_with_like_info %}
-            <div class="list-group mt-3">
-                {% for item in comments_with_like_info %}
-                    {% set comment = item.comment %}
-                    {% set like_count = item.like_count %}
-                    {% set has_liked = item.has_liked %}
-                    <div class="list-group-item mb-2">
-                        <p class="mb-1">
-                            <img src="{{ url_for('static', filename='profile_pics/' + comment.author.profile_image) }}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
-                            <strong><a href="{{ url_for('main.user_profile', user_id=comment.author.id) }}" class="user-link text-primary">{{ comment.author.username }}</a></strong>:
-                        </p>
-                        <p class="mb-1">{{ comment.content }}</p>
-                        <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
-                        <div class="mt-2">
-                            {% if current_user.is_authenticated %}
-                                <button class="btn btn-sm {% if has_liked %}btn-primary liked{% else %}btn-outline-primary{% endif %} like-button" 
-                                        data-comment-id="{{ comment.id }}">
-                                    {% if has_liked %}Non Mi Piace più{% else %}Mi Piace{% endif %}
-                                </button>
-                                <span id="likes-count-{{ comment.id }}" class="ms-2 badge bg-light text-dark">{{ like_count }} Mi Piace</span>
-                            {% endif %}
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <p class="lead text-muted mb-3">
+                                {{ route.description or "Nessuna descrizione disponibile." }}
+                            </p>
+                            <div class="d-flex align-items-center text-muted">
+                                <i class="fas fa-user-circle me-2"></i>
+                                <span>Creato da 
+                                    <a href="{{ url_for('main.user_profile', user_id=route.creator.id) }}" class="text-decoration-none fw-bold text-primary">
+                                        {{ route.creator.username }}
+                                    </a>
+                                    il {{ route.created_at.strftime('%d/%m/%Y') }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-play-circle me-2"></i>Registra Attività
+                            </a>
                         </div>
                     </div>
-                {% endfor %}
+
+                    <!-- Mappa -->
+                    <div class="mb-4">
+                        <h3 class="h5 mb-3 text-dark">
+                            <i class="fas fa-map-marked-alt me-2"></i>Mappa del Percorso
+                        </h3>
+                        <div id="routeDetailMap" class="rounded-3 border" style="height: 400px; background: #f8f9fa;"></div>
+                    </div>
+                </div>
             </div>
-        {% else %}
-            <p class="text-center text-muted mt-3">Ancora nessun commento. Sii il primo a lasciare un feedback!</p>
-        {% endif %}
+
+            <!-- Statistiche e Dettagli -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <i class="fas fa-route text-primary fs-1 mb-3"></i>
+                            <h5 class="card-title">Distanza</h5>
+                            <p class="card-text fs-4 fw-bold text-dark">
+                                {% if route.distance_km %}{{ "%.2f"|format(route.distance_km) }} km{% else %}N/D{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <i class="fas fa-mountain text-success fs-1 mb-3"></i>
+                            <h5 class="card-title">Dislivello</h5>
+                            <p class="card-text fs-4 fw-bold text-dark">N/D</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <i class="fas fa-running text-info fs-1 mb-3"></i>
+                            <h5 class="card-title">Attività</h5>
+                            <p class="card-text fs-4 fw-bold text-dark">
+                                {{ top_5_activities_for_route|length or 0 }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Azioni Rapide -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Azioni Rapide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-primary">
+                            <i class="fas fa-play me-2"></i>Inizia Attività
+                        </a>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-heart me-2"></i>Aggiungi ai Preferiti
+                        </button>
+                        <button class="btn btn-outline-secondary">
+                            <i class="fas fa-share-alt me-2"></i>Condividi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attività Recenti -->
+            <!-- Attività Recenti -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Attività Recenti</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_5_activities_for_route %}
+                        <div class="list-group list-group-flush">
+                            {% for activity in top_5_activities_for_route %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            {% if activity.name %}
+                                                {{ activity.name }}
+                                            {% else %}
+                                                Attività #{{ activity.id }}
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {% if activity.duration %}
+                                                {{ "%.1f"|format(activity.duration/60) }} min
+                                            {% else %}
+                                                N/D
+                                            {% endif %}
+                                            • {{ activity.activity_type }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success d-block mb-1">
+                                            {% if activity.distance %}
+                                                {{ "%.2f"|format(activity.distance) }} km
+                                            {% else %}
+                                                N/D
+                                            {% endif %}
+                                        </span>
+                                        <small class="text-muted">
+                                            {{ "%.1f"|format(activity.avg_speed) }} km/h
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-running fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Nessuna attività registrata</p>
+                            <small class="text-muted">Sii il primo a completare questo percorso!</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sezione Community -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <!-- Commenti -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-gradient-dark text-white py-3">
+                    <h3 class="h5 mb-0">
+                        <i class="fas fa-comments me-2"></i>Community
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Form Commento -->
+                    {% if current_user.is_authenticated %}
+                    <div class="mb-4 p-4 bg-light rounded-3">
+                        <form method="POST" id="commentForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="comment_content" class="form-label fw-semibold">Lascia un commento</label>
+                                <textarea id="comment_content" name="comment_content" rows="3" 
+                                          class="form-control border-0 shadow-sm" 
+                                          placeholder="Condividi la tua esperienza su questo percorso..." 
+                                          required></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">I commenti sono pubblici</small>
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="fas fa-paper-plane me-2"></i>Pubblica
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <a href="{{ url_for('auth.login') }}" class="alert-link">Accedi</a> per aggiungere un commento
+                    </div>
+                    {% endif %}
+
+                    <!-- Lista Commenti -->
+                    {% if comments_with_like_info %}
+                    <div class="comments-section">
+                        {% for item in comments_with_like_info %}
+                            {% set comment = item.comment %}
+                            {% set like_count = item.like_count %}
+                            {% set has_liked = item.has_liked %}
+                            <div class="comment-card card border-0 shadow-sm mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex">
+                                        <img src="{{ url_for('static', filename='profile_pics/' + comment.author.profile_image) }}" 
+                                             class="rounded-circle me-3" 
+                                             alt="{{ comment.author.username }}" 
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h6 class="mb-0">
+                                                        <a href="{{ url_for('main.user_profile', user_id=comment.author.id) }}" 
+                                                           class="text-decoration-none text-dark fw-bold">
+                                                            {{ comment.author.username }}
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-clock me-1"></i>
+                                                        {{ comment.created_at.strftime('%d/%m/%Y alle %H:%M') }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <p class="mb-3 text-dark">{{ comment.content }}</p>
+                                            <div class="d-flex align-items-center">
+                                                {% if current_user.is_authenticated %}
+                                                <button class="btn btn-sm {% if has_liked %}btn-primary{% else %}btn-outline-primary{% endif %} like-button me-2" 
+                                                        data-comment-id="{{ comment.id }}">
+                                                    <i class="fas fa-thumbs-up me-1"></i>
+                                                    {% if has_liked %}Non Mi Piace più{% else %}Mi Piace{% endif %}
+                                                </button>
+                                                {% endif %}
+                                                <span id="likes-count-{{ comment.id }}" class="badge bg-light text-dark">
+                                                    <i class="fas fa-heart me-1 text-danger"></i>{{ like_count }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-comments fs-1 text-muted mb-3"></i>
+                        <h5 class="text-muted">Nessun commento ancora</h5>
+                        <p class="text-muted">Sii il primo a condividere la tua esperienza!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -104,79 +281,102 @@
     const routeGeoJSON = {{ route_geojson_data|safe }};
 </script>
 
-<!-- Script per la mappa -->
+<!-- Script per la mappa migliorato -->
 <script>
-// Inizializzazione della mappa
 function initRouteMap() {
-    // Crea la mappa
-    const map = L.map('routeDetailMap').setView([41.9028, 12.4964], 13);
-    
-    // Aggiungi layer tile
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // Crea la mappa con tema più moderno
+    const map = L.map('routeDetailMap', {
+        zoomControl: false
+    }).setView([41.9028, 12.4964], 13);
+
+    // Aggiungi controllo zoom in alto a destra
+    L.control.zoom({
+        position: 'topright'
     }).addTo(map);
-    
-    // Usa i dati GeoJSON passati dal backend
+
+    // Layer tile moderno
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    // Usa i dati GeoJSON
     if (routeGeoJSON && routeGeoJSON.geometry) {
         try {
-            // Disegna il percorso sulla mappa
+            // Disegna il percorso con stile migliorato
             const routeLayer = L.geoJSON(routeGeoJSON, {
                 style: {
-                    color: 'blue',
-                    weight: 6,
-                    opacity: 0.7
+                    color: '#0d6efd',
+                    weight: 5,
+                    opacity: 0.8,
+                    lineCap: 'round',
+                    lineJoin: 'round'
                 }
             }).addTo(map);
-            
-            // Aggiungi marker di inizio e fine
+
+            // Icone personalizzate per marker
+            const startIcon = L.divIcon({
+                html: '<i class="fas fa-play-circle fa-2x text-success"></i>',
+                iconSize: [30, 30],
+                className: 'start-marker'
+            });
+
+            const endIcon = L.divIcon({
+                html: '<i class="fas fa-flag-checkered fa-2x text-danger"></i>',
+                iconSize: [30, 30],
+                className: 'end-marker'
+            });
+
             const coordinates = routeGeoJSON.geometry.coordinates;
             if (coordinates && coordinates.length > 0) {
-                // Marker di partenza (ricorda: in GeoJSON le coordinate sono [lng, lat])
+                // Marker di partenza
                 const startCoord = [coordinates[0][1], coordinates[0][0]];
-                L.marker(startCoord)
+                L.marker(startCoord, { icon: startIcon })
                     .addTo(map)
-                    .bindPopup('Partenza')
-                    .openPopup();
-                
+                    .bindPopup('<div class="text-center"><strong>Partenza</strong></div>');
+
                 // Marker di arrivo
                 const endCoord = [coordinates[coordinates.length - 1][1], coordinates[coordinates.length - 1][0]];
-                L.marker(endCoord)
+                L.marker(endCoord, { icon: endIcon })
                     .addTo(map)
-                    .bindPopup('Arrivo');
-                
-                // Adatta la vista della mappa al percorso
-                map.fitBounds(routeLayer.getBounds());
+                    .bindPopup('<div class="text-center"><strong>Arrivo</strong></div>');
+
+                // Adatta la vista con padding
+                map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
             }
-            
+
         } catch (error) {
-            console.error('Errore nel caricamento del percorso GeoJSON:', error);
-            showMapError('Errore nel caricamento del percorso');
+            console.error('Errore nel caricamento del percorso:', error);
+            showMapError('Impossibile caricare la mappa del percorso');
         }
     } else {
-        showMapError('Nessun dato del percorso disponibile');
+        showMapError('Dati del percorso non disponibili');
     }
-    
+
     function showMapError(message) {
         const mapContainer = document.getElementById('routeDetailMap');
-        mapContainer.innerHTML = `<div class="alert alert-warning text-center m-3">${message}</div>`;
-        mapContainer.style.display = 'flex';
-        mapContainer.style.alignItems = 'center';
-        mapContainer.style.justifyContent = 'center';
+        mapContainer.innerHTML = `
+            <div class="h-100 d-flex flex-column justify-content-center align-items-center text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h5 class="text-muted">${message}</h5>
+                <small class="text-muted">Ricarica la pagina o riprova più tardi</small>
+            </div>
+        `;
     }
 }
 
-// Inizializza la mappa quando il documento è pronto
+// Inizializza la mappa
 document.addEventListener('DOMContentLoaded', function() {
     initRouteMap();
 });
 
+// Gestione like commenti
 const csrfToken = "{{ csrf_token() }}";
-
-// --- Toggle Like Commenti ---
 document.querySelectorAll('.like-button').forEach(button => {
     button.addEventListener('click', function() {
         const commentId = this.dataset.commentId;
-        if (!commentId) return console.error("Comment ID non definito!");
+        if (!commentId) return;
 
         const url = `{{ url_for('main.toggle_like', comment_id=0) }}`.replace('0', commentId);
         const currentButton = this;
@@ -192,27 +392,58 @@ document.querySelectorAll('.like-button').forEach(button => {
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
-                // Aggiorna contatore Mi Piace
                 const likesSpan = document.getElementById(`likes-count-${commentId}`);
-                if (likesSpan) likesSpan.textContent = `${data.new_like_count} Mi Piace`;
+                if (likesSpan) likesSpan.innerHTML = `<i class="fas fa-heart me-1 text-danger"></i>${data.new_like_count}`;
 
-                // Aggiorna bottone
                 if (data.action === 'liked') {
-                    currentButton.textContent = 'Non Mi Piace più';
+                    currentButton.innerHTML = '<i class="fas fa-thumbs-up me-1"></i>Non Mi Piace più';
                     currentButton.classList.remove('btn-outline-primary');
-                    currentButton.classList.add('btn-primary', 'liked');
+                    currentButton.classList.add('btn-primary');
                 } else {
-                    currentButton.textContent = 'Mi Piace';
-                    currentButton.classList.remove('btn-primary', 'liked');
+                    currentButton.innerHTML = '<i class="fas fa-thumbs-up me-1"></i>Mi Piace';
+                    currentButton.classList.remove('btn-primary');
                     currentButton.classList.add('btn-outline-primary');
                 }
-            } else {
-                alert('Errore: ' + (data.message || 'Riprova più tardi'));
             }
         })
-        .catch(err => console.error('Errore AJAX like commento:', err));
+        .catch(err => console.error('Errore:', err));
     });
 });
 </script>
 
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+}
+
+.bg-gradient-dark {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.comment-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.comment-card:hover {
+    transform: translateY(-2px);
+}
+
+.start-marker, .end-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.form-control {
+    border-radius: 8px;
+}
+</style>
 {% endblock %}
