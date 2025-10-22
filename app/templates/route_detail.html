@@ -99,7 +99,77 @@
 {% block scripts %}
 {{ super() }}
 
+<!-- Passa i dati GeoJSON al JavaScript -->
 <script>
+    const routeGeoJSON = {{ route_geojson_data|safe }};
+</script>
+
+<!-- Script per la mappa -->
+<script>
+// Inizializzazione della mappa
+function initRouteMap() {
+    // Crea la mappa
+    const map = L.map('routeDetailMap').setView([41.9028, 12.4964], 13);
+    
+    // Aggiungi layer tile
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Usa i dati GeoJSON passati dal backend
+    if (routeGeoJSON && routeGeoJSON.geometry) {
+        try {
+            // Disegna il percorso sulla mappa
+            const routeLayer = L.geoJSON(routeGeoJSON, {
+                style: {
+                    color: 'blue',
+                    weight: 6,
+                    opacity: 0.7
+                }
+            }).addTo(map);
+            
+            // Aggiungi marker di inizio e fine
+            const coordinates = routeGeoJSON.geometry.coordinates;
+            if (coordinates && coordinates.length > 0) {
+                // Marker di partenza (ricorda: in GeoJSON le coordinate sono [lng, lat])
+                const startCoord = [coordinates[0][1], coordinates[0][0]];
+                L.marker(startCoord)
+                    .addTo(map)
+                    .bindPopup('Partenza')
+                    .openPopup();
+                
+                // Marker di arrivo
+                const endCoord = [coordinates[coordinates.length - 1][1], coordinates[coordinates.length - 1][0]];
+                L.marker(endCoord)
+                    .addTo(map)
+                    .bindPopup('Arrivo');
+                
+                // Adatta la vista della mappa al percorso
+                map.fitBounds(routeLayer.getBounds());
+            }
+            
+        } catch (error) {
+            console.error('Errore nel caricamento del percorso GeoJSON:', error);
+            showMapError('Errore nel caricamento del percorso');
+        }
+    } else {
+        showMapError('Nessun dato del percorso disponibile');
+    }
+    
+    function showMapError(message) {
+        const mapContainer = document.getElementById('routeDetailMap');
+        mapContainer.innerHTML = `<div class="alert alert-warning text-center m-3">${message}</div>`;
+        mapContainer.style.display = 'flex';
+        mapContainer.style.alignItems = 'center';
+        mapContainer.style.justifyContent = 'center';
+    }
+}
+
+// Inizializza la mappa quando il documento è pronto
+document.addEventListener('DOMContentLoaded', function() {
+    initRouteMap();
+});
+
 const csrfToken = "{{ csrf_token() }}";
 
 // --- Toggle Like Commenti ---
@@ -141,48 +211,6 @@ document.querySelectorAll('.like-button').forEach(button => {
             }
         })
         .catch(err => console.error('Errore AJAX like commento:', err));
-    });
-});
-
-// --- Toggle Like Post ---
-document.querySelectorAll('.btn-like').forEach(button => {
-    button.addEventListener('click', function() {
-        const postId = this.dataset.postId;
-        if (!postId) return console.error("Post ID non definito!");
-
-        const url = `/post/${postId}/like`;
-        const currentButton = this;
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Aggiorna contatore Mi Piace
-                const likesSpan = document.getElementById(`likes-count-post-${postId}`);
-                if (likesSpan) likesSpan.textContent = `${data.new_like_count} Mi Piace`;
-
-                // Aggiorna bottone
-                if (data.action === 'liked') {
-                    currentButton.textContent = 'Non Mi Piace più';
-                    currentButton.classList.remove('btn-outline-primary');
-                    currentButton.classList.add('btn-primary', 'liked');
-                } else {
-                    currentButton.textContent = 'Mi Piace';
-                    currentButton.classList.remove('btn-primary', 'liked');
-                    currentButton.classList.add('btn-outline-primary');
-                }
-            } else {
-                alert('Errore: ' + (data.message || 'Riprova più tardi'));
-            }
-        })
-        .catch(err => console.error('Errore AJAX like post:', err));
     });
 });
 </script>
