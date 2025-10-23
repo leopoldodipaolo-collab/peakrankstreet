@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PeakRankStreet App{% endblock %}</title>
 
+    {# --- AGGIUNGI QUESTA RIGA --- #}
+    <meta name="description" content="{% block description %}Scopri percorsi, sfide e una community di atleti su PeakRankStreet.{% endblock %}">
+    {# --- FINE RIGA AGGIUNTA --- #}
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -477,34 +481,36 @@
                     <!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
                     <!-- ================================================================ -->
 
-                    {# 1. Importiamo la nostra macro per le card riutilizzabili #}
-                    {% from 'macros/_cards.html' import feed_card %}
+        {# In index.html, nella sezione del feed #}
 
-                    {# 2. Definiamo dinamicamente i link che andranno nel footer della card #}
-                    {% set community_footer_links = [
-                        {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
-                        {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
-                    ] %}
+<!-- ================================================================ -->
+<!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
+<!-- ================================================================ -->
 
-                    {% if current_user.is_authenticated %}
-                        {% do community_footer_links.append({
-                            'url': url_for('main.create_post'), 
-                            'text': '<i class="bi bi-plus-circle me-1"></i>Crea Post', 
-                            'class': 'btn-outline-success'
-                        }) %}
-                    {% endif %}
+{# --- 1. INCLUDIAMO IL NUOVO BOX "CREA POST" QUI SOPRA --- #}
+{% include 'partials/_create_post_box.html' %}
 
-                    {# 3. Chiamiamo la macro usando la sintassi corretta {{ ... }} #}
-                    {# Questo commento è fuori e va bene #}
-                    {{ feed_card(
-                        id='community-feed',
-                        title='Aggiornamenti dalla Community',
-                        icon_class='bi-newspaper',
-                        items=community_posts,
-                        footer_links=community_footer_links,
-                        current_user=current_user,
-                        has_next_feed_page=has_next_feed_page
-                    ) }}
+{# 2. Importiamo la nostra macro per le card (invariato) #}
+{% from 'macros/_cards.html' import feed_card %}
+
+{# --- 3. MODIFICHIAMO I LINK DEL FOOTER --- #}
+{# Rimuoviamo la logica per aggiungere "Crea Post" da qui #}
+{% set community_footer_links = [
+    {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
+    {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
+] %}
+{# Non c'è più il blocco if/do per aggiungere il pulsante create_post #}
+
+{# 4. Chiamiamo la macro (invariato) #}
+{{ feed_card(
+    id='community-feed',
+    title='Aggiornamenti dalla Community',
+    icon_class='bi-newspaper',
+    items=community_posts,
+    footer_links=community_footer_links,
+    current_user=current_user,
+    has_next_feed_page=has_next_feed_page
+) }}
 
                 <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
                 <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">

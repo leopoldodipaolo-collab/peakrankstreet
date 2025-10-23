@@ -1,6 +1,9 @@
 {% extends "index.html" %}
 
-{% block title %}Dettaglio Post{% endblock %}
+{# --- BLOCCHI SEO OTTIMIZZATI --- #}
+{% block title %}{{ post.content|striptags|truncate(60, True) }} - PeakRankStreet{% endblock %}
+{% block description %}{{ post.content|striptags|truncate(155, True) }}{% endblock %}
+{# --- FINE BLOCCHI SEO --- #}
 
 {% block content %}
 <div class="container mt-5 pt-5">
