@@ -323,53 +323,153 @@
                         </div>
                     </div>
 
-                    <!-- Sfide Recenti -->
-                    <div class="card shadow-lg my-5">
-                        <div class="card-header bg-warning-custom text-dark d-flex justify-content-between align-items-center">
-                            <h3 class="mb-0"><i class="bi bi-star-half me-2"></i>Sfide Recenti a {{ user_city or 'Vicino a te' }}</h3>
-                            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-sm btn-dark-custom">Vedi tutte</a>
-                        </div>
-                        <div class="card-body">
-                            <div id="recent-challenges-list" class="list-group">
-                                {% if recent_challenges_in_city %}
-                                    {% for challenge in recent_challenges_in_city %}
-                                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
-                                        class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center challenge-list-item-home {% if challenge.bet_type != 'none' %}challenge-with-bet{% endif %}">
-                                            <div>
-                                                {% if challenge.bet_type != 'none' %}
-                                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
-                                                        {% if challenge.bet_type == 'beer' %}🍺{% elif challenge.bet_type == 'dinner' %}🍝{% elif challenge.bet_type == 'coffee' %}☕{% elif challenge.bet_type == 'custom' %}🎁{% endif %}
-                                                    </span>
-                                                {% endif %}
-                                                <strong>{{ challenge.name }}</strong>
-                                                <small class="text-muted d-block">su percorso '{{ challenge.route_info.name }}'</small>
-                                            </div>
-                                            <div class="text-end">
-                                                {% if challenge.is_active %}
-                                                    <span class="badge bg-success me-2">Attiva</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary me-2">Finita</span>
-                                                {% endif %}
-                                                <small class="text-muted">Termina il {{ challenge.end_date.strftime('%d/%m') }}</small>
-                                            </div>
-                                            {% if challenge.bet_type != 'none' %}
-                                                <div class="w-100 mt-2 pt-2 border-top border-muted challenge-bet-details-preview">
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-currency-exchange"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong>
-                                                    </small>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-center text-muted">Nessuna sfida recente creata nella tua zona. Sii il primo a lanciarne una! 🚀</p>
+                   <!-- SEZIONE COMPLETA SFIDE - Sostituisce la vecchia sezione -->
+<div class="card shadow-lg my-5">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h2 class="mb-0"><i class="bi bi-bullseye me-2"></i>Tutte le Sfide</h2>
+        <!-- Filtro per stato -->
+        <div class="d-flex align-items-center flex-grow-1 justify-content-end">
+            <label for="statusFilter" class="form-label mb-0 me-2 text-white-50 d-none d-md-block">Filtra:</label>
+            <select id="statusFilter" class="form-select form-select-sm w-auto">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tutte</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Attive</option>
+                <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminate</option>
+                <option value="closed_only" {% if status_filter == 'closed_only' %}selected{% endif %}>Chiuse</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-4">
+
+        <!-- === SEZIONE SFIDE INVIATE === -->
+        {% if invited_challenges %}
+        <div class="card shadow-sm mb-4 bet-card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Sfide a Cui Sei Invitato</h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for challenge in invited_challenges %}
+                    <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
+                        <div class="flex-grow-1 mb-2 mb-md-0">
+                            <h5 class="mb-1 d-flex align-items-center">
+                                {# Icona Scommessa per SFIDE INVIATE #}
+                                {% if challenge.bet_type != 'none' %}
+                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                        {% if challenge.bet_type == 'beer' %} 🍺
+                                        {% elif challenge.bet_type == 'dinner' %} 🍝
+                                        {% elif challenge.bet_type == 'coffee' %} ☕
+                                        {% elif challenge.bet_type == 'custom' %} 🎁
+                                        {% endif %}
+                                    </span>
                                 {% endif %}
-                            </div>
-                            <hr class="my-4">
-                            <div class="text-center">
-                                <a href="{{ url_for('main.create_challenge') }}" class="btn btn-lg btn-warning-custom mt-3"><i class="bi bi-plus-circle me-2"></i>Lancia una nuova sfida!</a>
-                            </div>
+                                {{ challenge.name }}
+                            </h5>
+                            <p class="mb-1 text-muted">
+                                <strong>Percorso:</strong> <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a>
+                                • <strong>Creato da:</strong> <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a>
+                            </p>
+                            <small class="text-muted">
+                                <i class="bi bi-calendar-range me-1"></i>Periodo: {{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}
+                            </small>
+                            {# Dettaglio scommessa anche qui #}
+                            {% if challenge.bet_type != 'none' %}
+                                <p class="mb-0 mt-2 challenge-bet-details-preview-list">
+                                    <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
+                                </p>
+                            {% endif %}
                         </div>
+                        <div class="text-end mt-2 mt-md-0">
+                            <span class="badge bg-warning text-dark status-badge me-2">In attesa</span>
+                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                               class="btn btn-primary btn-sm btn-bet-action">
+                                Dettagli <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- === SEZIONE SFIDE APERTE === -->
+        {% if challenges %}
+            <div class="list-group list-group-flush">
+                {% for challenge in challenges %}
+                    <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 mb-2 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
+                        <div class="route-info flex-grow-1 mb-2 mb-md-0">
+                            <h5 class="mb-1 d-flex align-items-center">
+                                {# Icona Scommessa per SFIDE APERTE #}
+                                {% if challenge.bet_type != 'none' %}
+                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                        {% if challenge.bet_type == 'beer' %} 🍺
+                                        {% elif challenge.bet_type == 'dinner' %} 🍝
+                                        {% elif challenge.bet_type == 'coffee' %} ☕
+                                        {% elif challenge.bet_type == 'custom' %} 🎁
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                                {{ challenge.name }}
+                            </h5>
+                            <p class="mb-1 text-muted">Percorso: <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a></p>
+                            <p class="mb-1 text-muted"><i class="bi bi-calendar-range me-1"></i>Periodo: Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
+                            <small class="text-muted">Creata da: <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a> il {{ challenge.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                            {# Dettaglio scommessa anche qui #}
+                            {% if challenge.bet_type != 'none' %}
+                                <p class="mb-0 mt-2 challenge-bet-details-preview-list">
+                                    <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="route-actions text-end ms-md-auto mt-2 mt-md-0">
+                            {% if current_user.is_authenticated and challenge.end_date >= now %}
+                                <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm me-2 btn-bet-action">Partecipa <i class="bi bi-arrow-right-circle"></i></a>
+                            {% elif challenge.end_date < now %}
+                                <span class="badge bg-secondary status-badge me-2">Terminata</span>
+                            {% endif %}
+                            <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-success btn-sm btn-bet-action">Classifica <i class="bi bi-bar-chart-fill"></i></a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginazione -->
+            <nav aria-label="Pagina di navigazione sfide" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not challenges_pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.prev_num, status=status_filter) }}" aria-label="Precedente">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">Precedente</span>
+                        </a>
+                    </li>
+                    {% for page_num in challenges_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if challenges_pagination.page == page_num %}
+                                <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_num }}</a></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="{{ url_for('main.challenges_list', page=page_num, status=status_filter) }}">{{ page_num }}</a></li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not challenges_pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.next_num, status=status_filter) }}" aria-label="Successivo">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Successivo</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+        {% else %}
+            <p class="text-center text-muted mt-4 p-3 border rounded">
+                <i class="bi bi-info-circle me-2"></i>Ancora nessuna sfida creata con i filtri selezionati. Sii il primo a 
+                <a href="{{ url_for('main.create_challenge') }}" class="text-primary fw-bold">crearne una!</a>
+            </p>
+        {% endif %}
+    </div>
+</div>
                     </div>
 
                     <!-- ================================================================ -->
@@ -631,6 +731,15 @@
                 });
             }
         });
+
+        document.getElementById('statusFilter')?.addEventListener('change', function() {
+    var selectedStatus = this.value;
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams(currentUrl.search);
+    params.set('status', selectedStatus);
+    params.set('page', 1); // Resetta a pagina 1
+    window.location.href = currentUrl.pathname + '?' + params.toString();
+});
     </script>
 {% endblock %}
 </body>

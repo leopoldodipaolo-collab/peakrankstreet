@@ -102,42 +102,65 @@ from sqlalchemy import case, func
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
-    # --- LOGICA FEED DELLA COMMUNITY (VERSIONE CORRETTA E COMPLETA) ---
-    
-    PER_PAGE = 5 # Quanti post per pagina
-    
-    # 1. Definiamo l'ordinamento speciale per mettere in evidenza i post admin
+    # --- LOGICA FEED DELLA COMMUNITY ---
+    PER_PAGE = 5
     special_post_order = case(
         (Post.post_category.in_(['admin_announcement', 'weekly_tip']), 0),
         else_=1
     )
 
-    # 2. Eseguiamo la query per la PRIMA PAGINA del feed con l'ordinamento speciale
     posts_pagination = Post.query.options(joinedload(Post.user)).order_by(
         special_post_order, 
         Post.created_at.desc()
     ).paginate(page=1, per_page=PER_PAGE, error_out=False)
     
-    community_posts = posts_pagination.items # Questa è la lista dei primi 5 post (o meno)
+    community_posts = posts_pagination.items
 
-    # 3. Arricchiamo i post con le informazioni sui "Mi piace" dell'utente corrente
     if current_user.is_authenticated:
         post_ids = [p.id for p in community_posts]
-        if post_ids: # Esegui la query solo se ci sono post da controllare
+        if post_ids:
             liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
             for post in community_posts:
                 post.current_user_liked = post.id in liked_post_ids
-        else: # Se non ci sono post, non c'è nulla da fare
+        else:
              for post in community_posts:
                 post.current_user_liked = False
     else:
         for post in community_posts:
             post.current_user_liked = False
 
-    # --- FINE LOGICA FEED ---
+    # --- LOGICA PER TUTTE LE SFIDE (SEMPLIFICATA) ---
+    
+    status_filter = request.args.get('status', 'all')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    challenges_query = Challenge.query.options(
+        joinedload(Challenge.route_info),
+        joinedload(Challenge.challenger)
+    )
+    
+    now = datetime.utcnow()
+    if status_filter == 'active':
+        challenges_query = challenges_query.filter(
+            Challenge.end_date >= now,
+            Challenge.is_active == True
+        )
+    elif status_filter == 'finished':
+        challenges_query = challenges_query.filter(Challenge.end_date < now)
+    elif status_filter == 'closed_only':
+        challenges_query = challenges_query.filter(Challenge.is_active == False)
+    
+    challenges_query = challenges_query.order_by(Challenge.start_date.desc())
+    
+    challenges_pagination = challenges_query.paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # SFIDE INVIATE - LASCIAMO VUOTO SE NON ESISTE LA RELAZIONE
+    invited_challenges = []
 
-
-    # --- ALTRI DATI PER LA HOME PAGE (il tuo codice originale, che va bene) ---
+    # --- ALTRI DATI PER LA HOME PAGE ---
     
     recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
     
@@ -149,17 +172,13 @@ def index():
     
     recent_challenges_in_city = []
     if user_city:
-        challenges_query = db.session.query(Challenge).join(Route).filter(
+        challenges_city_query = db.session.query(Challenge).join(Route).filter(
             Route.classic_city == user_city,
             Challenge.end_date >= datetime.utcnow(),
             Challenge.is_active == True,
             Challenge.bet_type != 'none'
         ).order_by(Challenge.start_date.asc()).limit(3).all()
-        recent_challenges_in_city = challenges_query
-        
-    # --- NUOVA LOGICA FEED UNIFICATO ---
-    community_items, has_next_feed_page = get_unified_feed_items(page=1, per_page=5)
-    # --- FINE NUOVA LOGICA ---
+        recent_challenges_in_city = challenges_city_query
         
     # --- PASSAGGIO DATI AL TEMPLATE ---
     return render_template("index.html", 
@@ -168,10 +187,14 @@ def index():
                            recent_activities=recent_activities,
                            recent_challenges_in_city=recent_challenges_in_city,
                            top_users=top_users,
-                           community_posts=community_posts, # Passiamo i post già pronti
-                           has_next_feed_page=posts_pagination.has_next, # Passiamo l'info per il pulsante
-                           total_posts=posts_pagination.total, # <-- AGGIUNGI QUESTO
-                           now=datetime.utcnow()
+                           community_posts=community_posts,
+                           has_next_feed_page=posts_pagination.has_next,
+                           total_posts=posts_pagination.total,
+                           challenges=challenges_pagination.items,
+                           challenges_pagination=challenges_pagination,
+                           status_filter=status_filter,
+                           invited_challenges=invited_challenges,  # Lista vuota
+                           now=now
                            )
 @main.route('/feed')
 @login_required
