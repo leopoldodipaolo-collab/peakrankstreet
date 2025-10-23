@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag 
+from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags
 from app import db
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
@@ -2762,3 +2762,116 @@ def delete_post(post_id):
     db.session.commit()
     
     return jsonify({'status': 'success', 'message': 'Post eliminato'})
+
+
+
+@main.route('/explore')
+@login_required # Decidi tu se renderla accessibile a tutti o solo agli utenti loggati
+def explore():
+    # Per ora, passiamo solo un titolo. Aggiungeremo i dati tra poco.
+    return render_template('explore.html', is_homepage=False)
+
+
+@main.route('/api/trending_tags')
+def trending_tags():
+    """
+    API che restituisce gli hashtag più utilizzati.
+    """
+    # Query che conta quanti post sono associati a ogni tag,
+    # ordina in modo decrescente e prende i primi 10.
+    trending = db.session.query(
+        Tag, func.count(post_tags.c.post_id).label('total')
+    ).join(
+        post_tags
+    ).group_by(
+        Tag.id
+    ).order_by(
+        func.count(post_tags.c.post_id).desc()
+    ).limit(10).all()
+
+    # Trasformiamo i risultati in un formato JSON semplice
+    tags_list = [{'name': tag.name, 'count': total} for tag, total in trending]
+    
+    return jsonify(tags_list)
+
+@main.route('/api/featured_routes') # o @api.route(...)
+def featured_routes():
+    """
+    API che restituisce una lista di percorsi suggeriti,
+    dando priorità a quelli vicini all'utente.
+    """
+    LIMIT = 6
+    routes = []
+    
+    # 1. Prova a trovare percorsi IN EVIDENZA nella città dell'utente
+    if current_user.is_authenticated and current_user.city:
+        routes = Route.query.filter_by(
+            is_featured=True, 
+            classic_city=current_user.city
+        ).order_by(Route.created_at.desc()).limit(LIMIT).all()
+
+    # 2. Se non ne trova, prova a trovare percorsi RECENTI nella città dell'utente
+    if not routes and current_user.is_authenticated and current_user.city:
+        routes = Route.query.filter_by(
+            classic_city=current_user.city
+        ).order_by(Route.created_at.desc()).limit(LIMIT).all()
+
+    # 3. Se ancora non trova nulla (o l'utente non ha una città),
+    #    cerca percorsi IN EVIDENZA a livello globale.
+    if not routes:
+        routes = Route.query.filter_by(is_featured=True).order_by(Route.created_at.desc()).limit(LIMIT).all()
+
+    # 4. Come ultima risorsa, prendi i percorsi più RECENTI a livello globale.
+    if not routes:
+        routes = Route.query.order_by(Route.created_at.desc()).limit(LIMIT).all()
+
+    # La logica per creare il JSON rimane la stessa
+    routes_list = []
+    for route in routes:
+        routes_list.append({
+            'id': route.id,
+            'name': route.name,
+            'city': route.classic_city or 'N/D',
+            'distance': route.distance_km,
+            'activity_type': route.activity_type,
+            'creator_username': route.creator.username,
+            'url': url_for('main.route_detail', route_id=route.id)
+        })
+        
+    return jsonify(routes_list)
+
+
+@main.route('/api/suggested_users') # o @api.route(...)
+def suggested_users():
+    """
+    API che restituisce una lista di utenti suggeriti.
+    Logica attuale: i 5 utenti con più attività registrate.
+    """
+    # Escludiamo l'utente corrente dalla lista dei suggerimenti, se loggato
+    query = db.session.query(
+        User, func.count(Activity.id).label('activity_count')
+    ).join(
+        Activity
+    ).group_by(
+        User.id
+    )
+
+    if current_user.is_authenticated:
+        query = query.filter(User.id != current_user.id)
+
+    suggested = query.order_by(
+        func.count(Activity.id).desc()
+    ).limit(5).all()
+
+    users_list = []
+    for user, activity_count in suggested:
+        users_list.append({
+            'id': user.id,
+            'username': user.username,
+            'profile_image': url_for('static', filename=f'profile_pics/{user.profile_image}'),
+            'city': user.city,
+            'activity_count': activity_count,
+            'url': url_for('main.user_profile', user_id=user.id)
+        })
+        
+    return jsonify(users_list)
