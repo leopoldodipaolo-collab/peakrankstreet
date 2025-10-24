@@ -159,7 +159,7 @@
                              <a href="{{ url_for('main.track_activity') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn"><i class="bi bi-geo-alt-fill me-2"></i>Inizia a Tracciare!</a>
                              {# Aggiunto il pulsante Carica GPX anche per utenti loggati #}
                              <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica GPX</a>
-                             <a href="{{ url_for('main.explore') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Esplora</a>
+                             
                              <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
                              <a href="{{ url_for('main.record_activity') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Registra Attività</a>
                         {% endif %}
@@ -187,11 +187,18 @@
                                         <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Hike"><i class="bi bi-mountains me-1"></i>Hike</button>
                                     </div>
                                 </div>
+                                {# --- NUOVA ACTION BAR AGGIUNTA QUI --- #}
+                                <hr class="my-3">
+                                <div class="text-center">
+                                    <a href="{{ url_for('main.explore') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-compass-fill me-2"></i>Esplora</a>
+                                    <a href="{{ url_for('main.list_groups') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-people-fill me-2"></i>Gruppi</a>
+                                    <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-map-fill me-2"></i>Proponi un Classico</a>
+                                </div>
+                                {# --- FINE ACTION BAR --- #}
                             </div>
                         </div>
                     </div>
                     
-                    <a href="{{ url_for('main.list_groups') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>gruppi</a>
                     
                     {# Inserisci questo blocco subito prima di <div class="card shadow-lg mb-5 map-card-custom"> #}
                     <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
