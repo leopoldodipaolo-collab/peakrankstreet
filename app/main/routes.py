@@ -1172,7 +1172,16 @@ def notifications():
                 bg_color = "bg-info"
             else:
                 message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
-                
+        
+        elif n.action == 'route_approved':
+            route = Route.query.get(n.object_id)
+            if route:
+                message = f"🎉 Congratulazioni! La tua proposta per il percorso <strong>'{route.name}'</strong> è stata approvata."
+                link = url_for('main.route_detail', route_id=route.id)
+                icon = "🗺️"
+                bg_color = "bg-success"
+            else:
+                message = "🎉 Congratulazioni! Una tua proposta per un percorso è stata approvata."     
         # --- FINE BLOCCHI NUOVI ---
 
 
@@ -2875,3 +2884,84 @@ def suggested_users():
         })
         
     return jsonify(users_list)
+
+# In app/main/routes.py
+
+@main.route("/routes/propose-classic", methods=["GET","POST"])
+@login_required
+def propose_classic_route():
+    if request.method == "POST":
+        # --- 1. ESTRAZIONE DELLA TRACCIA (Il tuo codice, che è corretto) ---
+        coords_geojson_str = None
+        distance_km = None
+
+        # Prova a caricare dal file GPX
+        if 'gpx_file' in request.files and request.files['gpx_file'].filename != '':
+            gpx_file = request.files['gpx_file']
+            try:
+                gpx_data = gpxpy.parse(gpx_file.stream)
+                points = [[p.longitude, p.latitude] for t in gpx_data.tracks for s in t.segments for p in s.points]
+                if points:
+                    coords_geojson_str = json.dumps({"type": "Feature", "geometry": {"type": "LineString", "coordinates": points}, "properties": {}})
+                    distance_km = gpx_data.length_3d() / 1000 if gpx_data.length_3d() else gpx_data.length_2d() / 1000
+                else:
+                    flash('Il file GPX non contiene dati di percorso validi.', 'danger')
+                    return redirect(url_for("main.propose_classic_route")) # Corretto redirect
+            except Exception as e:
+                flash(f'Errore nella lettura del file GPX: {e}', 'danger')
+                return redirect(url_for("main.propose_classic_route")) # Corretto redirect
+        
+        # Se non c'è GPX, prova a prenderlo dalla mappa disegnata
+        elif "coordinates" in request.form and request.form["coordinates"]:
+            coords_geojson_str = request.form["coordinates"]
+            try:
+                geojson_obj = json.loads(coords_geojson_str)
+                line_coords = geojson_obj['geometry']['coordinates']
+                total_distance_meters = sum(calculate_distance_meters(line_coords[i][1], line_coords[i][0], line_coords[i+1][1], line_coords[i+1][0]) for i in range(len(line_coords) - 1))
+                distance_km = total_distance_meters / 1000.0
+            except (json.JSONDecodeError, KeyError, IndexError) as e:
+                distance_km = None # Lascia che sia il database a gestirlo se necessario
+
+        # Validazione finale: deve esserci una traccia
+        if not coords_geojson_str:
+            flash('Devi disegnare un percorso sulla mappa o caricare un file GPX.', 'danger')
+            return redirect(url_for("main.propose_classic_route"))
+
+        # --- 2. CREAZIONE DI UN UNICO OGGETTO ROUTE CON TUTTI I CAMPI ---
+        try:
+            new_route = Route(
+                # Campi base
+                name=request.form["name"],
+                description=request.form.get("description"),
+                activity_type=request.form.get("activity_type"),
+                coordinates=coords_geojson_str,
+                created_by=current_user.id,
+                distance_km=distance_km,
+                
+                # Campi "Classici" dal form
+                classic_city=request.form.get("classic_city"),
+                difficulty=request.form.get("difficulty"),
+                landmarks=request.form.get("landmarks"),
+                start_location=request.form.get("start_location"),
+                end_location=request.form.get("end_location"),
+                elevation_gain=request.form.get("elevation_gain", type=int, default=None),
+                estimated_time=request.form.get("estimated_time"),
+                
+                # Stato della proposta
+                is_classic=False,  # Sarà l'admin a deciderlo
+                classic_status='proposed'
+            )
+            
+            db.session.add(new_route)
+            db.session.commit()
+            
+            flash('Proposta inviata con successo! Verrai notificato quando verrà revisionata.', 'success')
+            return redirect(url_for("main.index"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Si è verificato un errore durante il salvataggio della proposta: {e}", 'danger')
+            return redirect(url_for("main.propose_classic_route"))
+
+    # Metodo GET: mostra semplicemente il form
+    return render_template('propose_classic.html', is_homepage=False)

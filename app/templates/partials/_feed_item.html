@@ -12,7 +12,13 @@
     {% elif post.post_category == 'admin_announcement' or post.post_category == 'weekly_tip' %}
         {# È un annuncio o un consiglio speciale #}
         {% include 'partials/feed_items/_special_post.html' with context %}
-        
+    
+    {# --- AGGIUNGI QUESTO BLOCCO ELIF --- #}
+    {% elif post.post_category == 'system_new_classic' %}
+        {# Possiamo riutilizzare lo stile dei record, che è celebrativo #}
+        {% include 'partials/feed_items/_system_record.html' with context %}
+    {# --- FINE BLOCCO --- #}
+    
     {% elif post.post_category == 'system_record' %}
         {# È un post automatico per un nuovo record #}
         {% include 'partials/feed_items/_system_record.html' with context %}

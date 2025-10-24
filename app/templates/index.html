@@ -191,7 +191,17 @@
                         </div>
                     </div>
                     
-
+                    {# Inserisci questo blocco subito prima di <div class="card shadow-lg mb-5 map-card-custom"> #}
+                    <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
+                        <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
+                        <div class="card-img-overlay d-flex flex-column justify-content-center align-items-center text-center">
+                            <h3 class="card-title">Conosci un percorso leggendario?</h3>
+                            <p class="card-text">Aiutaci a mappare i percorsi "Classici" della tua zona. Proponi il tuo preferito!</p>
+                            <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-warning fw-bold">
+                                <i class="bi bi-award-fill me-2"></i>Proponi un Percorso Classico
+                            </a>
+                        </div>
+                    </div>
                     <div class="card shadow-lg mb-5 map-card-custom">
                         <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
                             <h4 class="mb-0"><i class="bi bi-map-fill me-2"></i>Mappa Esplorativa</h4>
@@ -481,36 +491,30 @@
                     <!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
                     <!-- ================================================================ -->
 
-        {# In index.html, nella sezione del feed #}
+                    {# --- 1. INCLUDIAMO IL NUOVO BOX "CREA POST" QUI SOPRA --- #}
+                    {% include 'partials/_create_post_box.html' %}
 
-<!-- ================================================================ -->
-<!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
-<!-- ================================================================ -->
+                    {# 2. Importiamo la nostra macro per le card (invariato) #}
+                    {% from 'macros/_cards.html' import feed_card %}
 
-{# --- 1. INCLUDIAMO IL NUOVO BOX "CREA POST" QUI SOPRA --- #}
-{% include 'partials/_create_post_box.html' %}
+                    {# --- 3. MODIFICHIAMO I LINK DEL FOOTER --- #}
+                    {# Rimuoviamo la logica per aggiungere "Crea Post" da qui #}
+                    {% set community_footer_links = [
+                        {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
+                        {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
+                    ] %}
+                    {# Non c'è più il blocco if/do per aggiungere il pulsante create_post #}
 
-{# 2. Importiamo la nostra macro per le card (invariato) #}
-{% from 'macros/_cards.html' import feed_card %}
-
-{# --- 3. MODIFICHIAMO I LINK DEL FOOTER --- #}
-{# Rimuoviamo la logica per aggiungere "Crea Post" da qui #}
-{% set community_footer_links = [
-    {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
-    {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
-] %}
-{# Non c'è più il blocco if/do per aggiungere il pulsante create_post #}
-
-{# 4. Chiamiamo la macro (invariato) #}
-{{ feed_card(
-    id='community-feed',
-    title='Aggiornamenti dalla Community',
-    icon_class='bi-newspaper',
-    items=community_posts,
-    footer_links=community_footer_links,
-    current_user=current_user,
-    has_next_feed_page=has_next_feed_page
-) }}
+                    {# 4. Chiamiamo la macro (invariato) #}
+                    {{ feed_card(
+                        id='community-feed',
+                        title='Aggiornamenti dalla Community',
+                        icon_class='bi-newspaper',
+                        items=community_posts,
+                        footer_links=community_footer_links,
+                        current_user=current_user,
+                        has_next_feed_page=has_next_feed_page
+                    ) }}
 
                 <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
                 <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">

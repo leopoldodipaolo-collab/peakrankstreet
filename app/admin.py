@@ -37,15 +37,15 @@ class RouteAdminView(SecureModelView):
     # RISOLTO: Usa 'created_by' invece di 'creator' per evitare problemi di relazione
     column_list = [
         'id', 'name', 'created_by', 'activity_type', 
-        'is_featured', 'is_classic', 'classic_city',
+        'is_featured', 'is_classic', 'classic_city','classic_status',
         'is_active', 'difficulty', 'distance_km', 'created_at'
     ]
     column_searchable_list = ['name', 'description', 'classic_city', 'start_location']
     column_filters = [
         'is_featured', 'is_classic', 'is_active',
-        'activity_type', 'difficulty', 'classic_city', 'created_at'
+        'activity_type', 'difficulty', 'classic_city', 'created_at', 'classic_status'
     ]
-    column_editable_list = ['is_featured', 'is_classic', 'is_active']
+    column_editable_list = ['is_featured', 'is_classic', 'is_active', 'classic_status']
     
     # RISOLTO: Definisci esplicitamente le colonne del form
     form_columns = [

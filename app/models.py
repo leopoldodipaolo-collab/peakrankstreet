@@ -2,6 +2,9 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from . import db
+from sqlalchemy import event
+from sqlalchemy.orm import object_session
+from sqlalchemy.orm.attributes import get_history
 
 # =====================================================================
 # TABELLE DI ASSOCIAZIONE (Molti-a-Molti)
@@ -100,6 +103,14 @@ class Route(db.Model):
     activities = db.relationship('Activity', backref='route_activity', lazy='dynamic')
     comments = db.relationship('Comment', backref='route', lazy='dynamic')
     records = db.relationship('RouteRecord', backref='route', lazy='dynamic')
+
+    # --- NUOVO CAMPO FONDAMENTALE ---
+    classic_status = db.Column(db.String(20), default='none', index=True)
+    # Valori possibili:
+    # 'none' -> Percorso normale creato da un utente
+    # 'proposed' -> Proposto come classico, in attesa di revisione
+    # 'approved' -> Approvato come classico dall'admin
+    # 'rejected' -> Rifiutato come classico dall'admin
 
     def __repr__(self):
         return f'<Route {self.name}>'
@@ -442,3 +453,63 @@ def create_bet_notification(challenge, winner, loser):
         
     except Exception as e:
         print(f"❌ Errore creazione scommessa: {e}")
+
+
+def after_route_approved(mapper, connection, target):
+    """
+    Questa funzione viene chiamata automaticamente dopo che una Route viene aggiornata.
+    Controlla se lo stato è appena diventato 'approved'.
+    """
+    # Usiamo 'is_modified' per assicurarci che questa logica venga eseguita
+    # solo quando il campo 'classic_status' è effettivamente cambiato.
+    history = get_history(target, 'classic_status')
+    
+    # Controlliamo se il valore è cambiato e se il nuovo valore è 'approved'
+    if history.has_changes() and target.classic_status == 'approved':
+        
+        # --- INIZIO BLOCCO INDENTATO CORRETTAMENTE ---
+        
+        print(f"✅ DEBUG: Il percorso ID {target.id} è stato approvato! Creo la notifica.")
+
+        # Assicurati che il creatore esista prima di procedere
+        if not target.creator:
+            print(f"❌ ERRORE: Impossibile trovare il creatore per il percorso ID {target.id}. Salto la notifica.")
+            return
+
+        # 1. Crea la notifica per l'utente che ha proposto il percorso
+        notification = Notification(
+            recipient_id=target.created_by,
+            actor_id=1, # Assumendo che l'utente con ID 1 sia un admin. Modifica se necessario.
+            action='route_approved',
+            object_id=target.id,
+            object_type='route'
+        )
+        
+        # 2. Crea un post automatico nel feed
+        post_content = (
+            f"🗺️ Nuovo Percorso Classico! Grazie a {target.creator.username}, "
+            f"il percorso '{target.name}' a {target.classic_city} è ora disponibile per tutti. "
+            "Scopritelo!"
+        )
+        
+        new_post = Post(
+            user_id=target.created_by,
+            content=post_content,
+            post_category='system_new_classic',
+            post_type='text'
+        )
+
+        # Usiamo la sessione legata all'oggetto 'target' per aggiungere i nuovi oggetti
+        session = object_session(target)
+        if session:
+            session.add(notification)
+            session.add(new_post)
+            # Nota: Non facciamo session.commit() qui. L'evento 'after_update' 
+            # viene eseguito all'interno di una transazione esistente.
+            # SQLAlchemy si occuperà del commit.
+
+        # --- FINE BLOCCO INDENTATO ---
+
+
+# Registra il listener per il modello Route
+event.listen(Route, 'after_update', after_route_approved)
