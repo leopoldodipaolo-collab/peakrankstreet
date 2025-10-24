@@ -191,6 +191,8 @@
                         </div>
                     </div>
                     
+                    <a href="{{ url_for('main.list_groups') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>gruppi</a>
+                    
                     {# Inserisci questo blocco subito prima di <div class="card shadow-lg mb-5 map-card-custom"> #}
                     <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
                         <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
@@ -510,7 +512,7 @@
                         id='community-feed',
                         title='Aggiornamenti dalla Community',
                         icon_class='bi-newspaper',
-                        items=community_posts,
+                        items=community_items,  
                         footer_links=community_footer_links,
                         current_user=current_user,
                         has_next_feed_page=has_next_feed_page

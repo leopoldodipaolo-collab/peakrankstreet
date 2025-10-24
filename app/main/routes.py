@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags
+from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags, Group
 from app import db
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
@@ -97,71 +97,15 @@ def allowed_file(filename):
 from sqlalchemy import case, func
 
 # ... (gli altri import e le altre rotte) ...
-
 @main.route('/')
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
-    # --- LOGICA FEED DELLA COMMUNITY ---
-    PER_PAGE = 5
-    special_post_order = case(
-        (Post.post_category.in_(['admin_announcement', 'weekly_tip']), 0),
-        else_=1
-    )
+    # --- UNICA FONTE DI VERITÀ PER IL FEED ---
+    community_items, has_next_feed_page = get_unified_feed_items(page=1, per_page=5)
+    # --- FINE LOGICA FEED ---
 
-    posts_pagination = Post.query.options(joinedload(Post.user)).order_by(
-        special_post_order, 
-        Post.created_at.desc()
-    ).paginate(page=1, per_page=PER_PAGE, error_out=False)
-    
-    community_posts = posts_pagination.items
-
-    if current_user.is_authenticated:
-        post_ids = [p.id for p in community_posts]
-        if post_ids:
-            liked_post_ids = {like.post_id for like in PostLike.query.filter(PostLike.user_id == current_user.id, PostLike.post_id.in_(post_ids)).all()}
-            for post in community_posts:
-                post.current_user_liked = post.id in liked_post_ids
-        else:
-             for post in community_posts:
-                post.current_user_liked = False
-    else:
-        for post in community_posts:
-            post.current_user_liked = False
-
-    # --- LOGICA PER TUTTE LE SFIDE (SEMPLIFICATA) ---
-    
-    status_filter = request.args.get('status', 'all')
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
-    
-    challenges_query = Challenge.query.options(
-        joinedload(Challenge.route_info),
-        joinedload(Challenge.challenger)
-    )
-    
-    now = datetime.utcnow()
-    if status_filter == 'active':
-        challenges_query = challenges_query.filter(
-            Challenge.end_date >= now,
-            Challenge.is_active == True
-        )
-    elif status_filter == 'finished':
-        challenges_query = challenges_query.filter(Challenge.end_date < now)
-    elif status_filter == 'closed_only':
-        challenges_query = challenges_query.filter(Challenge.is_active == False)
-    
-    challenges_query = challenges_query.order_by(Challenge.start_date.desc())
-    
-    challenges_pagination = challenges_query.paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    # SFIDE INVIATE - LASCIAMO VUOTO SE NON ESISTE LA RELAZIONE
-    invited_challenges = []
-
-    # --- ALTRI DATI PER LA HOME PAGE ---
-    
+    # --- DATI AGGIUNTIVI PER LA HOME PAGE (Il tuo codice, che va bene) ---
     recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
     
     top_users_data = (
@@ -187,15 +131,12 @@ def index():
                            recent_activities=recent_activities,
                            recent_challenges_in_city=recent_challenges_in_city,
                            top_users=top_users,
-                           community_posts=community_posts,
-                           has_next_feed_page=posts_pagination.has_next,
-                           total_posts=posts_pagination.total,
-                           challenges=challenges_pagination.items,
-                           challenges_pagination=challenges_pagination,
-                           status_filter=status_filter,
-                           invited_challenges=invited_challenges,  # Lista vuota
-                           now=now
+                           # Passiamo la variabile corretta con il nome corretto
+                           community_items=community_items, 
+                           has_next_feed_page=has_next_feed_page,
+                           now=datetime.utcnow()
                            )
+
 @main.route('/feed')
 @login_required
 def feed():
@@ -1777,30 +1718,38 @@ def allowed_file(filename):
 @main.route('/posts/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
-    # Imposta la cartella di upload
-    upload_dir = os.path.join(current_app.root_path, 'static', 'posts_images')
-    os.makedirs(upload_dir, exist_ok=True)
-    current_app.config['UPLOAD_FOLDER'] = upload_dir
-
+    # --- LOGICA ESEGUITA QUANDO IL FORM VIENE INVIATO (METODO POST) ---
     if request.method == 'POST':
         content = request.form.get('content', '')
         post_type = request.form.get('post_type', 'text')
         image_file = request.files.get('image')
-        link = request.form.get('link')
+        group_id = request.form.get('group_id') # Prende l'ID del gruppo dal form
+        
+        # Converte l'ID del gruppo in intero se presente, altrimenti rimane None
+        if group_id:
+            try:
+                group_id = int(group_id)
+            except ValueError:
+                group_id = None
+        else:
+            group_id = None
 
-        # Validazione
-        if not content.strip() and not image_file and not link:
-            flash('Il post non può essere vuoto. Aggiungi testo, immagine o link.', 'warning')
+        # Validazione base del contenuto
+        if not content.strip() and not image_file:
+            flash('Il post non può essere vuoto. Aggiungi testo o un\'immagine.', 'warning')
             return redirect(url_for('main.create_post'))
 
         image_filename = None
-
-        # Gestione Immagine
+        # Gestione dell'immagine (se caricata)
         if image_file and image_file.filename != '':
             if allowed_file(image_file.filename):
+                upload_dir = os.path.join(current_app.root_path, 'static', 'posts_images')
+                os.makedirs(upload_dir, exist_ok=True)
+                
                 filename = secure_filename(image_file.filename)
                 unique_filename = f"{uuid.uuid4()}{os.path.splitext(filename)[1]}"
                 save_path = os.path.join(upload_dir, unique_filename)
+                
                 try:
                     image_file.save(save_path)
                     image_filename = unique_filename
@@ -1812,38 +1761,28 @@ def create_post():
                 flash('Formato immagine non valido. Usa PNG, JPG, JPEG o GIF.', 'danger')
                 return redirect(url_for('main.create_post'))
 
-        # --- INIZIO LOGICA DI PARSING DEL CONTENUTO ---
-        
-        # 1. Analizziamo il contenuto per trovare le @menzioni e creare i relativi link
+        # Analisi del contenuto per menzioni e hashtag
         processed_content_mentions, mentioned_users = parse_mentions(content)
 
-        # 2. Creiamo l'oggetto Post in memoria (senza aggiungerlo alla sessione)
-        #    Usiamo il contenuto già processato per le menzioni come base.
+        # Creazione dell'oggetto Post in memoria
         new_post = Post(
             user_id=current_user.id,
-            content=processed_content_mentions, # Questo contenuto verrà sovrascritto tra poco
+            content=processed_content_mentions, # Contenuto temporaneo con link delle menzioni
             image_url=image_filename,
             post_type=post_type,
+            group_id=group_id,
             post_category=request.form.get('post_category', 'user_post')
         )
 
-        # 3. Analizziamo il contenuto per trovare gli #hashtag, salvarli,
-        #    associarli a `new_post` e aggiornare il testo con i link.
+        # Analisi per hashtag, che modifica sia il contenuto che l'oggetto new_post
         final_content = parse_and_link_hashtags(processed_content_mentions, new_post)
-        
-        # 4. Aggiorniamo il contenuto del post con la versione finale,
-        #    che ora include sia i link delle menzioni che quelli degli hashtag.
-        new_post.content = final_content
-        
-        # --- FINE LOGICA DI PARSING ---
+        new_post.content = final_content # Aggiornamento con il contenuto finale
 
         try:
-            # Aggiungiamo il post completo alla sessione del database
             db.session.add(new_post)
-            # flush() assegna un ID a new_post, necessario per le notifiche
-            db.session.flush()
+            db.session.flush()  # Assegna un ID a new_post
 
-            # Creiamo le notifiche per ogni utente menzionato
+            # Creazione delle notifiche per le menzioni
             for user in mentioned_users:
                 if user.id != current_user.id:
                     notification = Notification(
@@ -1855,19 +1794,36 @@ def create_post():
                     )
                     db.session.add(notification)
 
-            # Salviamo tutto in modo permanente nel database
             db.session.commit()
             
             flash('Post creato con successo!', 'success')
-            return redirect(url_for('main.index'))
+
+            # Redirect intelligente: alla bacheca del gruppo o alla home page
+            if group_id:
+                return redirect(url_for('main.group_detail', group_id=group_id))
+            else:
+                return redirect(url_for('main.index'))
             
         except Exception as e:
             db.session.rollback()
             flash(f"Errore durante la creazione del post: {e}", 'danger')
             return redirect(url_for('main.create_post'))
 
-    # Metodo GET
-    return render_template('create_post.html', is_homepage=False)
+    # --- LOGICA ESEGUITA QUANDO LA PAGINA VIENE CARICATA (METODO GET) ---
+    
+    # Recupera i gruppi a cui l'utente è iscritto per popolare il menu a tendina
+    user_groups = current_user.joined_groups.order_by(Group.name.asc()).all()
+    
+    # Codice di debug per verificare i gruppi trovati
+    print("\n--- [DEBUG] Caricamento pagina CREATE_POST (GET) ---")
+    print(f"Utente: {current_user.username}")
+    print(f"Numero di gruppi trovati: {len(user_groups)}")
+    for group in user_groups:
+        print(f"  - Gruppo: {group.name} (ID: {group.id})")
+    print("-------------------------------------------\n")
+    
+    # Mostra il form vuoto, passando la lista dei gruppi
+    return render_template('create_post.html', is_homepage=False, user_groups=user_groups)
 
 
 # --- Assicurati che la funzione allowed_file sia definita (probabilmente in routes.py o una utility) ---
@@ -2015,13 +1971,13 @@ def api_feed():
     page = request.args.get('page', 1, type=int)
     items, has_next = get_unified_feed_items(page=page, per_page=5)
     
-    # Ora il template parziale riceverà una lista mista di Post e Activity
     items_html = render_template('partials/_feed_posts_chunk.html', items=items)
     
     return jsonify({
         'html': items_html,
         'has_next_page': has_next
     })
+
 # TEST #####################################################################################################################################
 
 @main.route("/test/create_test_bet_leo_marco")
@@ -2965,3 +2921,106 @@ def propose_classic_route():
 
     # Metodo GET: mostra semplicemente il form
     return render_template('propose_classic.html', is_homepage=False)
+
+
+
+@main.route('/groups')
+@login_required
+def list_groups():
+    page = request.args.get('page', 1, type=int)
+    # Mostra i gruppi impaginati
+    groups_pagination = Group.query.order_by(Group.name.asc()).paginate(page=page, per_page=10, error_out=False)
+    return render_template('list_groups.html', groups_pagination=groups_pagination, is_homepage=False)
+
+@main.route('/groups/new', methods=['GET', 'POST'])
+@login_required
+def create_group():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        city = request.form.get('city')
+        
+        if not name:
+            flash('Il nome del gruppo è obbligatorio.', 'danger')
+            return redirect(url_for('main.create_group'))
+
+        new_group = Group(
+            name=name,
+            description=description,
+            city=city,
+            owner_id=current_user.id
+        )
+        
+        # Il creatore diventa automaticamente il primo membro
+        new_group.members.append(current_user)
+        
+        db.session.add(new_group)
+        db.session.commit()
+        
+        flash(f"Gruppo '{name}' creato con successo!", 'success')
+        return redirect(url_for('main.group_detail', group_id=new_group.id))
+        
+    return render_template('create_group.html', is_homepage=False)
+
+@main.route('/group/<int:group_id>')
+@login_required
+def group_detail(group_id):
+    group = Group.query.get_or_404(group_id)
+    members = group.members
+    is_member = current_user in members
+    is_owner = group.owner_id == current_user.id
+    
+    # --- NUOVA LOGICA: RECUPERA I POST DEL GRUPPO ---
+    # Usiamo la relazione 'posts' che abbiamo definito nel modello
+    group_posts = group.posts.order_by(Post.created_at.desc()).all()
+
+    # Arricchiamo i post con le info sui like (logica riutilizzata)
+    if current_user.is_authenticated:
+        for post in group_posts:
+            post.current_user_liked = post.likes.filter_by(user_id=current_user.id).first() is not None
+    # --- FINE NUOVA LOGICA ---
+
+    return render_template('group_detail.html', 
+                           group=group, 
+                           members=members, 
+                           is_member=is_member,
+                           is_owner=is_owner,
+                           group_posts=group_posts, # <-- Passiamo i post al template
+                           is_homepage=False)
+
+@main.route('/group/<int:group_id>/join', methods=['POST'])
+@login_required
+def join_group(group_id):
+    group = Group.query.get_or_404(group_id)
+    # Controlla se l'utente è già membro
+    if current_user in group.members:
+        flash('Sei già un membro di questo gruppo.', 'info')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+
+    group.members.append(current_user)
+    db.session.commit()
+
+    flash(f"Ti sei iscritto con successo a '{group.name}'!", 'success')
+    return redirect(url_for('main.group_detail', group_id=group.id))
+
+
+@main.route('/group/<int:group_id>/leave', methods=['POST'])
+@login_required
+def leave_group(group_id):
+    group = Group.query.get_or_404(group_id)
+
+    # Controlla se l'utente è effettivamente un membro
+    if current_user not in group.members:
+        flash('Non sei un membro di questo gruppo.', 'info')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+        
+    # Impedisce al proprietario di abbandonare il proprio gruppo (logica da migliorare in futuro)
+    if group.owner_id == current_user.id:
+        flash('Non puoi abbandonare un gruppo che hai creato.', 'danger')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+
+    group.members.remove(current_user)
+    db.session.commit()
+
+    flash(f"Hai abbandonato il gruppo '{group.name}'.", 'success')
+    return redirect(url_for('main.list_groups')) # Reindirizziamo alla lista dei gruppi

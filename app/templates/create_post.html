@@ -29,6 +29,19 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="group_id" class="form-label">Pubblica In (Opzionale)</label>
+                            <select class="form-select" id="group_id" name="group_id">
+                                <option value="">Feed Pubblico (principale)</option>
+                                {% for group in user_groups %}
+                                    <option value="{{ group.id }}">Gruppo: {{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Se scegli un gruppo, il tuo post sarà visibile solo sulla bacheca di quel gruppo.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
                             <label for="image" class="form-label">Allega un'immagine (opzionale)</label>
                             <input class="form-control" type="file" id="image" name="image" accept="image/*">
                         </div>

@@ -14,19 +14,22 @@ def get_unified_feed_items(page=1, per_page=5):
     Recupera una lista unificata e impaginata di Post e Activity,
     ordinata per data di creazione.
     """
-    # 1. Creiamo una query per i Post, selezionando solo le colonne per l'ordinamento e l'identificazione
+     # 1. Query per i Post PUBBLICI
     posts_query = db.session.query(
         Post.id.label('item_id'),
         Post.created_at.label('timestamp'),
         literal_column("'post'").label('item_type')
-    ).filter(Post.post_category.in_(['user_post', 'system_record', 'system_badge'])) # Filtriamo i post che vogliamo nel feed
+    ).filter(
+        Post.group_id == None  # <-- QUESTO È IL FILTRO FONDAMENTALE
+    )
 
-    # 2. Creiamo una query simile per le Activity
+    # 2. Query per le Activity
     activities_query = db.session.query(
         Activity.id.label('item_id'),
         Activity.created_at.label('timestamp'),
         literal_column("'activity'").label('item_type')
     )
+
 
     # 3. Uniamo le due query. `union_all` è più veloce di `union`.
     unified_query = union_all(posts_query, activities_query).alias('unified')

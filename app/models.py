@@ -22,6 +22,15 @@ post_tags = db.Table('post_tags',
     extend_existing=True
 )
 
+
+# Tabella di associazione per i membri dei gruppi
+group_members = db.Table('group_members',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('group_id', db.Integer, db.ForeignKey('groups.id'), primary_key=True),
+    extend_existing=True
+)
+
+
 # =====================================================================
 # MODELLI PRINCIPALI
 # =====================================================================
@@ -74,8 +83,37 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f'<User {self.username}>'
+    
+    # RELAZIONE PER I GRUPPI POSSEDUTI
+    owned_groups = db.relationship('Group', foreign_keys='Group.owner_id', backref='owner', lazy='dynamic')
+
+    # RELAZIONE PER I GRUPPI A CUI L'UTENTE È ISCRITTO
+    joined_groups = db.relationship('Group',
+                                    secondary=group_members,
+                                    backref=db.backref('members', lazy='dynamic'),
+                                    lazy='dynamic')
 
 
+# Puoi aggiungere questa nuova classe dopo la classe User
+class Group(db.Model):
+    __tablename__ = 'groups'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text, nullable=True)
+    profile_image = db.Column(db.String(120), nullable=False, default='default_group.png')
+    city = db.Column(db.String(100), index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    # RELAZIONE PER I POST DEL GRUPPO
+    posts = db.relationship('Post', backref='group', lazy='dynamic')
+    
+    # NESSUN'ALTRA RELAZIONE QUI. 'members' verrà creato dal backref.
+
+    def __repr__(self):
+        return f'<Group {self.name}>'
+    
 class Route(db.Model):
     __tablename__ = 'Routes'
     id = db.Column(db.Integer, primary_key=True)
@@ -188,6 +226,12 @@ class Post(db.Model):
     comments = db.relationship('PostComment', backref='post', lazy='dynamic', cascade="all, delete-orphan")
     likes = db.relationship('PostLike', backref='post', lazy='dynamic', cascade="all, delete-orphan")
     tags = db.relationship('Tag', secondary=post_tags, backref=db.backref('posts', lazy='dynamic'), lazy='dynamic')
+
+    # --- NUOVO CAMPO FACOLTATIVO ---
+    # Se un post è pubblicato in un gruppo, questo campo avrà l'ID del gruppo
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True, index=True)
+    # --- FINE NUOVO CAMPO ---
+    
 
     def __repr__(self):
         return f'<Post {self.id}>'
