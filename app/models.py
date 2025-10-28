@@ -52,6 +52,11 @@ class User(db.Model, UserMixin):
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
     route_records = db.relationship('RouteRecord', backref='record_holder', lazy='dynamic')
     user_badges = db.relationship('UserBadge', backref='user', lazy='dynamic')
+
+    # --- NUOVI CAMPI PER LA GAMIFICATION FEUDALE ---
+    prestige = db.Column(db.Integer, default=0, nullable=False, index=True)
+    title = db.Column(db.String(50), default='Popolano', nullable=False)
+    # --- FINE NUOVI CAMPI ---
     
     followed = db.relationship(
         'User', secondary=followers,
@@ -109,7 +114,10 @@ class Group(db.Model):
     # RELAZIONE PER I POST DEL GRUPPO
     posts = db.relationship('Post', backref='group', lazy='dynamic')
     
-    # NESSUN'ALTRA RELAZIONE QUI. 'members' verrà creato dal backref.
+    events = db.relationship('Event', 
+                             back_populates='group', 
+                             lazy='dynamic',
+                             cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Group {self.name}>'
@@ -557,3 +565,40 @@ def after_route_approved(mapper, connection, target):
 
 # Registra il listener per il modello Route
 event.listen(Route, 'after_update', after_route_approved)
+
+
+
+# All'inizio del file, insieme alle altre tabelle di associazione
+event_participants = db.Table('event_participants',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('event_id', db.Integer, db.ForeignKey('events.id'), primary_key=True),
+    extend_existing=True
+)
+
+# ... (gli altri tuoi modelli) ...
+
+# Puoi aggiungere questa nuova classe dopo la classe Group
+class Event(db.Model):
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, index=True)
+    description = db.Column(db.Text)
+    event_time = db.Column(db.DateTime, nullable=False, index=True)
+    location = db.Column(db.String(200)) # Es. "Ingresso Parco della Caffarella"
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Chi ha creato l'evento
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    creator = db.relationship('User', backref='created_events')
+    
+    # A quale gruppo appartiene l'evento
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
+    group = db.relationship('Group', back_populates='events')
+
+    # Relazione per accedere ai partecipanti
+    participants = db.relationship('User', secondary=event_participants,
+                                   backref=db.backref('joined_events', lazy='dynamic'),
+                                   lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Event {self.name}>'

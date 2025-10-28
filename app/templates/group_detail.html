@@ -37,12 +37,38 @@
                 </div>
             </div>
         </div>
+        
     </div>
+
+     {# --- NUOVA SEZIONE: EVENTI IMMINENTI --- #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Eventi Imminenti</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for event in upcoming_events %}
+                    <a href="{{ url_for('main.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
+                        <div class="fw-bold">{{ event.name }}</div>
+                        <small class="text-muted">{{ event.event_time.strftime('%d %B %Y - %H:%M') }}</small>
+                    </a>
+                {% else %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">Nessun evento imminente in programma.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
 
     <!-- Contenuto Principale: Bacheca e Membri -->
     <div class="card shadow-sm">
         <div class="card-header">
             <h5 class="mb-0">Bacheca del Gruppo</h5>
+            {# --- AGGIUNGI PULSANTE QUI --- #}
+            {% if is_member %}
+                <a href="{{ url_for('main.create_event', group_id=group.id) }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-calendar-plus me-1"></i> Crea Evento
+                </a>
+            {% endif %}
         </div>
         <div class="card-body">
             {# Aggiungiamo un box per creare post RAPIDAMENTE (opzionale ma consigliato) #}

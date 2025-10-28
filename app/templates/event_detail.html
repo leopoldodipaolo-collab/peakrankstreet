@@ -1,0 +1,76 @@
+{% extends "index.html" %}
+
+{% block title %}{{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="card shadow-lg">
+        <!-- Card Header con informazioni principali -->
+        <div class="card-header bg-primary-custom text-white p-4">
+            <h1 class="display-5 fw-bold">{{ event.name }}</h1>
+            <p class="lead">Organizzato dal gruppo <a href="{{ url_for('main.group_detail', group_id=event.group.id) }}" class="text-white fw-bold">{{ event.group.name }}</a></p>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row">
+                <!-- Colonna Dettagli Evento -->
+                <div class="col-md-8">
+                    <div class="mb-4">
+                        <h4><i class="bi bi-calendar-event me-2"></i>Quando</h4>
+                        <p class="fs-5">{{ event.event_time.strftime('%A %d %B %Y alle ore %H:%M') }}</p>
+                    </div>
+                    <div class="mb-4">
+                        <h4><i class="bi bi-geo-alt-fill me-2"></i>Dove</h4>
+                        <p class="fs-5">{{ event.location or 'Luogo da definire' }}</p>
+                    </div>
+                    <div class="mb-4">
+                        <h4><i class="bi bi-info-circle-fill me-2"></i>Dettagli</h4>
+                        <p>{{ event.description | replace('\n', '<br>') | safe }}</p> 
+                    </div>
+                    <small class="text-muted">Evento creato da <a href="{{ url_for('main.user_profile', user_id=event.creator.id) }}">{{ event.creator.username }}</a> il {{ event.created_at.strftime('%d/%m/%Y') }}</small>
+                </div>
+
+                <!-- Colonna Partecipanti e Azioni -->
+                <div class="col-md-4">
+                    <div class="sticky-top" style="top: 100px;">
+                        <div class="d-grid gap-2 mb-4">
+                            {% if is_participating %}
+                                <form action="{{ url_for('main.leave_event', event_id=event.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-lg w-100">
+                                        <i class="bi bi-x-circle me-1"></i> Non Partecipo Più
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form action="{{ url_for('main.join_event', event_id=event.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-success btn-lg w-100">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Partecipo!
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Partecipanti ({{ participants|length }})</h5>
+                            </div>
+                            <div class="list-group list-group-flush">
+                                {% for user in participants %}
+                                    <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 35px; height: 35px; object-fit: cover;">
+                                        <span>{{ user.username }}</span>
+                                        {% if user.id == event.creator_id %}
+                                            <span class="badge bg-primary ms-auto">Organizzatore</span>
+                                        {% endif %}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

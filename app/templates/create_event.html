@@ -1,0 +1,37 @@
+{% extends "index.html" %}
+{% block title %}Crea Nuovo Evento per {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <h1 class="mb-1">Crea un Nuovo Evento</h1>
+                    <p class="text-muted mb-4">Stai organizzando un evento per il gruppo <strong>{{ group.name }}</strong>.</p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome Evento*</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Es. Corsa di gruppo al parco" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="event_time" class="form-label">Data e Ora*</label>
+                            <input type="datetime-local" class="form-control" id="event_time" name="event_time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Luogo di Ritrovo</label>
+                            <input type="text" class="form-control" id="location" name="location" placeholder="Es. Ingresso Villa Borghese, lato Pincio">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrizione / Dettagli</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" placeholder="Dettagli sul percorso, ritmo, equipaggiamento consigliato, etc."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">Crea Evento</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

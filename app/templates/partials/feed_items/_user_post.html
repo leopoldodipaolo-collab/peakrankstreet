@@ -14,6 +14,7 @@
                 <div>
                     <h6 class="mb-0">
                         <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="text-dark text-decoration-none fw-bold">{{ post.user.username }}</a>
+                         <span class="badge bg-secondary fw-normal ms-1">{{ post.user.title }}</span>
                     </h6>
                     <small class="text-muted timeago" datetime="{{ post.created_at.isoformat() }}Z">
                         {{ post.created_at.strftime('%d %b %Y') }}

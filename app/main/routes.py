@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags, Group
+from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags, Group,Event
 from app import db
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
@@ -21,6 +21,7 @@ from app import csrf  # <-- IMPORT CORRETTO
 import json
 from .services import get_unified_feed_items
 import re # <-- Aggiungi questo import all'inizio del file
+from .gamification import add_prestige,TITLES
 
 main = Blueprint('main', __name__)
 
@@ -77,8 +78,7 @@ def award_badge_if_earned(user, badge_name):
             post_category='system_badge', # La nostra nuova categoria speciale!
             post_type='text'
         )
-        db.session.add(badge_post)
-        # --- FINE NUOVO CODICE ---
+        add_prestige(user, 'get_badge')
         
         db.session.commit() # Questo salverà sia UserBadge che il nuovo Post
         flash(f'Congratulazioni! Hai ottenuto il badge: "{badge.name}"!', 'info')
@@ -183,6 +183,7 @@ def user_profile(user_id):
                            bets_won=bets_won,
                            bets_lost=bets_lost,
                            is_homepage=False,
+                           TITLES=TITLES,
                            Route=Route)
 
 
@@ -328,6 +329,7 @@ def create_route():
 
         new_route = Route(name=name, description=description, activity_type=activity_type, coordinates=coords_geojson_str, created_by=current_user.id, distance_km=distance_km)
         db.session.add(new_route)
+        add_prestige(current_user, 'new_route')
         db.session.commit()
         
         flash('Percorso creato con successo!', 'success')
@@ -675,6 +677,7 @@ def record_activity():
                 distance=float(activity_distance_km)
             )
             db.session.add(new_activity)
+            add_prestige(current_user, 'new_activity')
             db.session.commit()
 
             current_record = RouteRecord.query.filter_by(route_id=target_route.id, activity_type=activity_type).order_by(RouteRecord.duration.asc()).first()
@@ -708,7 +711,7 @@ def record_activity():
                     post_type='text' # È un post di solo testo
                 )
                 db.session.add(record_post)
-                # --- FINE NUOVO CODICE ---
+                add_prestige(current_user, 'new_record')
                 db.session.commit()
                 award_badge_if_earned(current_user, "Re/Regina del Percorso")
             
@@ -1113,7 +1116,15 @@ def notifications():
                 bg_color = "bg-info"
             else:
                 message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
-        
+
+        elif n.action == 'title_up':
+            user = User.query.get(n.object_id)
+            if user:
+                message = f"👑 **Promozione!** La tua fama è cresciuta, sei stato nominato <strong>{user.title}</strong>!"
+                link = url_for('main.user_profile', user_id=user.id)
+                icon = "👑"
+                bg_color = "bg-warning"
+                
         elif n.action == 'route_approved':
             route = Route.query.get(n.object_id)
             if route:
@@ -1793,6 +1804,8 @@ def create_post():
                         object_type='post'
                     )
                     db.session.add(notification)
+            
+            add_prestige(current_user, 'new_post')
 
             db.session.commit()
             
@@ -1900,6 +1913,8 @@ def toggle_post_like(post_id):
         new_like = PostLike(user_id=current_user.id, post_id=post_id)
         db.session.add(new_like)
         action = 'liked'
+        if post.user_id != current_user.id:
+            add_prestige(post.user, 'receive_like')
         
     db.session.commit()
     
@@ -1931,7 +1946,7 @@ def add_comment_to_post_ajax(post_id):
         content=processed_content # <-- Usiamo il contenuto processato!
     )
     db.session.add(new_comment)
-    
+    add_prestige(current_user, 'new_comment')
     # --- NUOVA LOGICA PER LE NOTIFICHE ---
     # 2. Creiamo una notifica per ogni utente menzionato (e che non sia se stesso)
     for user in mentioned_users:
@@ -1945,7 +1960,7 @@ def add_comment_to_post_ajax(post_id):
             )
             db.session.add(notification)
     # --- FINE NUOVA LOGICA ---
-    
+
     db.session.commit()
     
     # 3. Renderizzazione del solo HTML per il nuovo commento
@@ -2909,6 +2924,7 @@ def propose_classic_route():
             )
             
             db.session.add(new_route)
+            add_prestige(current_user, 'new_route')
             db.session.commit()
             
             flash('Proposta inviata con successo! Verrai notificato quando verrà revisionata.', 'success')
@@ -2980,12 +2996,18 @@ def group_detail(group_id):
             post.current_user_liked = post.likes.filter_by(user_id=current_user.id).first() is not None
     # --- FINE NUOVA LOGICA ---
 
+    # --- NUOVA LOGICA: RECUPERA GLI EVENTI IMMINENTI ---
+    now = datetime.utcnow()
+    upcoming_events = group.events.filter(Event.event_time >= now).order_by(Event.event_time.asc()).limit(5).all()
+    # --- FINE NUOVA LOGICA ---
+
     return render_template('group_detail.html', 
                            group=group, 
                            members=members, 
                            is_member=is_member,
                            is_owner=is_owner,
                            group_posts=group_posts, # <-- Passiamo i post al template
+                           upcoming_events=upcoming_events,
                            is_homepage=False)
 
 @main.route('/group/<int:group_id>/join', methods=['POST'])
@@ -3024,3 +3046,113 @@ def leave_group(group_id):
 
     flash(f"Hai abbandonato il gruppo '{group.name}'.", 'success')
     return redirect(url_for('main.list_groups')) # Reindirizziamo alla lista dei gruppi
+
+
+@main.route('/group/<int:group_id>/events/new', methods=['GET', 'POST'])
+@login_required
+def create_event(group_id):
+    group = Group.query.get_or_404(group_id)
+    
+    # Sicurezza: solo i membri del gruppo possono creare eventi
+    if current_user not in group.members:
+        flash('Devi essere un membro del gruppo per creare un evento.', 'danger')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        event_time_str = request.form.get('event_time')
+        location = request.form.get('location')
+
+        if not name or not event_time_str:
+            flash('Nome e data/ora dell\'evento sono obbligatori.', 'danger')
+            return redirect(url_for('main.create_event', group_id=group.id))
+
+        try:
+            # Converte la stringa dal form in un oggetto datetime
+            event_time = datetime.strptime(event_time_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('Formato data/ora non valido.', 'danger')
+            return redirect(url_for('main.create_event', group_id=group.id))
+            
+        new_event = Event(
+            name=name,
+            description=description,
+            event_time=event_time,
+            location=location,
+            creator_id=current_user.id,
+            group_id=group.id
+        )
+        
+        # Il creatore partecipa automaticamente
+        new_event.participants.append(current_user)
+        
+        db.session.add(new_event)
+        db.session.commit()
+        
+        flash('Evento creato con successo!', 'success')
+        return redirect(url_for('main.event_detail', event_id=new_event.id))
+        
+    return render_template('create_event.html', group=group, is_homepage=False)
+
+
+@main.route('/event/<int:event_id>')
+@login_required
+def event_detail(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Sicurezza: per ora, rendiamo gli eventi visibili solo ai membri del gruppo
+    if current_user not in event.group.members:
+        flash('Devi essere un membro del gruppo per vedere questo evento.', 'warning')
+        return redirect(url_for('main.group_detail', group_id=event.group.id))
+
+    participants = event.participants.all()
+    is_participating = current_user in participants
+    is_creator = event.creator_id == current_user.id
+    
+    return render_template('event_detail.html', 
+                           event=event, 
+                           participants=participants, 
+                           is_participating=is_participating,
+                           is_creator=is_creator,
+                           is_homepage=False)
+
+
+@main.route('/event/<int:event_id>/join', methods=['POST'])
+@login_required
+def join_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    # Sicurezza aggiuntiva
+    if current_user not in event.group.members:
+        flash('Devi essere un membro del gruppo per partecipare a questo evento.', 'danger')
+        return redirect(url_for('main.group_detail', group_id=event.group.id))
+
+    if current_user not in event.participants:
+        event.participants.append(current_user)
+        db.session.commit()
+        flash('Partecipazione confermata!', 'success')
+    else:
+        flash('Stai già partecipando a questo evento.', 'info')
+        
+    return redirect(url_for('main.event_detail', event_id=event.id))
+
+
+@main.route('/event/<int:event_id>/leave', methods=['POST'])
+@login_required
+def leave_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    if current_user in event.participants:
+        # Impedisce al creatore di annullare la propria partecipazione (potrebbe cancellare l'evento)
+        if event.creator_id == current_user.id:
+            flash('L\'organizzatore non può annullare la propria partecipazione.', 'warning')
+            return redirect(url_for('main.event_detail', event_id=event.id))
+            
+        event.participants.remove(current_user)
+        db.session.commit()
+        flash('Hai annullato la tua partecipazione.', 'success')
+    else:
+        flash('Non stavi partecipando a questo evento.', 'info')
+
+    return redirect(url_for('main.event_detail', event_id=event.id))
