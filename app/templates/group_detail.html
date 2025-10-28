@@ -22,7 +22,7 @@
                 <!-- Pulsanti Azione -->
                 <div class="ms-auto">
                     {% if is_owner %}
-                        <a href="#" class="btn btn-secondary">Gestisci Gruppo</a>
+                        <a href="{{ url_for('main.manage_group', group_id=group.id) }}" class="btn btn-secondary">Gestisci Gruppo</a>
                     {% elif is_member %}
                         <form action="{{ url_for('main.leave_group', group_id=group.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

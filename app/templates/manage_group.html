@@ -1,0 +1,66 @@
+{% extends "index.html" %}
+{% block title %}Gestisci {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h1 class="mb-4">Gestione Gruppo: {{ group.name }}</h1>
+
+    <div class="row">
+        <!-- Colonna Modifica Dettagli -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Modifica Dettagli</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome Gruppo</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ group.name }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrizione</label>
+                            <textarea class="form-control" id="description" name="description" rows="5">{{ group.description }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="city" class="form-label">Città</label>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ group.city }}">
+                        </div>
+                        {# Aggiungi qui <input type="file"> per l'immagine #}
+                        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonna Gestione Membri -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Gestisci Membri ({{ members|length }})</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for member in members %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='profile_pics/' + member.profile_image) }}" alt="{{ member.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <a href="{{ url_for('main.user_profile', user_id=member.id) }}" class="text-dark text-decoration-none">{{ member.username }}</a>
+                            </div>
+                            
+                            {% if member.id == group.owner_id %}
+                                <span class="badge bg-primary">Admin</span>
+                            {% else %}
+                                <form action="{{ url_for('main.remove_member', group_id=group.id, user_id=member.id) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler rimuovere questo membro dal gruppo?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Rimuovi</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

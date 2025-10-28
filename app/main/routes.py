@@ -170,6 +170,8 @@ def user_profile(user_id):
     bets_lost = Bet.query.filter_by(loser_id=user_id).options(
         db.joinedload(Bet.winner)
     ).order_by(Bet.status.asc(), Bet.created_at.desc()).all()
+    user_posts = Post.query.filter_by(user_id=user.id, group_id=None).order_by(Post.created_at.desc()).limit(10).all()
+    user_groups = user.joined_groups.all()
 
     return render_template("profile.html",
                            user=user,
@@ -184,6 +186,8 @@ def user_profile(user_id):
                            bets_lost=bets_lost,
                            is_homepage=False,
                            TITLES=TITLES,
+                           user_posts=user_posts,
+                           user_groups=user_groups,
                            Route=Route)
 
 
@@ -3156,3 +3160,55 @@ def leave_event(event_id):
         flash('Non stavi partecipando a questo evento.', 'info')
 
     return redirect(url_for('main.event_detail', event_id=event.id))
+
+
+@main.route('/group/<int:group_id>/manage', methods=['GET', 'POST'])
+@login_required
+def manage_group(group_id):
+    group = Group.query.get_or_404(group_id)
+    
+    # Sicurezza: solo il proprietario può gestire il gruppo
+    if group.owner_id != current_user.id:
+        flash('Non hai i permessi per gestire questo gruppo.', 'danger')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+
+    if request.method == 'POST':
+        # Aggiorna i dati del gruppo
+        group.name = request.form.get('name', group.name)
+        group.description = request.form.get('description', group.description)
+        group.city = request.form.get('city', group.city)
+        
+        # Aggiungi qui la logica per l'upload dell'immagine del gruppo se vuoi
+        
+        db.session.commit()
+        flash('Le impostazioni del gruppo sono state aggiornate.', 'success')
+        return redirect(url_for('main.manage_group', group_id=group.id))
+        
+    members = group.members.all()
+    return render_template('manage_group.html', group=group, members=members, is_homepage=False)
+
+
+@main.route('/group/<int:group_id>/remove_member/<int:user_id>', methods=['POST'])
+@login_required
+def remove_member(group_id, user_id):
+    group = Group.query.get_or_404(group_id)
+    user_to_remove = User.query.get_or_404(user_id)
+    
+    # Sicurezza: solo il proprietario può rimuovere membri
+    if group.owner_id != current_user.id:
+        flash('Non hai i permessi per eseguire questa azione.', 'danger')
+        return redirect(url_for('main.group_detail', group_id=group.id))
+        
+    # Sicurezza: non si può rimuovere il proprietario
+    if user_to_remove.id == group.owner_id:
+        flash('Il proprietario non può essere rimosso dal gruppo.', 'warning')
+        return redirect(url_for('main.manage_group', group_id=group.id))
+        
+    if user_to_remove in group.members:
+        group.members.remove(user_to_remove)
+        db.session.commit()
+        flash(f"{user_to_remove.username} è stato rimosso dal gruppo.", 'success')
+    else:
+        flash('Questo utente non è un membro del gruppo.', 'info')
+        
+    return redirect(url_for('main.manage_group', group_id=group.id))
