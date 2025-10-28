@@ -1,12 +1,14 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Notifiche{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
+<div class="container mt-5 pt-5">
     <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h1 class="h3 fw-bold mb-2 mb-md-0">
             🔔 Le Tue Notifiche
             {% if unread_count > 0 %}
             <span class="badge bg-danger ms-2">{{ unread_count }}</span>
@@ -14,14 +16,15 @@
         </h1>
         
         {% if notifications %}
-        <div>
+        <div class="d-flex gap-2">
             <form action="{{ url_for('main.clear_all_notifications') }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <button type="submit" class="btn btn-outline-danger btn-sm" 
                         onclick="return confirm('Marcare tutte le notifiche come lette?')">
-                    🗑️ Segna Tutte Lette
+                    <i class="bi bi-check2-all"></i> Segna Tutte Lette
                 </button>
             </form>
-            <a href="{{ url_for('main.my_bets') }}" class="btn btn-outline-primary btn-sm ms-2">
+            <a href="{{ url_for('main.my_bets') }}" class="btn btn-outline-primary btn-sm">
                 💰 Le Mie Scommesse
             </a>
         </div>
@@ -30,36 +33,36 @@
 
     {% if notifications %}
         <!-- STATS RAPIDE -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white text-center">
+        <div class="row mb-4 g-3">
+            <div class="col-6 col-md-3">
+                <div class="card bg-light text-center h-100">
                     <div class="card-body py-2">
                         <h5 class="mb-0">{{ notifications|length }}</h5>
-                        <small>TOTALI</small>
+                        <small class="text-muted">TOTALI</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white text-center">
+            <div class="col-6 col-md-3">
+                <div class="card bg-light text-center h-100">
                     <div class="card-body py-2">
-                        <h5 class="mb-0">{{ notifications|selectattr('read', 'false')|list|length }}</h5>
-                        <small>DA LEGGERE</small>
+                        <h5 class="mb-0 text-danger fw-bold">{{ unread_count }}</h5>
+                        <small class="text-muted">DA LEGGERE</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark text-center">
+            <div class="col-6 col-md-3">
+                <div class="card bg-light text-center h-100">
                     <div class="card-body py-2">
                         <h5 class="mb-0">{{ notifications|selectattr('icon', 'equalto', '🎉')|list|length }}</h5>
-                        <small>VITTORIE</small>
+                        <small class="text-muted">VITTORIE</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white text-center">
+            <div class="col-6 col-md-3">
+                <div class="card bg-light text-center h-100">
                     <div class="card-body py-2">
                         <h5 class="mb-0">{{ notifications|selectattr('icon', 'equalto', '🎯')|list|length }}</h5>
-                        <small>SFIDE</small>
+                        <small class="text-muted">SFIDE</small>
                     </div>
                 </div>
             </div>
@@ -67,61 +70,39 @@
 
         <!-- LISTA NOTIFICHE -->
         <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold">Ultime notifiche</span>
-                    <small class="text-muted">Ordinate dalla più recente</small>
-                </div>
-            </div>
             <div class="list-group list-group-flush">
                 {% for notification in notifications %}
-                <a href="{{ notification.link }}" 
+                <a href="{{ notification.link if notification.link else '#' }}" 
                    class="list-group-item list-group-item-action notification-item 
                           {{ 'notification-unread' if not notification.read else 'notification-read' }}"
                    data-notification-id="{{ notification.id }}">
                     <div class="d-flex w-100 justify-content-between align-items-start">
-                        <!-- ICONA -->
                         <div class="me-3 flex-shrink-0">
                             <div class="notification-icon {{ notification.bg_color }} text-white">
                                 {{ notification.icon }}
                             </div>
                         </div>
                         
-                        <!-- MESSAGGIO -->
                         <div class="flex-grow-1 me-3">
                             <div class="mb-1 notification-message">
                                 {{ notification.message|safe }}
                             </div>
                             <small class="text-muted">
-                                ⏰ {{ notification.timestamp.strftime('%d/%m/%Y alle %H:%M') }}
+                                <i class="bi bi-clock-history"></i> {{ notification.timestamp.strftime('%d/%m/%Y alle %H:%M') }}
                             </small>
                         </div>
                         
-                        <!-- INDICATORI -->
                         <div class="flex-shrink-0 text-end">
                             {% if not notification.read %}
                             <span class="badge bg-danger pulse notification-badge">NUOVA</span>
                             {% else %}
-                            <small class="text-muted">Letta</small>
+                            <i class="bi bi-check-circle text-success" title="Letta"></i>
                             {% endif %}
                         </div>
                     </div>
                 </a>
                 {% endfor %}
             </div>
-        </div>
-
-        <!-- PULSANTI AZIONE -->
-        <div class="text-center mt-4">
-            <form action="{{ url_for('main.clear_all_notifications') }}" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-outline-secondary btn-sm" 
-                        onclick="return confirm('Sicuro di voler segnare tutte le notifiche come lette?')">
-                    ✅ Segna Tutte Come Lette
-                </button>
-            </form>
-            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary btn-sm ms-2">
-                🎯 Trova Nuove Sfide
-            </a>
         </div>
 
     {% else %}
@@ -145,6 +126,7 @@
 </div>
 {% endblock %}
 
+{# Se il tuo base.html ha un blocco styles, questo verrà inserito lì #}
 {% block styles %}
 {{ super() }}
 <style>
@@ -155,7 +137,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5em;
+    font-size: 1.5rem;
     transition: transform 0.3s ease;
 }
 
@@ -164,17 +146,17 @@
 }
 
 .notification-unread {
-    background-color: #f8f9fa !important;
-    border-left: 4px solid #007bff !important;
+    background-color: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    font-weight: 500;
 }
 
 .notification-read {
-    opacity: 0.7;
-    background-color: #ffffff !important;
+    opacity: 0.8;
 }
 
 .notification-item:hover {
-    background-color: #e9ecef !important;
+    background-color: #e9ecef;
     text-decoration: none;
 }
 
@@ -187,36 +169,33 @@
     padding: 4px 8px;
 }
 
-/* Animazione pulse per notifiche nuove */
 .pulse {
     animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .notification-icon {
         width: 40px;
         height: 40px;
-        font-size: 1.2em;
+        font-size: 1.2rem;
     }
-    
     .notification-message {
-        font-size: 0.9em;
+        font-size: 0.9rem;
     }
 }
 </style>
 {% endblock %}
 
+{# Se il tuo base.html ha un blocco scripts, questo verrà inserito lì #}
 {% block scripts %}
 {{ super() }}
 <script>
-// Animazioni al caricamento
 document.addEventListener('DOMContentLoaded', function() {
     // Aggiungi effetto di apparizione progressiva
     const notificationItems = document.querySelectorAll('.notification-item');
@@ -225,23 +204,18 @@ document.addEventListener('DOMContentLoaded', function() {
         item.style.transform = 'translateY(20px)';
         
         setTimeout(() => {
-            item.style.transition = 'all 0.5s ease';
+            item.style.transition = 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
             item.style.opacity = '1';
             item.style.transform = 'translateY(0)';
-        }, index * 100);
+        }, index * 80);
     });
 
-    // Rimuovi animazione pulse dopo 3 secondi
+    // Rimuovi animazione pulse dopo 4 secondi per non disturbare
     setTimeout(function() {
         document.querySelectorAll('.pulse').forEach(function(badge) {
             badge.style.animation = 'none';
         });
-    }, 3000);
+    }, 4000);
 });
-
-// Conferma azioni
-function confirmAction(message) {
-    return confirm(message);
-}
 </script>
 {% endblock %}

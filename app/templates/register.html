@@ -1,55 +1,65 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
-{% block title %}Registrati - StreetSport App{% endblock %}
+{% block title %}Registrati - PeakRankStreet App{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center my-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h2 class="mb-0 text-center">Registrati</h2>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation" novalidate id="registerForm">
-                    <!-- CSRF token come input hidden -->
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center my-4">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h2 class="mb-0 h4"><i class="bi bi-person-plus-fill me-2"></i>Crea un Nuovo Account</h2>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation" novalidate id="registerForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username:</label>
-                        <input type="text" id="username" name="username" class="form-control" required>
-                        <div class="invalid-feedback">
-                            Per favore, inserisci un username.
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" id="username" name="username" class="form-control" required>
+                                <div class="invalid-feedback">Per favore, inserisci un username.</div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email:</label>
-                        <input type="email" id="email" name="email" class="form-control" required>
-                        <div class="invalid-feedback">
-                            Per favore, inserisci un'email valida.
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input type="email" id="email" name="email" class="form-control" required>
+                                <div class="invalid-feedback">Per favore, inserisci un'email valida.</div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password:</label>
-                        <input type="password" id="password" name="password" class="form-control" required minlength="6">
-                        <div class="invalid-feedback">
-                            Per favore, inserisci una password (minimo 6 caratteri).
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" id="password" name="password" class="form-control" required minlength="6">
+                                <div class="invalid-feedback">Inserisci una password di almeno 6 caratteri.</div>
+                            </div>
                         </div>
+
+                        <div class="mb-4">
+                            <label for="city" class="form-label">Città (opzionale)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
+                                <input type="text" id="city" name="city" class="form-control">
+                            </div>
+                            <div class="form-text">La tua città verrà usata per centrare la mappa sulla homepage.</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Registra</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Hai già un account? <a href="{{ url_for('auth.login') }}">Accedi qui</a>.</small>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="city" class="form-label">Città (opzionale):</label>
-                        <input type="text" id="city" name="city" class="form-control">
-                        <div class="form-text">La tua città verrà usata per centrare la mappa sulla homepage.</div>
-                    </div>
-
-                    <button type="submit" class="btn btn-success w-100">Registra</button>
-                </form>
-
-                <p class="text-center mt-3">
-                    Hai già un account? <a href="{{ url_for('auth.login') }}">Accedi qui</a>.
-                </p>
+                </div>
             </div>
         </div>
     </div>

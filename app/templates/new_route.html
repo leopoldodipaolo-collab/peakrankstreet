@@ -1,94 +1,112 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Crea Nuovo Percorso{% endblock %}
 
 {% block content %}
-    <!-- MODIFICATO: Aggiunto 'main.' -->
-    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0">Crea Nuovo Percorso</h2>
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h2 class="mb-0 h4"><i class="bi bi-geo-alt-fill me-2"></i>Crea un Nuovo Percorso</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4 p-md-5">
                     <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate id="createRouteForm">
-                        <!-- ✅ Campo CSRF corretto -->
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nome del Percorso:</label>
-                            <input type="text" id="name" name="name" class="form-control" required>
-                            <div class="invalid-feedback">
-                                Per favore, inserisci un nome per il percorso.
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="name" class="form-label">Nome del Percorso</label>
+                                <input type="text" id="name" name="name" class="form-control" required>
+                                <div class="invalid-feedback">Per favore, inserisci un nome per il percorso.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="activity_type" class="form-label">Tipo di Attività</label>
+                                <select id="activity_type" name="activity_type" class="form-select" required>
+                                    <option value="Corsa">Corsa</option>
+                                    <option value="Bici">Bici</option>
+                                    <option value="Hike">Hike</option>
+                                </select>
+                                <div class="invalid-feedback">Per favore, seleziona un tipo di attività.</div>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Descrizione (opzionale):</label>
-                            <textarea id="description" name="description" rows="3" class="form-control"></textarea>
+                        <div class="mb-3 mt-3">
+                            <label for="description" class="form-label">Descrizione (opzionale)</label>
+                            <textarea id="description" name="description" rows="3" class="form-control" placeholder="Aggiungi dettagli come il tipo di terreno, punti di interesse, ecc."></textarea>
+                        </div>
+                        
+                        <hr class="my-4">
+
+                        <div class="text-center mb-3">
+                            <p class="lead">Scegli come definire il tracciato:</p>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="activity_type" class="form-label">Tipo di Attività:</label>
-                            <select id="activity_type" name="activity_type" class="form-select" required>
-                                <option value="Corsa">Corsa</option>
-                                <option value="Bici">Bici</option>
-                                <option value="Hike">Hike</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Per favore, seleziona un tipo di attività.
+                        <div class="card bg-light border-dashed mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="bi bi-pencil-fill me-2"></i>Opzione 1: Disegna sulla Mappa</h5>
+                                <div id="map_drawing" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 5px; background-color: #f8f9fa;"></div>
+                                <input type="hidden" id="coordinates" name="coordinates">
+                                <div class="invalid-feedback" id="coords-feedback">Disegna un percorso sulla mappa o carica un file GPX.</div>
                             </div>
                         </div>
 
-                        <h3 class="mt-4 mb-3">Opzione 1: Disegna il percorso sulla mappa</h3>
-                        <div class="mb-3">
-                            <label class="form-label">Disegna il percorso sulla mappa:</label>
-                            <div id="map_drawing" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 5px;"></div>
-                            <input type="hidden" id="coordinates" name="coordinates">
-                            <div class="invalid-feedback" id="coords-feedback">
-                                Disegna un percorso sulla mappa o carica un file GPX.
+                        <div class="text-center my-3 fw-bold text-muted">oppure</div>
+
+                        <div class="card bg-light border-dashed">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="bi bi-upload me-2"></i>Opzione 2: Carica un File GPX</h5>
+                                <label for="gpx_file" class="form-label">Seleziona un file GPX dal tuo dispositivo:</label>
+                                <input type="file" id="gpx_file" name="gpx_file" accept=".gpx" class="form-control">
+                                <div class="form-text mt-2">Se carichi un file GPX, il disegno sulla mappa verrà ignorato.</div>
+                                <div class="invalid-feedback" id="gpx-feedback">Carica un file GPX valido.</div>
                             </div>
                         </div>
 
-                        <h3 class="mt-4 mb-3">Opzione 2: Carica un file GPX</h3>
-                        <div class="mb-3">
-                            <label for="gpx_file" class="form-label">Carica file GPX:</label>
-                            <input type="file" id="gpx_file" name="gpx_file" accept=".gpx" class="form-control">
-                            <div class="form-text">Se carichi un file GPX, il disegno sulla mappa verrà ignorato.</div>
-                            <div class="invalid-feedback" id="gpx-feedback">
-                                Carica un file GPX.
-                            </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="saveRouteButton">
+                                <span id="saveRouteSpinner" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                Salva Percorso
+                            </button>
                         </div>
-
-                        <button type="submit" class="btn btn-success w-100 mt-3" id="saveRouteButton">
-                            Salva Percorso
-                            <span id="saveRouteSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
-                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
     {{ super() }}
-    <!-- 'static' non cambia perché non è un endpoint di un blueprint -->
     <script src="{{ url_for('static', filename='js/map_drawing.js') }}"></script>
     <script>
-        document.getElementById('createRouteForm').addEventListener('submit', function() {
-            const saveRouteButton = document.getElementById('saveRouteButton');
-            const saveRouteSpinner = document.getElementById('saveRouteSpinner');
-            // La validazione personalizzata è gestita da form_validation.js,
-            // qui gestiamo solo lo stato del pulsante al submit
-            if (this.checkValidity()) { 
-                // Controlla anche la validazione custom
-                if (typeof validateMapOrGpx === 'function' && !validateMapOrGpx()) {
-                    return;
-                }
-                saveRouteButton.disabled = true;
-                saveRouteSpinner.style.display = 'inline-block';
+        document.addEventListener('DOMContentLoaded', function() {
+            const createRouteForm = document.getElementById('createRouteForm');
+            if (createRouteForm) {
+                createRouteForm.addEventListener('submit', function(event) {
+                    // La validazione custom (mappa vs gpx) deve essere gestita da form_validation.js
+                    // Qui gestiamo solo lo stato del pulsante al momento dell'invio
+                    
+                    // Preveniamo il submit se la validazione custom fallisce
+                    if (typeof validateMapOrGpx === 'function' && !validateMapOrGpx()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return;
+                    }
+
+                    // Se la validazione standard di Bootstrap fallisce, non fare nulla
+                    if (!this.checkValidity()) {
+                        return;
+                    }
+
+                    // Se entrambe le validazioni passano, mostra lo spinner
+                    const saveRouteButton = document.getElementById('saveRouteButton');
+                    const saveRouteSpinner = document.getElementById('saveRouteSpinner');
+                    saveRouteButton.disabled = true;
+                    saveRouteSpinner.style.display = 'inline-block';
+                });
             }
         });
     </script>

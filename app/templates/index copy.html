@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PeakRankStreet App{% endblock %}</title>
+
+    {# --- AGGIUNGI QUESTA RIGA --- #}
+    <meta name="description" content="{% block description %}Scopri percorsi, sfide e una community di atleti su PeakRankStreet.{% endblock %}">
+    {# --- FINE RIGA AGGIUNTA --- #}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    
+    <!-- Leaflet.markercluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#28a745">
+    
+</head>
+<body>
+    <div class="main-wrapper"> 
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3"> 
+                <div class="container">
+                    <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
+                        <span class="fw-bold">PeakRankStreet</span>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                        <ul class="navbar-nav align-items-center">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" aria-current="page" href="{{ url_for('main.index') }}">Home</a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.create_route' %}active{% endif %}" href="{{ url_for('main.create_route') }}"><i class="bi bi-geo-alt me-1"></i>Crea Percorso</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.create_challenge' %}active{% endif %}" href="{{ url_for('main.create_challenge') }}"><i class="bi bi-award me-1"></i>Crea Sfida</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.challenges_list' %}active{% endif %}" href="{{ url_for('main.challenges_list') }}"><i class="bi bi-grid-3x3-gap-fill me-1"></i>Sfide</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.explore_users' %}active{% endif %}" href="{{ url_for('main.explore_users') }}"><i class="bi bi-people-fill me-1"></i>Esplora</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.all_activities' %}active{% endif %}" href="{{ url_for('main.all_activities') }}"><i class="bi bi-activity me-1"></i>Attività</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.feed' %}active{% endif %}" href="{{ url_for('main.feed') }}"><i class="bi bi-rss-fill me-1"></i>Feed</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link position-relative {% if request.endpoint == 'main.notifications' %}active{% endif %}" 
+                                    href="{{ url_for('main.notifications') }}">
+                                        <i class="bi bi-bell-fill"></i>
+                                        {% if unread_notifications_count > 0 %}
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge">
+                                                {{ unread_notifications_count }}
+                                                <span class="visually-hidden">notifiche non lette</span>
+                                            </span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.track_activity' %}active{% endif %}" 
+                                    href="{{ url_for('main.track_activity') }}">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>Traccia Live
+                                    </a>
+                                </li>
+                                                                
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-trophy-fill me-1"></i>Classifiche
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownLeaderboards">
+                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_total_distance') }}">Distanza Totale</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_most_routes') }}">Percorsi Creati</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.finished_challenges') }}">🏁 Sfide Terminate</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar">
+                                        <span class="d-lg-none d-xl-inline">Profilo ({{ current_user.username }})</span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownMenuLink">
+                                        <li><a class="dropdown-item" href="{{ url_for('main.user_profile', user_id=current_user.id) }}">Il mio profilo</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.edit_profile') }}">Modifica profilo</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-outline-success mx-2 px-3 {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link btn btn-success px-3 {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">Registrati</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-shrink-0">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container mt-5 pt-5">
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if is_homepage %}
+                <!-- Hero Section -->
+                <section class="hero-section text-white text-center d-flex align-items-center justify-content-center">
+                    <div class="container">
+                        <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
+                        <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di StreetSport.</p>
+                        {% if not current_user.is_authenticated %}
+                            {# Pulsante primario: Registrazione #}
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn">Inizia Ora!</a>
+                            {# Pulsante secondario: Caricamento GPX #}
+                            <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica il tuo GPX</a>
+                            {# Altri pulsanti come Esplora possono rimanere #}
+                            {# <a href="{{ url_for('main.explore_users') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn">Esplora</a> #}
+                        {% else %}
+                            {# Utente Loggato #}
+                             <a href="{{ url_for('main.track_activity') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn"><i class="bi bi-geo-alt-fill me-2"></i>Inizia a Tracciare!</a>
+                             {# Aggiunto il pulsante Carica GPX anche per utenti loggati #}
+                             <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica GPX</a>
+                             
+                             <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
+                             <a href="{{ url_for('main.record_activity') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Registra Attività</a>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <div class="container mt-5">
+                    <h2 class="text-center mb-4 section-title">La Tua Avventura Ti Aspetta</h2>
+                    
+                    <div class="row mb-5 justify-content-center">
+                        <div class="col-12 col-md-8">
+                            <div class="card p-3 shadow-lg rounded-pill-custom">
+                                <div class="input-group">
+                                    <input type="text" id="citySearchInput" class="form-control form-control-lg rounded-pill-left" placeholder="Cerca la tua città o un'area..." value="{{ user_city if user_city else '' }}">
+                                    <button class="btn btn-primary-custom rounded-pill-right" type="button" id="searchCityButton">
+                                        Cerca
+                                        <span id="citySearchSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                    </button>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <div class="btn-group activity-type-filter" role="group" id="activityTypeFilter">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm active" data-type="all"><i class="bi bi-globe me-1"></i>Tutti</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Corsa"><i class="bi bi-person-running me-1"></i>Corsa</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Bici"><i class="bi bi-bicycle me-1"></i>Bici</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Hike"><i class="bi bi-mountains me-1"></i>Hike</button>
+                                    </div>
+                                </div>
+                                {# --- NUOVA ACTION BAR AGGIUNTA QUI --- #}
+                                <hr class="my-3">
+                                <div class="text-center">
+                                    <a href="{{ url_for('main.explore') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-compass-fill me-2"></i>Esplora</a>
+                                    <a href="{{ url_for('main.list_groups') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-people-fill me-2"></i>Gruppi</a>
+                                    <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-map-fill me-2"></i>Proponi un Classico</a>
+                                </div>
+                                {# --- FINE ACTION BAR --- #}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    {# Inserisci questo blocco subito prima di <div class="card shadow-lg mb-5 map-card-custom"> #}
+                    <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
+                        <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
+                        <div class="card-img-overlay d-flex flex-column justify-content-center align-items-center text-center">
+                            <h3 class="card-title">Conosci un percorso leggendario?</h3>
+                            <p class="card-text">Aiutaci a mappare i percorsi "Classici" della tua zona. Proponi il tuo preferito!</p>
+                            <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-warning fw-bold">
+                                <i class="bi bi-award-fill me-2"></i>Proponi un Percorso Classico
+                            </a>
+                        </div>
+                    </div>
+                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.bets_hall' %}active{% endif %}" href="{{ url_for('main.bets_hall') }}">
+                            <i class="bi bi-gem me-1"></i>Scommesse
+                        </a>
+                    </li>
+                    <div class="card shadow-lg mb-5 map-card-custom">
+                        <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="bi bi-map-fill me-2"></i>Mappa Esplorativa</h4>
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="mapLoadingSpinner" style="display:none;"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="mainMap" class="map-container"></div>
+                            <div class="map-overlay-instructions p-3 bg-light text-muted" id="map-instructions">
+                                <i class="bi bi-info-circle me-2"></i>Usa la barra di ricerca per esplorare nuove aree o clicca su un percorso sulla mappa per vederne i dettagli.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DETTAGLI PERCORSO - SOTTO LA MAPPA -->
+                    <div id="selected-route-details" class="card shadow-lg mb-5 route-details-card" style="display: none;">
+                        <div class="card-header bg-success-custom text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>Dettagli Percorso Selezionato</h4>
+                            <button type="button" class="btn btn-sm btn-light" onclick="hideRouteDetails()">
+                                <i class="bi bi-x-lg"></i> Chiudi
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title text-success-custom fw-bold" id="detail-route-name"></h5>
+                                    <p class="card-text text-muted" id="detail-route-description"></p>
+                                    <p class="card-text"><small class="text-muted" id="detail-route-meta"></small></p>
+                                    
+                                    <div id="detail-king-queen" class="king-queen-highlight mt-3 p-3 bg-warning bg-opacity-10 rounded" role="alert" style="display:none;">
+                                        <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Re/Regina del Percorso!</h5>
+                                        <p class="mb-1">Detenuto da: <strong id="kq-username"></strong> - <strong id="kq-duration"></strong>
+                                            <a href="#" id="kq-activity-link" class="btn btn-sm btn-link p-0 ms-1 text-dark" style="font-size:0.8em; vertical-align: baseline;">(Attività)</a>
+                                        </p>
+                                        <small class="text-muted" id="kq-created-at"></small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="detail-top-5-times" class="mt-3" style="display:none;">
+                                        <h6 class="border-bottom pb-2"><i class="bi bi-trophy me-2"></i>Top 5 Tempi</h6>
+                                        <ul class="list-group list-group-flush list-group-small" id="top-5-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-top">
+                                <a href="#" id="detail-route-link" class="btn btn-success-custom me-2">
+                                    <i class="bi bi-eye me-1"></i>Vedi Dettagli Completi
+                                </a>
+                                <a href="#" id="record-activity-link" class="btn btn-outline-success-custom me-2">
+                                    <i class="bi bi-stopwatch me-1"></i>Registra Tempo
+                                </a>
+                                <a href="#" id="create-challenge-link" class="btn btn-outline-warning">
+                                    <i class="bi bi-trophy me-1"></i>Crea Sfida
+                                </a>
+                            </div>
+
+                                <div id="user-profile-url-base" style="display:none;">{{ url_for('main.user_profile', user_id=12345) }}</div> 
+                        <div id="route-detail-url-base" style="display:none;">{{ url_for('main.route_detail', route_id=12345) }}</div>
+                        <div id="activity-detail-url-base" style="display:none;">{{ url_for('main.activity_detail', activity_id=12345) }}</div>
+                        <div id="map-data-api-url" style="display:none;">{{ url_for('api.get_map_data') }}</div>
+                        <div id="user-initial-city" style="display:none;">{{ user_city if user_city else '' }}</div> 
+                        <div id="profile-pics-base-url" style="display:none;">{{ url_for('static', filename='profile_pics/') }}</div>
+                        </div>
+                    </div>
+
+                    <!-- TABBED CONTENT SECTIONS FOR MOBILE (d-lg-none) -->
+                    <!-- VISIBLE ON DESKTOP, TABBED ON MOBILE -->
+                    <ul class="nav nav-pills nav-fill mb-3 d-lg-none" id="mainTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="leaderboards-tab" data-bs-toggle="pill" data-bs-target="#leaderboards-pane" type="button" role="tab" aria-controls="leaderboards-pane" aria-selected="false"><i class="bi bi-trophy"></i> Classifiche</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="challenges-tab" data-bs-toggle="pill" data-bs-target="#challenges-pane" type="button" role="tab" aria-controls="challenges-pane" aria-selected="true"><i class="bi bi-award"></i> Sfide</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="activities-tab" data-bs-toggle="pill" data-bs-target="#activities-pane" type="button" role="tab" aria-controls="activities-pane" aria-selected="false"><i class="bi bi-activity"></i> Attività</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content d-lg-block">
+
+                <!-- SEZIONE LEADERBOARDS -->
+                <div class="tab-pane fade show active d-lg-block" id="leaderboards-pane" role="tabpanel">
+                    <div class="row my-4">
+                        <!-- Eroi Locali: Distanza -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-lg h-100 leaderboard-card">
+                                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-truncate" title="Eroi Locali: Distanza"><i class="bi bi-star-fill me-2"></i>Eroi Locali: Distanza</h5>
+                                    <a href="{{ url_for('main.leaderboard_total_distance') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                        <i class="bi bi-globe me-1"></i>Vedi Globale
+                                    </a>
+                                </div>
+                                <ul class="list-group list-group-small list-group-flush" id="top-distance-list">
+                                    <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Eroi Locali: Percorsi Creati -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow-lg h-100 leaderboard-card">
+                                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-truncate" title="Eroi Locali: Percorsi Creati"><i class="bi bi-lightning-fill me-2"></i>Eroi Locali: Percorsi Creati</h5>
+                                    <a href="{{ url_for('main.leaderboard_most_routes') }}" class="btn btn-sm btn-light-custom text-truncate" title="Vedi Globale">
+                                        <i class="bi bi-globe me-1"></i>Vedi Globale
+                                    </a>
+                                </div>
+                                <ul class="list-group list-group-small list-group-flush" id="top-creators-list">
+                                    <li class="list-group-item text-center text-muted">Caricamento classifica...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEZIONE PERCORSI CLASSICI & SFIDE RECENTI -->
+                <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel">
+
+                    <!-- Percorsi Classici -->
+                    <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
+                        <div class="card-header bg-secondary-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
+                            <small class="text-white-50">I percorsi più amati e sfidanti della tua città</small>
+                        </div>
+                        <div class="card-body">
+                            <div id="classic-routes-container" class="row row-cols-1 row-cols-md-2 g-4">
+                                <!-- Card percorsi caricate via JS -->
+                            </div>
+                            <div id="no-classic-routes" class="text-center p-3 d-none">
+                                <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
+                                <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
+                            </div>
+                        </div>
+                    </div>
+
+                   <!-- SEZIONE COMPLETA SFIDE - Sostituisce la vecchia sezione -->
+                    <div class="card shadow-lg my-5">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0"><i class="bi bi-bullseye me-2"></i>Tutte le Sfide</h2>
+                            <!-- Filtro per stato -->
+                            <div class="d-flex align-items-center flex-grow-1 justify-content-end">
+                                <label for="statusFilter" class="form-label mb-0 me-2 text-white-50 d-none d-md-block">Filtra:</label>
+                                <select id="statusFilter" class="form-select form-select-sm w-auto">
+                                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tutte</option>
+                                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Attive</option>
+                                    <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminate</option>
+                                    <option value="closed_only" {% if status_filter == 'closed_only' %}selected{% endif %}>Chiuse</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+
+                            <!-- === SEZIONE SFIDE INVIATE === -->
+                            {% if invited_challenges %}
+                            <div class="card shadow-sm mb-4 bet-card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Sfide a Cui Sei Invitato</h4>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for challenge in invited_challenges %}
+                                        <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
+                                            <div class="flex-grow-1 mb-2 mb-md-0">
+                                                <h5 class="mb-1 d-flex align-items-center">
+                                                    {# Icona Scommessa per SFIDE INVIATE #}
+                                                    {% if challenge.bet_type != 'none' %}
+                                                        <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                                            {% if challenge.bet_type == 'beer' %} 🍺
+                                                            {% elif challenge.bet_type == 'dinner' %} 🍝
+                                                            {% elif challenge.bet_type == 'coffee' %} ☕
+                                                            {% elif challenge.bet_type == 'custom' %} 🎁
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                    {{ challenge.name }}
+                                                </h5>
+                                                <p class="mb-1 text-muted">
+                                                    <strong>Percorso:</strong> <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a>
+                                                    • <strong>Creato da:</strong> <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a>
+                                                </p>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar-range me-1"></i>Periodo: {{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}
+                                                </small>
+                                                {# Dettaglio scommessa anche qui #}
+                                                {% if challenge.bet_type != 'none' %}
+                                                    <p class="mb-0 mt-2 challenge-bet-details-preview-list">
+                                                        <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-end mt-2 mt-md-0">
+                                                <span class="badge bg-warning text-dark status-badge me-2">In attesa</span>
+                                                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" 
+                                                class="btn btn-primary btn-sm btn-bet-action">
+                                                    Dettagli <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- === SEZIONE SFIDE APERTE === -->
+                            {% if challenges %}
+                                <div class="list-group list-group-flush">
+                                    {% for challenge in challenges %}
+                                        <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 mb-2 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
+                                            <div class="route-info flex-grow-1 mb-2 mb-md-0">
+                                                <h5 class="mb-1 d-flex align-items-center">
+                                                    {# Icona Scommessa per SFIDE APERTE #}
+                                                    {% if challenge.bet_type != 'none' %}
+                                                        <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
+                                                            {% if challenge.bet_type == 'beer' %} 🍺
+                                                            {% elif challenge.bet_type == 'dinner' %} 🍝
+                                                            {% elif challenge.bet_type == 'coffee' %} ☕
+                                                            {% elif challenge.bet_type == 'custom' %} 🎁
+                                                            {% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                    {{ challenge.name }}
+                                                </h5>
+                                                <p class="mb-1 text-muted">Percorso: <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a></p>
+                                                <p class="mb-1 text-muted"><i class="bi bi-calendar-range me-1"></i>Periodo: Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
+                                                <small class="text-muted">Creata da: <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a> il {{ challenge.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                                {# Dettaglio scommessa anche qui #}
+                                                {% if challenge.bet_type != 'none' %}
+                                                    <p class="mb-0 mt-2 challenge-bet-details-preview-list">
+                                                        <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="route-actions text-end ms-md-auto mt-2 mt-md-0">
+                                                {% if current_user.is_authenticated and challenge.end_date >= now %}
+                                                    <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm me-2 btn-bet-action">Partecipa <i class="bi bi-arrow-right-circle"></i></a>
+                                                {% elif challenge.end_date < now %}
+                                                    <span class="badge bg-secondary status-badge me-2">Terminata</span>
+                                                {% endif %}
+                                                <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-success btn-sm btn-bet-action">Classifica <i class="bi bi-bar-chart-fill"></i></a>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Paginazione -->
+                                <nav aria-label="Pagina di navigazione sfide" class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item {% if not challenges_pagination.has_prev %}disabled{% endif %}">
+                                            <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.prev_num, status=status_filter) }}" aria-label="Precedente">
+                                                <span aria-hidden="true">&laquo;</span>
+                                                <span class="sr-only">Precedente</span>
+                                            </a>
+                                        </li>
+                                        {% for page_num in challenges_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                            {% if page_num %}
+                                                {% if challenges_pagination.page == page_num %}
+                                                    <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_num }}</a></li>
+                                                {% else %}
+                                                    <li class="page-item"><a class="page-link" href="{{ url_for('main.challenges_list', page=page_num, status=status_filter) }}">{{ page_num }}</a></li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <li class="page-item {% if not challenges_pagination.has_next %}disabled{% endif %}">
+                                            <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.next_num, status=status_filter) }}" aria-label="Successivo">
+                                                <span aria-hidden="true">&raquo;</span>
+                                                <span class="sr-only">Successivo</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+
+                            {% else %}
+                                <p class="text-center text-muted mt-4 p-3 border rounded">
+                                    <i class="bi bi-info-circle me-2"></i>Ancora nessuna sfida creata con i filtri selezionati. Sii il primo a 
+                                    <a href="{{ url_for('main.create_challenge') }}" class="text-primary fw-bold">crearne una!</a>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- ================================================================ -->
+                    <!-- NUOVA SEZIONE: Aggiornamenti dalla Community (con Macro)           -->
+                    <!-- ================================================================ -->
+
+                    {# --- 1. INCLUDIAMO IL NUOVO BOX "CREA POST" QUI SOPRA --- #}
+                    {% include 'partials/_create_post_box.html' %}
+
+                    {# 2. Importiamo la nostra macro per le card (invariato) #}
+                    {% from 'macros/_cards.html' import feed_card %}
+
+                    {# --- 3. MODIFICHIAMO I LINK DEL FOOTER --- #}
+                    {# Rimuoviamo la logica per aggiungere "Crea Post" da qui #}
+                    {% set community_footer_links = [
+                        {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
+                        {'url': url_for('main.challenges_list'), 'text': 'Esplora le Sfide', 'class': 'btn-outline-secondary'}
+                    ] %}
+                    {# Non c'è più il blocco if/do per aggiungere il pulsante create_post #}
+
+                    {# 4. Chiamiamo la macro (invariato) #}
+                    {{ feed_card(
+                        id='community-feed',
+                        title='Aggiornamenti dalla Community',
+                        icon_class='bi-newspaper',
+                        items=community_items,  
+                        footer_links=community_footer_links,
+                        current_user=current_user,
+                        has_next_feed_page=has_next_feed_page
+                    ) }}
+
+                <!-- ATTIVITÀ RECENTI & PERCORSI DISPONIBILI -->
+                <div class="tab-pane fade d-lg-block" id="activities-pane" role="tabpanel">
+                    <div class="social-feed-section card shadow-lg my-5">
+                        <div class="card-header bg-info-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-activity me-2"></i>Attività Recenti nell'Area</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-activities-list" class="list-group">
+                                <p class="text-center text-muted">Caricamento attività...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="routes-list-section card shadow-lg my-5">
+                        <div class="card-header bg-success-custom text-white">
+                            <h3 class="mb-0"><i class="bi bi-flag-fill me-2"></i>Percorsi nell'Area</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="available-routes-list" class="list-group">
+                                <p class="text-center text-muted">Caricamento percorsi...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+
+        </main>
+
+        <footer class="footer bg-dark-custom py-4 mt-auto border-top text-white-50">
+            <div class="container text-center">
+                <!-- Logo centrato in alto, più grande -->
+                <div class="mb-4">
+                    <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="StreetSport Logo" style="max-height:120px;">
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <h6 class="text-white">PeakRankStreet</h6>
+                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                        <!-- <p class="small mb-0">Porta le tue avventure all'aperto al livello successivo! Traccia le tue corse, 
+                            scursioni o pedalate con la tua app GPS preferita e carica facilmente i tuoi file GPX. La nostra 
+                            piattaforma gamificata trasformerà le tue attività in sfide avvincenti, classifiche competitive e 
+                            badge esclusivi. Confrontati con amici, scopri nuovi percorsi e diventa il campione del tuo sport!</p>-->
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Link Utili</h6>
+                        <ul class="list-unstyled small">
+                            <li><a href="{{ url_for('main.explore_users') }}" class="text-white-50 text-decoration-none">Esplora Utenti</a></li>
+                            <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Le mie Sfide</a></li>
+                            <li><a href="{{ url_for('main.all_activities') }}" class="text-white-50 text-decoration-none">Tutte le Attività</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Contatti</h6>
+                        <p class="small mb-0"><i class="bi bi-envelope-fill me-1"></i> info@streetsport.com</p>
+                        <div class="social-icons mt-2">
+                            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+                            <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <hr class="text-white-50 my-3">
+                <p class="mb-0 small">&copy; 2025 PeakRankStreet App. Tutti i diritti riservati.</p>
+            </div>
+        </footer>
+
+
+
+    </div>
+
+    <!-- Script JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script>var is_homepage_js = {{ is_homepage | default(false) | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            function applyTimeago(container) {
+                const elements = container.querySelectorAll('.timeago:not(.timeago-applied)');
+                if (elements.length > 0) {
+                    timeago.render(elements, 'it');
+                }
+            }
+            applyTimeago(document.body);
+
+            const csrfToken = '{{ csrf_token() }}';
+
+            document.body.addEventListener('click', function(event) {
+                
+                const likeButton = event.target.closest('.like-button');
+                if (likeButton) {
+                    event.preventDefault();
+                    const postId = likeButton.dataset.postId;
+                    const apiUrl = `/post/${postId}/like`;
+                    
+                    fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const icon = likeButton.querySelector('i');
+                            const countSpan = likeButton.querySelector('.like-count');
+                            countSpan.textContent = data.new_like_count;
+                            
+                            if (data.action === 'liked') {
+                                likeButton.classList.remove('text-muted');
+                                likeButton.classList.add('text-danger');
+                                icon.classList.remove('bi-heart');
+                                icon.classList.add('bi-heart-fill');
+                            } else {
+                                likeButton.classList.remove('text-danger');
+                                likeButton.classList.add('text-muted');
+                                icon.classList.remove('bi-heart-fill');
+                                icon.classList.add('bi-heart');
+                            }
+                        }
+                    });
+                }
+
+                const deletePostBtn = event.target.closest('.delete-post-btn');
+                if (deletePostBtn) {
+                    event.preventDefault();
+                    if (confirm('Sei sicuro di voler eliminare questo post?')) {
+                        const url = deletePostBtn.dataset.deleteUrl;
+                        fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                document.getElementById(`post-${deletePostBtn.dataset.postId}`).remove();
+                            } else { alert('Errore: ' + data.message); }
+                        });
+                    }
+                }
+
+                const editPostBtn = event.target.closest('.edit-post-btn');
+                if (editPostBtn) {
+                    event.preventDefault();
+                    const postId = editPostBtn.dataset.postId;
+                    const postDiv = document.getElementById(`post-${postId}`);
+                    const contentContainer = postDiv.querySelector('.post-content-container');
+                    const originalContentP = contentContainer.querySelector('.post-content-text');
+                    
+                    if (originalContentP) {
+                        const originalContent = originalContentP.innerHTML;
+                        const editFormHTML = `
+                            <form class="edit-post-form" action="/post/${postId}/edit" method="POST">
+                                <textarea class="form-control mb-2" name="content" rows="4">${originalContent.replace(/<br\s*[\/]?>/gi, "")}</textarea>
+                                <button type="submit" class="btn btn-primary btn-sm">Salva</button>
+                                <button type="button" class="btn btn-secondary btn-sm cancel-edit-post-btn">Annulla</button>
+                            </form>
+                        `;
+                        contentContainer.innerHTML = editFormHTML;
+                    }
+                }
+
+                const cancelPostBtn = event.target.closest('.cancel-edit-post-btn');
+                if (cancelPostBtn) {
+                    const contentContainer = cancelPostBtn.closest('.post-content-container');
+                    const originalContent = cancelPostBtn.closest('form').querySelector('textarea').defaultValue;
+                    contentContainer.innerHTML = `<p class="post-content-text mb-0">${originalContent}</p>`;
+                }
+            });
+
+            document.body.addEventListener('submit', function(event) {
+                const editPostForm = event.target.closest('.edit-post-form');
+                if (editPostForm) {
+                    event.preventDefault();
+                    const url = editPostForm.getAttribute('action');
+                    const formData = new FormData(editPostForm);
+                    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            editPostForm.parentElement.innerHTML = `<p class="post-content-text mb-0">${data.new_content}</p>`;
+                        } else { alert('Errore: ' + data.message); }
+                    });
+                }
+            });
+
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                const loadingSpinner = document.getElementById('loading-spinner');
+                const postsContainer = document.getElementById('feed-posts-container');
+                
+                loadMoreBtn.addEventListener('click', function() {
+                    loadMoreBtn.style.display = 'none';
+                    loadingSpinner.style.display = 'block';
+                    const nextPage = this.dataset.nextPage;
+
+                    fetch(`/api/feed?page=${nextPage}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            postsContainer.insertAdjacentHTML('beforeend', data.html);
+                            applyTimeago(postsContainer);
+                            if (data.has_next_page) {
+                                loadMoreBtn.dataset.nextPage = parseInt(nextPage) + 1;
+                                loadMoreBtn.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Errore nel caricare altri post:', error);
+                            loadMoreBtn.style.display = 'block';
+                        })
+                        .finally(() => {
+                            loadingSpinner.style.display = 'none';
+                        });
+                });
+            }
+        });
+
+        document.getElementById('statusFilter')?.addEventListener('change', function() {
+            var selectedStatus = this.value;
+            const currentUrl = new URL(window.location.href);
+            const params = new URLSearchParams(currentUrl.search);
+            params.set('status', selectedStatus);
+            params.set('page', 1); // Resetta a pagina 1
+            window.location.href = currentUrl.pathname + '?' + params.toString();
+        });
+    </script>
+{% endblock %}
+</body>
+</html>

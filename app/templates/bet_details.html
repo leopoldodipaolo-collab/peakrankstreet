@@ -1,48 +1,56 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 {% from "_macros.html" import bet_card %}
 
 {% block title %}Dettagli Scommessa{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
+<div class="container mt-5 pt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>📋 Dettagli Scommessa</h1>
+        <h1 class="h3 fw-bold">📋 Dettagli Scommessa</h1>
         <a href="{{ url_for('main.my_bets') }}" class="btn btn-outline-secondary">
             ← Tutte le Scommesse
         </a>
     </div>
 
-    <!-- USA LA MACRO MA SENZA AZIONI (già gestite nella pagina) -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="row">
-                        {% set show_actions = false %}
-                        {{ bet_card(bet, current_user, show_actions) }}
-                    </div>
+                <div class="card-body p-4">
                     
+                    {# Usa la macro per mostrare i dettagli della scommessa in modo consistente #}
+                    {# Passiamo show_actions=False perché le azioni specifiche sono gestite qui sotto #}
+                    {% set show_actions = false %}
+                    {{ bet_card(bet, current_user, show_actions) }}
+                    
+                    {# Aggiunge una linea di separazione prima delle azioni #}
+                    <hr class="my-4">
+
                     <!-- SEZIONE AZIONI SPECIFICA PER QUESTA PAGINA -->
-                    <div class="row mt-4">
-                        <div class="col-12 text-center">
-                            {% if bet.loser_id == current_user.id and bet.status == 'pending' %}
+                    <div class="text-center">
+                        {% if bet.loser_id == current_user.id and bet.status == 'pending' %}
+                            <h5 class="mb-3">Azione Richiesta</h5>
                             <form action="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <button type="submit" class="btn btn-success btn-lg" 
                                         onclick="return confirm('Confermi di aver pagato {{ bet.bet_value }} a {{ bet.winner.username }}?')">
-                                    ✅ Segna come Pagata
+                                    <i class="bi bi-check-circle-fill me-2"></i>Segna come Pagata
                                 </button>
                             </form>
-                            {% elif bet.status == 'paid' %}
-                            <div class="alert alert-success">
-                                <h5>✅ Scommessa Pagata</h5>
-                                <p>Pagata il: {{ bet.paid_at.strftime('%d/%m/%Y alle %H:%M') }}</p>
+                        {% elif bet.status == 'paid' %}
+                            <div class="alert alert-success d-inline-block">
+                                <h5 class="alert-heading mb-1"><i class="bi bi-patch-check-fill me-2"></i>Scommessa Pagata</h5>
+                                {% if bet.paid_at %}
+                                <p class="mb-0">Pagata il: {{ bet.paid_at.strftime('%d/%m/%Y alle %H:%M') }}</p>
+                                {% endif %}
                             </div>
-                            {% endif %}
-                            
-                            <a href="{{ url_for('main.my_bets') }}" class="btn btn-outline-primary ms-2">
-                                ← Torna alle Scommesse
-                            </a>
-                        </div>
+                        {% elif bet.winner_id == current_user.id and bet.status == 'pending' %}
+                             <div class="alert alert-info d-inline-block">
+                                <h5 class="alert-heading mb-0"><i class="bi bi-hourglass-split me-2"></i>In attesa di pagamento</h5>
+                                <p class="mb-0">In attesa che {{ bet.loser.username }} confermi il pagamento.</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

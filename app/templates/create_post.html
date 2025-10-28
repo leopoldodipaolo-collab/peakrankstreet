@@ -1,22 +1,23 @@
-{% extends "index.html" %} {# O index.html, assicurati che sia il tuo template principale #}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Crea Nuovo Post{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-lg-7">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary-custom text-white">
-                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Crea un Nuovo Aggiornamento</h4>
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h1 class="h3 mb-0"><i class="bi bi-plus-circle-fill me-2"></i>Crea un Nuovo Aggiornamento</h1>
                 </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data">
-                        {# CSRF Token - assicurati che funzioni #}
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <div class="mb-3">
                             <label for="post_type" class="form-label">Tipo di Post</label>
-                            <select class="form-select" id="post_type" name="post_type" aria-label="Seleziona il tipo di post">
+                            <select class="form-select" id="post_type" name="post_type">
                                 <option value="text" selected>Testo</option>
                                 <option value="image">Immagine</option>
                                 <option value="link">Link</option>
@@ -24,11 +25,26 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="content" class="form-label">Contenuto del Post</label>
-                            <textarea class="form-control" id="content" name="content" rows="6" placeholder="Scrivi qui il tuo aggiornamento..."></textarea>
+                            <label for="content" class="form-label">Contenuto del Post*</label>
+                            <textarea class="form-control" id="content" name="content" rows="6" placeholder="Scrivi qui il tuo aggiornamento..." required></textarea>
+                            <div class="invalid-feedback">Il contenuto del post non può essere vuoto.</div>
+                        </div>
+                        
+                        {# Campo per l'immagine (mostrato/nascosto con JS) #}
+                        <div class="mb-3" id="image-field" style="display: none;">
+                            <label for="image" class="form-label">Allega un'immagine*</label>
+                            <input class="form-control" type="file" id="image" name="image" accept="image/*">
+                            <div class="invalid-feedback">Per un post di tipo immagine, devi allegare un file.</div>
+                        </div>
+                        
+                        {# Campo per il Link (mostrato/nascosto con JS) #}
+                        <div class="mb-3" id="link-field" style="display: none;">
+                            <label for="link" class="form-label">Link*</label>
+                            <input type="url" class="form-control" id="link" name="link" placeholder="https://..." >
+                            <div class="invalid-feedback">Inserisci un URL valido.</div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="group_id" class="form-label">Pubblica In (Opzionale)</label>
                             <select class="form-select" id="group_id" name="group_id">
                                 <option value="">Feed Pubblico (principale)</option>
@@ -36,57 +52,50 @@
                                     <option value="{{ group.id }}">Gruppo: {{ group.name }}</option>
                                 {% endfor %}
                             </select>
-                            <div class="form-text">
-                                Se scegli un gruppo, il tuo post sarà visibile solo sulla bacheca di quel gruppo.
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="image" class="form-label">Allega un'immagine (opzionale)</label>
-                            <input class="form-control" type="file" id="image" name="image" accept="image/*">
-                        </div>
-                        
-                        {# Campo per il Link (mostrato condizionalmente con JS) #}
-                        <div class="mb-3" id="link-field" style="display: none;">
-                            <label for="link" class="form-label">Link</label>
-                            <input type="url" class="form-control" id="link" name="link" placeholder="https://...">
+                            <div class="form-text">Se scegli un gruppo, il post sarà visibile solo ai suoi membri.</div>
                         </div>
 
-                        <button type="submit" class="btn btn-success-custom btn-lg w-100">
-                            <i class="bi bi-send-fill me-2"></i> Pubblica Aggiornamento
-                        </button>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send-fill me-2"></i> Pubblica
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock content %} {# <-- ASSICURATI CHE QUESTO SIA CHIUSO CORRETTAMENTE #}
+{% endblock %} {# --- CORREZIONE: Sintassi di chiusura corretta --- #}
 
 {% block scripts %}
+{{ super() }} {# --- CORREZIONE: Aggiunto super() per includere gli script di base --- #}
 <script>
-    // Script per mostrare/nascondere il campo link in base al tipo di post selezionato
+document.addEventListener('DOMContentLoaded', function() {
     const postTypeSelect = document.getElementById('post_type');
-    const linkFieldDiv = document.getElementById('link-field'); 
+    const linkField = document.getElementById('link-field');
+    const imageField = document.getElementById('image-field');
+    const linkInput = document.getElementById('link');
+    const imageInput = document.getElementById('image');
+    const contentTextarea = document.getElementById('content');
 
-    if (postTypeSelect && linkFieldDiv) {
-        postTypeSelect.addEventListener('change', function() {
-            if (this.value === 'link') {
-                linkFieldDiv.style.display = 'block';
-            } else {
-                linkFieldDiv.style.display = 'none';
-            }
-        });
-
-        // Imposta lo stato iniziale al caricamento della pagina
-        if (postTypeSelect.value === 'link') {
-            linkFieldDiv.style.display = 'block';
-        } else {
-            linkFieldDiv.style.display = 'none';
-        }
+    function toggleFields() {
+        const selectedType = postTypeSelect.value;
+        
+        // Gestione visibilità
+        linkField.style.display = (selectedType === 'link') ? 'block' : 'none';
+        imageField.style.display = (selectedType === 'image') ? 'block' : 'none';
+        
+        // Gestione attributo 'required' per validazione
+        linkInput.required = (selectedType === 'link');
+        imageInput.required = (selectedType === 'image');
     }
-</script>
-{% endblock scripts %} 
 
-</body>
-</html>
+    if (postTypeSelect) {
+        postTypeSelect.addEventListener('change', toggleFields);
+        // Imposta lo stato iniziale al caricamento della pagina
+        toggleFields();
+    }
+});
+</script>
+{% endblock %} {# --- CORREZIONE: Sintassi di chiusura corretta --- #}

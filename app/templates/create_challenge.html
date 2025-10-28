@@ -1,62 +1,49 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Crea Nuova Sfida{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna a tutte le sfide</a>
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Crea Nuova Sfida</h2>
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h1 class="h3 mb-0"><i class="bi bi-pencil-square me-2"></i>Crea Nuova Sfida</h1>
                 </div>
                 <div class="card-body p-4 p-md-5">
                     <form method="POST" class="needs-validation" novalidate id="createChallengeForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <fieldset>
-                            <legend class="h5 mb-3 border-bottom pb-2">1. Dettagli Base</legend>
-
-                            <!-- Nome Sfida (con floating label) -->
+                            <legend class="h5 mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">1</span>Dettagli Base</legend>
                             <div class="form-floating mb-3">
                                 <input type="text" id="name" name="name" class="form-control" placeholder="Nome della Sfida" required>
-                                <label for="name">Nome della Sfida</label>
-                                <div class="invalid-feedback">
-                                    Per favore, inserisci un nome per la sfida.
-                                </div>
+                                <label for="name">Nome della Sfida*</label>
+                                <div class="invalid-feedback">Inserisci un nome per la sfida.</div>
                             </div>
-
-                            <!-- Selezione Percorso (con floating label) -->
                             <div class="form-floating mb-3">
                                 <select id="route_id" name="route_id" class="form-select" required>
                                     <option value="" selected disabled>-- Seleziona un Percorso --</option>
                                     {% for route in routes %}
-                                        <option value="{{ route.id }}">{{ route.name }} (Distanza: {{ "%.2f"|format(route.distance_km) }} km)</option>
+                                        <option value="{{ route.id }}" {% if pre_selected_route_id == route.id %}selected{% endif %}>{{ route.name }} ({{ "%.2f"|format(route.distance_km) }} km)</option>
                                     {% else %}
                                         <option value="" disabled>Nessun percorso disponibile. Crea prima un percorso!</option>
                                     {% endfor %}
                                 </select>
-                                <label for="route_id">Seleziona il Percorso</label>
-                                <div class="invalid-feedback">
-                                    Per favore, seleziona un percorso.
-                                </div>
+                                <label for="route_id">Seleziona il Percorso*</label>
+                                <div class="invalid-feedback">Seleziona un percorso.</div>
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="start_date" class="form-label">Data di Inizio:</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="start_date" class="form-label">Data di Inizio*</label>
                                     <input type="date" id="start_date" name="start_date" class="form-control" required>
-                                    <div class="invalid-feedback" id="start-date-feedback">
-                                        Per favore, inserisci una data di inizio valida.
-                                    </div>
+                                    <div class="invalid-feedback" id="start-date-feedback">Inserisci una data di inizio valida.</div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="end_date" class="form-label">Data di Fine:</label>
+                                <div class="col-md-6">
+                                    <label for="end_date" class="form-label">Data di Fine*</label>
                                     <input type="date" id="end_date" name="end_date" class="form-control" required>
-                                    <div class="invalid-feedback" id="end-date-feedback">
-                                        La data di fine deve essere successiva alla data di inizio.
-                                    </div>
+                                    <div class="invalid-feedback" id="end-date-feedback">La data di fine deve essere successiva a quella di inizio.</div>
                                 </div>
                             </div>
                         </fieldset>
@@ -64,100 +51,54 @@
                         <hr class="my-4">
 
                         <fieldset>
-                            <legend class="h5 mb-3 border-bottom pb-2">2. Tipo e Scommessa</legend>
-                            
+                            <legend class="h5 mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">2</span>Tipo e Scommessa</legend>
                             <div class="mb-4">
-                                <label class="form-label">Tipo di Sfida:</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="challenge_type" value="open" id="challengeOpen" checked>
-                                    <label class="form-check-label" for="challengeOpen">
-                                        <i class="bi bi-unlock-fill me-1"></i> Sfida Aperta - Chiunque può partecipare
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="challenge_type" value="closed" id="challengeClosed">
-                                    <label class="form-check-label" for="challengeClosed">
-                                        <i class="bi bi-lock-fill me-1"></i> Sfida Chiusa - Solo utenti invitati
-                                    </label>
-                                </div>
+                                <label class="form-label">Tipo di Sfida*</label>
+                                <div class="form-check"><input class="form-check-input" type="radio" name="challenge_type" value="open" id="challengeOpen" checked><label class="form-check-label" for="challengeOpen"><i class="bi bi-unlock-fill me-1"></i> Aperta (chiunque può partecipare)</label></div>
+                                <div class="form-check"><input class="form-check-input" type="radio" name="challenge_type" value="closed" id="challengeClosed"><label class="form-check-label" for="challengeClosed"><i class="bi bi-lock-fill me-1"></i> Chiusa (solo su invito)</label></div>
                             </div>
-
                             <div class="mb-3">
-                                <label class="form-label">Cosa c'è in palio?</label>
+                                <label class="form-label">Posta in gioco (opzionale)</label>
                                 <div class="bet-selection-options d-flex flex-wrap justify-content-center gap-3">
-                                    <div class="bet-option">
-                                        <input type="radio" class="btn-check" name="bet_type" id="betNone" value="none" checked>
-                                        <label class="btn btn-outline-secondary bet-btn" for="betNone">
-                                            <span class="fs-2">🤷</span><br>Solo la Gloria
-                                        </label>
-                                    </div>
-                                    <div class="bet-option">
-                                        <input type="radio" class="btn-check" name="bet_type" id="betBeer" value="beer">
-                                        <label class="btn btn-outline-warning bet-btn" for="betBeer">
-                                            <span class="fs-2">🍺</span><br>Birra
-                                        </label>
-                                    </div>
-                                    <div class="bet-option">
-                                        <input type="radio" class="btn-check" name="bet_type" id="betDinner" value="dinner">
-                                        <label class="btn btn-outline-danger bet-btn" for="betDinner">
-                                            <span class="fs-2">🍝</span><br>Cena
-                                        </label>
-                                    </div>
-                                    <div class="bet-option">
-                                        <input type="radio" class="btn-check" name="bet_type" id="betCoffee" value="coffee">
-                                        <label class="btn btn-outline-info bet-btn" for="betCoffee">
-                                            <span class="fs-2">☕</span><br>Caffè
-                                        </label>
-                                    </div>
-                                    <div class="bet-option">
-                                        <input type="radio" class="btn-check" name="bet_type" id="betCustom" value="custom">
-                                        <label class="btn btn-outline-primary bet-btn" for="betCustom">
-                                            <span class="fs-2">🎁</span><br>Altro
-                                        </label>
-                                    </div>
+                                    <div><input type="radio" class="btn-check" name="bet_type" id="betNone" value="none" checked><label class="btn btn-outline-secondary" for="betNone"><span class="fs-2">🤷</span><br>Solo Gloria</label></div>
+                                    <div><input type="radio" class="btn-check" name="bet_type" id="betBeer" value="beer"><label class="btn btn-outline-warning" for="betBeer"><span class="fs-2">🍺</span><br>Birra</label></div>
+                                    <div><input type="radio" class="btn-check" name="bet_type" id="betDinner" value="dinner"><label class="btn btn-outline-danger" for="betDinner"><span class="fs-2">🍝</span><br>Cena</label></div>
+                                    <div><input type="radio" class="btn-check" name="bet_type" id="betCoffee" value="coffee"><label class="btn btn-outline-info" for="betCoffee"><span class="fs-2">☕</span><br>Caffè</label></div>
+                                    <div><input type="radio" class="btn-check" name="bet_type" id="betCustom" value="custom"><label class="btn btn-outline-primary" for="betCustom"><span class="fs-2">🎁</span><br>Altro</label></div>
                                 </div>
-
                                 <div id="customBetContainer" class="mt-3" style="display: none;">
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" name="custom_bet" id="custom_bet" placeholder="Descrivi la scommessa">
-                                        <label for="custom_bet">Descrivi la scommessa personalizzata</label>
-                                        <div class="invalid-feedback">
-                                            Per favore, descrivi la scommessa.
-                                        </div>
-                                    </div>
+                                    <div class="form-floating"><input type="text" class="form-control" name="custom_bet" id="custom_bet" placeholder="Descrivi la scommessa"><label for="custom_bet">Descrivi la scommessa personalizzata*</label><div class="invalid-feedback">Descrivi la scommessa.</div></div>
                                 </div>
                             </div>
                         </fieldset>
 
                         <hr class="my-4">
 
-                        <fieldset id="inviteSection">
-                            <legend class="h5 mb-3 border-bottom pb-2">3. Invita Amici</legend>
-                            <div class="friends-list border rounded p-3 bg-light-subtle" style="max-height: 250px; overflow-y: auto;">
-                                <div id="friendsCheckboxes">
-                                    <div class="d-flex justify-content-center align-items-center p-3">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Caricamento...</span>
-                                        </div>
-                                        <span class="ms-2">Caricamento amici...</span>
-                                    </div>
-                                </div>
+                        <fieldset id="inviteSection" style="display: none;">
+                            <legend class="h5 mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">3</span>Invita Amici</legend>
+                            <div class="friends-list border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;">
+                                <div id="friendsCheckboxes" class="text-center text-muted">Caricamento amici...</div>
                             </div>
                             <small class="form-text mt-2 d-block" id="inviteHelp"></small>
                             <div class="invalid-feedback d-block" id="invite-feedback"></div>
                         </fieldset>
 
-                        <button type="submit" class="btn btn-success btn-lg w-100 mt-4" id="submitButton">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            <span class="button-text">Crea Sfida</span>
-                        </button>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitButton">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                <span class="button-text">Crea Sfida</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style> /* Stili specifici per questa pagina */
+    .bet-selection-options label { width: 100px; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -165,146 +106,113 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- ELEMENTI DEL DOM ---
-    const createChallengeForm = document.getElementById('createChallengeForm');
-    const challengeTypeRadios = document.querySelectorAll('input[name="challenge_type"]');
+    const form = document.getElementById('createChallengeForm');
+    if (!form) return;
+    const challengeTypeRadios = form.querySelectorAll('input[name="challenge_type"]');
     const inviteSection = document.getElementById('inviteSection');
     const inviteHelp = document.getElementById('inviteHelp');
     const inviteFeedback = document.getElementById('invite-feedback');
-    const betTypeRadios = document.querySelectorAll('input[name="bet_type"]');
+    const betTypeRadios = form.querySelectorAll('input[name="bet_type"]');
     const customBetContainer = document.getElementById('customBetContainer');
     const customBetInput = document.getElementById('custom_bet');
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
-    const startDateFeedback = document.getElementById('start-date-feedback');
-    const endDateFeedback = document.getElementById('end-date-feedback');
     const submitButton = document.getElementById('submitButton');
     const buttonSpinner = submitButton.querySelector('.spinner-border');
     const buttonText = submitButton.querySelector('.button-text');
 
     // --- FUNZIONI ---
-
-    function updateInviteSectionVisibility() {
-        const isClosed = document.getElementById('challengeClosed').checked;
+    function updateInviteSection() {
+        const isClosed = form.querySelector('input[name="challenge_type"]:checked').value === 'closed';
         inviteSection.style.display = 'block';
-        if (isClosed) {
-            inviteHelp.innerHTML = 'Per le sfide chiuse, <strong>devi invitare almeno un amico</strong>.';
-            inviteHelp.className = 'form-text mt-2 d-block text-primary';
-        } else {
-            inviteHelp.innerHTML = 'Invita amici per renderla più divertente! (Opzionale per sfide aperte)';
-            inviteHelp.className = 'form-text mt-2 d-block text-muted';
-        }
+        inviteHelp.textContent = isClosed 
+            ? 'Per le sfide chiuse, devi invitare almeno un amico.'
+            : 'Invita amici per rendere la sfida più divertente! (Opzionale)';
+        inviteHelp.className = `form-text mt-2 d-block ${isClosed ? 'text-primary fw-bold' : 'text-muted'}`;
     }
 
-    function updateCustomBetVisibility() {
-        const isCustom = document.getElementById('betCustom').checked;
+    function updateCustomBet() {
+        const isCustom = form.querySelector('input[name="bet_type"]:checked').value === 'custom';
         customBetContainer.style.display = isCustom ? 'block' : 'none';
         customBetInput.required = isCustom;
-        if (!isCustom) {
-            customBetInput.value = '';
-            customBetInput.classList.remove('is-invalid');
-        }
     }
 
     async function loadFriendsList() {
         try {
-            const response = await fetch('/api/my-friends');
-            if (!response.ok) throw new Error(`Errore HTTP: ${response.status}`);
+            const response = await fetch("{{ url_for('api.my_friends') }}");
             const friends = await response.json();
-            
             const container = document.getElementById('friendsCheckboxes');
-            if (friends && friends.length > 0) {
+            if (friends.length > 0) {
                 container.innerHTML = friends.map(friend => `
-                    <div class="form-check mb-2">
+                    <div class="form-check text-start mb-2">
                         <input class="form-check-input" type="checkbox" name="invited_friends" value="${friend.id}" id="friend-${friend.id}">
                         <label class="form-check-label d-flex align-items-center" for="friend-${friend.id}">
-                            <img src="${friend.profile_image}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;" alt="Immagine profilo di ${friend.username}">
+                            <img src="${friend.profile_image}" class="rounded-circle me-2" width="30" height="30" alt="${friend.username}" style="object-fit: cover;">
                             <span>${friend.username}</span>
                         </label>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             } else {
-                container.innerHTML = '<p class="text-muted text-center m-0">Non segui ancora nessun utente per invitarlo.</p>';
+                container.innerHTML = 'Non segui ancora nessun utente da invitare.';
             }
         } catch (error) {
-            console.error('Errore caricamento amici:', error);
-            document.getElementById('friendsCheckboxes').innerHTML = '<p class="text-danger text-center m-0">Errore nel caricamento della lista amici.</p>';
+            document.getElementById('friendsCheckboxes').innerHTML = '<span class="text-danger">Errore nel caricamento degli amici.</span>';
         }
     }
 
     function validateDates() {
-        const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
-        const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
         let isValid = true;
-        startDateInput.classList.remove('is-invalid');
-        endDateInput.classList.remove('is-invalid');
-
-        if (startDateInput.value && startDate < today) {
-            startDateFeedback.textContent = 'La data di inizio non può essere nel passato.';
-            startDateInput.classList.add('is-invalid');
+        
+        if (startDate < today) {
+            startDateInput.setCustomValidity('La data di inizio non può essere nel passato.');
             isValid = false;
+        } else {
+            startDateInput.setCustomValidity('');
         }
 
-        if (endDateInput.value && (!startDate || endDate < startDate)) {
-            endDateFeedback.textContent = 'La data di fine deve essere uguale o successiva alla data di inizio.';
-            endDateInput.classList.add('is-invalid');
+        if (endDate < startDate) {
+            endDateInput.setCustomValidity('La data di fine deve essere successiva a quella di inizio.');
             isValid = false;
+        } else {
+            endDateInput.setCustomValidity('');
         }
         return isValid;
     }
 
     // --- EVENT LISTENERS ---
-
-    challengeTypeRadios.forEach(radio => radio.addEventListener('change', updateInviteSectionVisibility));
-    betTypeRadios.forEach(radio => radio.addEventListener('change', updateCustomBetVisibility));
+    challengeTypeRadios.forEach(r => r.addEventListener('change', updateInviteSection));
+    betTypeRadios.forEach(r => r.addEventListener('change', updateCustomBet));
     startDateInput.addEventListener('change', validateDates);
     endDateInput.addEventListener('change', validateDates);
 
-    createChallengeForm.addEventListener('submit', function(event) {
-        // Prima, controlla la validità standard del form
-        if (!this.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.classList.add('was-validated');
-            return;
-        }
-
-        let isFormLogicValid = true;
-        inviteFeedback.textContent = ''; // Resetta il feedback
-
-        // Validazione custom delle date
-        if (!validateDates()) {
-            isFormLogicValid = false;
-        }
-
-        // Validazione custom per inviti in sfide chiuse
-        const isClosed = document.getElementById('challengeClosed').checked;
-        const invitedFriendsCount = document.querySelectorAll('input[name="invited_friends"]:checked').length;
+    form.addEventListener('submit', function(event) {
+        validateDates(); // Aggiorna la validità custom delle date
+        const isClosed = form.querySelector('input[name="challenge_type"]:checked').value === 'closed';
+        const invitedFriendsCount = form.querySelectorAll('input[name="invited_friends"]:checked').length;
+        
         if (isClosed && invitedFriendsCount === 0) {
             inviteFeedback.textContent = 'Per le sfide chiuse devi invitare almeno un amico.';
-            inviteSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            isFormLogicValid = false;
+        } else {
+            inviteFeedback.textContent = '';
         }
 
-        // Se una delle validazioni custom fallisce, blocca l'invio
-        if (!isFormLogicValid) {
+        if (!form.checkValidity() || (isClosed && invitedFriendsCount === 0)) {
             event.preventDefault();
             event.stopPropagation();
         } else {
-            // Se tutto è valido, mostra lo stato di caricamento
             submitButton.disabled = true;
             buttonSpinner.style.display = 'inline-block';
             buttonText.textContent = 'Creazione in corso...';
         }
-        
-        this.classList.add('was-validated');
+        form.classList.add('was-validated');
     });
 
     // --- ESECUZIONE INIZIALE ---
-    updateInviteSectionVisibility();
-    updateCustomBetVisibility();
+    updateInviteSection();
+    updateCustomBet();
     loadFriendsList();
 });
 </script>

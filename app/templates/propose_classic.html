@@ -1,27 +1,29 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Proponi un Percorso Classico{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="text-center mb-5">
         <h1 class="display-5 fw-bold">Proponi un Percorso Classico</h1>
         <p class="lead text-muted">Aiutaci a costruire la mappa dei percorsi più belli. Descrivi il tuo percorso preferito e invialo per la revisione. Se approvato, diventerà un "Classico" della tua città!</p>
     </div>
 
-    <div class="card shadow-lg">
+    <div class="card shadow-lg border-0">
         <div class="card-body p-4 p-md-5">
-            <form method="POST" enctype="multipart/form-data" id="propose-route-form">
+            <form method="POST" enctype="multipart/form-data" id="propose-route-form" class="needs-validation" novalidate>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 {# SEZIONE 1: Informazioni di Base #}
-                <h3 class="mb-3 border-bottom pb-2">1. Informazioni di Base</h3>
-                <div class="row">
-                    <div class="col-md-8 mb-3">
+                <h3 class="mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">1</span>Informazioni di Base</h3>
+                <div class="row g-3">
+                    <div class="col-md-8">
                         <label for="name" class="form-label">Nome del Percorso*</label>
                         <input type="text" class="form-control" id="name" name="name" placeholder="Es. Giro del Lago di Scanno" required>
+                        <div class="invalid-feedback">Il nome è obbligatorio.</div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4">
                         <label for="activity_type" class="form-label">Tipo di Attività*</label>
                         <select class="form-select" id="activity_type" name="activity_type" required>
                             <option value="Corsa">Corsa</option>
@@ -31,33 +33,30 @@
                         </select>
                     </div>
                 </div>
-                <div class="mb-4">
+                <div class="mt-3 mb-4">
                     <label for="description" class="form-label">Descrizione</label>
                     <textarea class="form-control" id="description" name="description" rows="3" placeholder="Descrivi le caratteristiche principali del percorso, cosa lo rende speciale..."></textarea>
                 </div>
 
                 {# SEZIONE 2: Tracciato del Percorso #}
-                <h3 class="mb-3 border-bottom pb-2">2. Tracciato del Percorso*</h3>
+                <h3 class="mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">2</span>Tracciato del Percorso*</h3>
                 <p class="text-muted">Puoi disegnare il percorso direttamente sulla mappa oppure caricare un file GPX.</p>
-                
-                <!-- Mappa Leaflet per il disegno -->
                 <div id="map" style="height: 400px;" class="mb-3 rounded border"></div>
                 <input type="hidden" id="coordinates" name="coordinates">
-                
-                <!-- Caricamento File GPX -->
                 <div class="mb-4">
                     <label for="gpx_file" class="form-label">Oppure carica un file GPX</label>
                     <input class="form-control" type="file" id="gpx_file" name="gpx_file" accept=".gpx">
                 </div>
                 
                 {# SEZIONE 3: Dettagli "Classici" #}
-                <h3 class="mb-3 border-bottom pb-2">3. Dettagli "Classici"</h3>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                <h3 class="mb-3 border-bottom pb-2"><span class="badge bg-primary me-2">3</span>Dettagli Aggiuntivi</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
                         <label for="classic_city" class="form-label">Città di Riferimento*</label>
                         <input type="text" class="form-control" id="classic_city" name="classic_city" placeholder="Es. Roma, Milano, L'Aquila" required>
+                        <div class="invalid-feedback">La città è obbligatoria.</div>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <label for="difficulty" class="form-label">Difficoltà*</label>
                         <select class="form-select" id="difficulty" name="difficulty" required>
                             <option selected disabled value="">Scegli un'opzione...</option>
@@ -66,28 +65,17 @@
                             <option value="Difficile">Difficile</option>
                             <option value="Esperto">Esperto</option>
                         </select>
+                        <div class="invalid-feedback">La difficoltà è obbligatoria.</div>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label for="landmarks" class="form-label">Punti di Riferimento o Attrazioni</label>
-                    <textarea class="form-control" id="landmarks" name="landmarks" rows="3" placeholder="Es. Fontana di Trevi, Colosseo, Parco Sempione..."></textarea>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="start_location" class="form-label">Punto di Partenza (indicativo)</label>
-                        <input type="text" class="form-control" id="start_location" name="start_location" placeholder="Es. Piazza Duomo">
+                    <div class="col-12">
+                        <label for="landmarks" class="form-label">Punti di Riferimento o Attrazioni</label>
+                        <textarea class="form-control" id="landmarks" name="landmarks" rows="3" placeholder="Es. Fontana di Trevi, Colosseo, Parco Sempione..."></textarea>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="end_location" class="form-label">Punto di Arrivo (indicativo)</label>
-                        <input type="text" class="form-control" id="end_location" name="end_location" placeholder="Es. Arrivo in cima">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <label for="elevation_gain" class="form-label">Dislivello Positivo (metri)</label>
                         <input type="number" class="form-control" id="elevation_gain" name="elevation_gain" placeholder="Es. 500">
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <label for="estimated_time" class="form-label">Tempo di Percorrenza Stimato</label>
                         <input type="text" class="form-control" id="estimated_time" name="estimated_time" placeholder="Es. 2 ore e 30 minuti">
                     </div>
@@ -105,14 +93,14 @@
 
 {% block scripts %}
 {{ super() }}
-<!-- Leaflet JS (necessario per la mappa) -->
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<!-- Leaflet JS non è necessario includerlo di nuovo se è già in base.html -->
+<!-- Assicurati che questi script siano in base.html -->
+<!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
+<!-- <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script> -->
 
 <script>
-    // Questo script è quasi identico a quello della pagina 'create_route'
     document.addEventListener('DOMContentLoaded', function() {
-        var map = L.map('map').setView([42.35, 13.39], 13); // Centrato su L'Aquila, modifica se necessario
+        var map = L.map('map').setView([42.35, 13.39], 13); // Centrato su L'Aquila
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -122,9 +110,7 @@
         map.addLayer(drawnItems);
 
         var drawControl = new L.Control.Draw({
-            edit: {
-                featureGroup: drawnItems
-            },
+            edit: { featureGroup: drawnItems },
             draw: {
                 polygon: false,
                 marker: false,
@@ -137,20 +123,11 @@
 
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
-            drawnItems.clearLayers();
+            drawnItems.clearLayers(); // Permette di disegnare una sola linea alla volta
             drawnItems.addLayer(layer);
             
             var geoJSON = layer.toGeoJSON();
             document.getElementById('coordinates').value = JSON.stringify(geoJSON);
-        });
-
-        // Opzionale: gestire il caricamento GPX per mostrare la traccia sulla mappa
-        document.getElementById('gpx_file').addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                // Se viene caricato un GPX, disabilita/nascondi la mappa per evitare confusione
-                document.getElementById('map').style.opacity = '0.5';
-                alert('File GPX selezionato. Il disegno sulla mappa verrà ignorato.');
-            }
         });
     });
 </script>

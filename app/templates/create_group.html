@@ -1,28 +1,47 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Crea un Nuovo Gruppo{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-body p-5">
-                    <h1 class="mb-4">Crea un Nuovo Gruppo</h1>
-                    <form method="POST">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h1 class="h3 mb-0"><i class="bi bi-people-fill me-2"></i>Crea un Nuovo Gruppo</h1>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" class="needs-validation" novalidate>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome del Gruppo*</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-collection-fill"></i></span>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                                <div class="invalid-feedback">Il nome del gruppo è obbligatorio.</div>
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label for="description" class="form-label">Descrizione</label>
-                            <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Descrivi lo scopo del gruppo, il tipo di attività, ecc."></textarea>
                         </div>
-                        <div class="mb-3">
+
+                        <div class="mb-4">
                             <label for="city" class="form-label">Città (opzionale)</label>
-                            <input type="text" class="form-control" id="city" name="city">
+                             <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
+                                <input type="text" class="form-control" id="city" name="city" placeholder="Es. Roma, Milano, L'Aquila">
+                            </div>
+                            <div class="form-text">Se specificata, il gruppo apparirà nelle ricerche locali.</div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg">Crea Gruppo</button>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.list_groups') }}" class="btn btn-secondary">Annulla</a>
+                            <button type="submit" class="btn btn-primary">Crea Gruppo</button>
+                        </div>
                     </form>
                 </div>
             </div>

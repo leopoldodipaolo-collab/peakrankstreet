@@ -1,11 +1,13 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Tutte le Attività{% endblock %}
 
 {% block content %}
-<div class="container my-5">
+{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
+<div class="container my-5 pt-5">
     <div class="text-center mb-5">
-        <h1 class="section-title">Feed delle Attività</h1>
+        <h1 class="display-5 fw-bold">Feed Globale delle Attività</h1>
         <p class="lead text-muted">Scopri le ultime imprese della nostra community di atleti.</p>
     </div>
     
@@ -13,46 +15,46 @@
         <div class="row">
             {% for activity in activities %}
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card activity-card h-100 shadow-sm">
+                <div class="card activity-card h-100 shadow-sm border-0">
                     <!-- Card Header: Atleta e Percorso -->
                     <div class="card-header activity-card-header d-flex align-items-center bg-white">
                         <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}">
-                            <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="img-fluid rounded-circle me-3" alt="Avatar di {{ activity.user_activity.username }}">
+                            <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="rounded-circle me-3" width="40" height="40" alt="Avatar di {{ activity.user_activity.username }}">
                         </a>
                         <div class="flex-grow-1">
                             <h5 class="mb-0 fs-6">
                                 {% if activity.route_activity %}
-                                    <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="user-link text-success">{{ activity.route_activity.name }}</a>
+                                    <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="text-decoration-none text-success fw-bold">{{ activity.route_activity.name }}</a>
                                 {% else %}
-                                    <span class="text-muted">Percorso Libero</span>
+                                    <span class="text-muted fw-bold">Percorso Libero</span>
                                 {% endif %}
                             </h5>
                             <small class="text-muted">
-                                di <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="user-link text-primary">{{ activity.user_activity.username }}</a>
+                                di <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="text-decoration-none text-primary">{{ activity.user_activity.username }}</a>
                             </small>
                         </div>
                     </div>
 
                     <!-- Card Body: Statistiche -->
                     <div class="card-body">
-                        <div class="activity-stats d-flex justify-content-around text-center my-3">
+                        <div class="activity-stats d-flex justify-content-around text-center my-3 p-2 bg-light rounded">
                             <div class="stat-item">
                                 <i class="bi bi-geo-alt-fill text-primary"></i>
-                                <strong>{{ "%.2f"|format(activity.distance) }}</strong>
-                                <small class="text-muted d-block">km</small>
+                                <div><strong>{{ "%.2f"|format(activity.distance) }}</strong></div>
+                                <small class="text-muted">km</small>
                             </div>
                             <div class="stat-item">
                                 <i class="bi bi-clock-fill text-primary"></i>
                                 {% set hours = activity.duration // 3600 %}
                                 {% set minutes = (activity.duration % 3600) // 60 %}
                                 {% set seconds = activity.duration % 60 %}
-                                <strong>{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</strong>
-                                <small class="text-muted d-block">hh:mm:ss</small>
+                                <div><strong>{{ "%02d:%02d:%02d"|format(hours, minutes, seconds) }}</strong></div>
+                                <small class="text-muted">hh:mm:ss</small>
                             </div>
                             <div class="stat-item">
                                 <i class="bi bi-speedometer2 text-primary"></i>
-                                <strong>{{ "%.2f"|format(activity.avg_speed) }}</strong>
-                                <small class="text-muted d-block">km/h</small>
+                                <div><strong>{{ "%.2f"|format(activity.avg_speed) }}</strong></div>
+                                <small class="text-muted">km/h</small>
                             </div>
                         </div>
 
@@ -60,14 +62,14 @@
                             <div class="challenge-link-badge text-center mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-trophy-fill text-warning me-1"></i>
-                                    Parte della sfida: <strong><a href="{{ url_for('main.leaderboard', challenge_id=activity.challenge_info.id) }}" class="user-link text-info">{{ activity.challenge_info.name }}</a></strong>
+                                    Parte della sfida: <strong><a href="{{ url_for('main.leaderboard', challenge_id=activity.challenge_info.id) }}" class="text-decoration-none text-info">{{ activity.challenge_info.name }}</a></strong>
                                 </small>
                             </div>
                         {% endif %}
                     </div>
 
                     <!-- Card Footer: Data e Azioni -->
-                    <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="card-footer d-flex justify-content-between align-items-center bg-white border-top-0">
                         <small class="text-muted">
                             <i class="bi bi-calendar-event me-1"></i>
                             {{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}
@@ -98,14 +100,14 @@
                     {% endif %}
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('main.all_activities', page=pagination.next_num) }}">Successivo &raquo;</a>
+                    <a class="page-link" href="{{ url_for('main.all_activities', page=page_num) }}">Successivo &raquo;</a>
                 </li>
             </ul>
         </nav>
         {% endif %}
 
     {% else %}
-        <div class="text-center p-5 border rounded-3 bg-light-subtle mt-5">
+        <div class="text-center p-5 border rounded-3 bg-light mt-5">
             <i class="bi bi-bicycle display-4 text-muted mb-3"></i>
             <h4>Nessuna Attività Registrata</h4>
             <p class="text-muted">Non ci sono ancora attività nel feed. Sii il primo a <a href="{{ url_for('main.record_activity') }}">registrarne una!</a></p>

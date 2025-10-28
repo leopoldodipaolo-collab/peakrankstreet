@@ -1,9 +1,11 @@
-{% extends "index.html" %}
+{# CORREZIONE: Estende il template di base, non la homepage #}
+{% extends "base.html" %}
 
 {% block title %}Sfide Terminate{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+{# Aggiunto contenitore per allineamento e margini corretti #}
+<div class="container mt-5 pt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 fw-bold text-primary">🏁 Sfide Terminate</h1>
         <a href="{{ url_for('main.challenges_list') }}" class="btn btn-outline-primary btn-hover">

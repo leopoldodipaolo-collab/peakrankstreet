@@ -874,42 +874,45 @@ def challenges_list():
     status_filter = request.args.get('status', 'all', type=str)
     now = datetime.utcnow()
     
-    # Query base per sfide aperte a tutti
-    query = Challenge.query.filter_by(challenge_type='open')
-    
+    # 1. Partiamo da una query non filtrata
+    query = Challenge.query
+
+    # 2. Applichiamo i filtri in base alla selezione dell'utente
     if status_filter == 'active':
-        query = query.filter(Challenge.end_date >= now, Challenge.is_active == True)
+        query = query.filter(
+            Challenge.end_date >= now, 
+            Challenge.is_active == True,
+            Challenge.challenge_type == 'open' # Mostra solo le 'open' attive
+        )
     elif status_filter == 'finished':
-        query = query.filter(Challenge.end_date < now, Challenge.is_active == False)
+        query = query.filter(Challenge.end_date < now)
     elif status_filter == 'closed_only':
-        query = Challenge.query.filter_by(challenge_type='closed')
-    # 'all' mostra tutto
-    
+        # Ora questo funziona, perché partiamo da una query non filtrata
+        query = query.filter(Challenge.challenge_type == 'closed')
+    elif status_filter == 'all':
+        # Per "Tutte", mostriamo solo quelle aperte per non intasare la lista
+        query = query.filter(Challenge.challenge_type == 'open')
+
+    # Applichiamo l'ordinamento alla fine
     pagination = query.order_by(Challenge.start_date.desc()).paginate(page=page, per_page=5, error_out=False)
 
-    # Sfide chiuse a cui l'utente è invitato (sempre visibili)
-    invited_challenges = Challenge.query.join(ChallengeInvitation)\
-                                       .filter(
-                                           Challenge.challenge_type == 'closed',
-                                           ChallengeInvitation.invited_user_id == current_user.id,
-                                           ChallengeInvitation.status == 'pending'
-                                       )\
-                                       .order_by(Challenge.created_at.desc())\
-                                       .all()
+    # La logica per le sfide a cui sei invitato e quelle create da te è separata e va bene
+    invited_challenges = Challenge.query.join(ChallengeInvitation).filter(
+        Challenge.challenge_type == 'closed',
+        ChallengeInvitation.invited_user_id == current_user.id,
+        ChallengeInvitation.status == 'pending'
+    ).order_by(Challenge.created_at.desc()).all()
 
-    # Sfide create dall'utente (sempre visibili)
-    my_challenges = Challenge.query.filter_by(created_by=current_user.id)\
-                                  .order_by(Challenge.created_at.desc())\
-                                  .all()
+    my_challenges = Challenge.query.filter_by(created_by=current_user.id).order_by(Challenge.created_at.desc()).all()
 
     return render_template("challenges_list.html", 
-                         challenges_pagination=pagination, 
-                         challenges=pagination.items, 
-                         invited_challenges=invited_challenges,
-                         my_challenges=my_challenges,
-                         status_filter=status_filter,
-                         now=now,
-                         is_homepage=False)
+                           challenges_pagination=pagination, 
+                           challenges=pagination.items, 
+                           invited_challenges=invited_challenges,
+                           my_challenges=my_challenges,
+                           status_filter=status_filter,
+                           now=now,
+                           is_homepage=False)
 
 @main.route("/leaderboards/total_distance")
 def leaderboard_total_distance():
@@ -3212,3 +3215,27 @@ def remove_member(group_id, user_id):
         flash('Questo utente non è un membro del gruppo.', 'info')
         
     return redirect(url_for('main.manage_group', group_id=group.id))
+
+@main.route('/bets')
+@login_required
+def bets_hall():
+    """
+    Pagina dedicata alle scommesse (la "Sala Scommesse").
+    """
+    # --- 1. SCOMMESSE PERSONALI (Logica che già hai) ---
+    my_bets_won = Bet.query.filter_by(winner_id=current_user.id).order_by(Bet.status.asc(), Bet.created_at.desc()).all()
+    my_bets_lost = Bet.query.filter_by(loser_id=current_user.id).order_by(Bet.status.asc(), Bet.created_at.desc()).all()
+
+    # --- 2. SCOMMESSE RECENTI DELLA COMMUNITY ---
+    # Recuperiamo le ultime 10 scommesse concluse (pagate)
+    recent_community_bets = Bet.query.filter(
+        Bet.status == 'paid'
+    ).order_by(
+        Bet.paid_at.desc()
+    ).limit(10).all()
+
+    return render_template('bets_hall.html', 
+                           my_bets_won=my_bets_won,
+                           my_bets_lost=my_bets_lost,
+                           recent_community_bets=recent_community_bets,
+                           is_homepage=False)

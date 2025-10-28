@@ -1,17 +1,18 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Il Tuo Feed - StreetSport{% endblock %}
 
 {% block content %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<div class="container my-5">
-    <!-- Input nascosto per CSRF -->
+{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
+<div class="container my-5 pt-5">
+    <!-- Input nascosto per CSRF, usato dallo script JS -->
     <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
     
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="mb-0">Il Tuo Feed</h1>
+                <h1 class="mb-0 h3 fw-bold">Il Tuo Feed</h1>
                 <a href="{{ url_for('main.record_activity') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle-fill me-1"></i> Registra Attività
                 </a>
@@ -23,11 +24,11 @@
                     <!-- Header -->
                     <div class="card-header bg-white d-flex align-items-center">
                         <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}">
-                            <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="img-fluid rounded-circle me-3" alt="Avatar di {{ activity.user_activity.username }}">
+                            <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" class="rounded-circle me-3" width="40" height="40" alt="Avatar di {{ activity.user_activity.username }}">
                         </a>
                         <div class="flex-grow-1">
                             <h5 class="mb-0 fs-6">
-                                <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="user-link text-dark fw-bold">{{ activity.user_activity.username }}</a>
+                                <a href="{{ url_for('main.user_profile', user_id=activity.user_activity.id) }}" class="text-decoration-none text-dark fw-bold">{{ activity.user_activity.username }}</a>
                             </h5>
                             <small class="text-muted" title="{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}">
                                 <i class="bi bi-clock me-1"></i>
@@ -38,34 +39,33 @@
 
                     <!-- Body -->
                     <div class="card-body">
-                        <!-- CORREZIONE APPLICATA QUI -->
                         <p class="feed-activity-title">
                             Ha completato 
                             <strong>
                                 {% if activity.route_activity %}
-                                    <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="user-link text-success">{{ activity.route_activity.name }}</a>
+                                    <a href="{{ url_for('main.route_detail', route_id=activity.route_activity.id) }}" class="text-decoration-none text-success">{{ activity.route_activity.name }}</a>
                                 {% else %}
                                     <span class="text-muted">un'attività manuale.</span>
                                 {% endif %}
                             </strong>
                         </p>
-                        <div class="activity-stats d-flex justify-content-around text-center my-3">
+                        <div class="activity-stats d-flex justify-content-around text-center my-3 p-2 bg-light rounded">
                             <div class="stat-item">
                                 <i class="bi bi-geo-alt-fill text-primary"></i>
-                                <strong>{{ "%.2f"|format(activity.distance) }}</strong>
-                                <small class="text-muted d-block">km</small>
+                                <div><strong>{{ "%.2f"|format(activity.distance) }}</strong></div>
+                                <small class="text-muted">km</small>
                             </div>
                             <div class="stat-item">
                                 <i class="bi bi-clock-fill text-primary"></i>
                                 {% set hours = activity.duration // 3600 %}
                                 {% set minutes = (activity.duration % 3600) // 60 %}
-                                <strong>{{ "%02d:%02d"|format(hours, minutes) }}</strong>
-                                <small class="text-muted d-block">hh:mm</small>
+                                <div><strong>{{ "%02d:%02d"|format(hours, minutes) }}</strong></div>
+                                <small class="text-muted">hh:mm</small>
                             </div>
                             <div class="stat-item">
                                 <i class="bi bi-speedometer2 text-primary"></i>
-                                <strong>{{ "%.2f"|format(activity.avg_speed) }}</strong>
-                                <small class="text-muted d-block">km/h</small>
+                                <div><strong>{{ "%.2f"|format(activity.avg_speed) }}</strong></div>
+                                <small class="text-muted">km/h</small>
                             </div>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
                                     <span class="like-count ms-1">{{ activity.likes.count() }}</span>
                                 </button>
                             {% else %}
-                                <span class="btn btn-action disabled">
+                                <span class="btn btn-action disabled text-muted">
                                     <i class="bi bi-heart-fill"></i>
                                     <span class="like-count ms-1">{{ activity.likes.count() }}</span>
                                 </span>
@@ -142,23 +142,31 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Il token viene letto dall'input nascosto nel body, che è la pratica corretta.
     const csrfToken = document.getElementById('csrf_token')?.value || '';
 
     document.querySelectorAll('.like-activity-button').forEach(button => {
         button.addEventListener('click', function() {
             const activityId = this.dataset.activityId;
             const likeCountSpan = this.querySelector('.like-count');
+            const icon = this.querySelector('i');
 
             fetch(`/api/activity/${activityId}/like`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
+                    'X-CSRFToken': csrfToken // Assicurati che il tuo backend gestisca questo header
                 },
                 body: JSON.stringify({})
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                if (!response.ok) {
+                    // Se la risposta è 401 (Unauthorized), reindirizza al login
+                    if (response.status === 401) {
+                         window.location.href = "{{ url_for('auth.login') }}";
+                    }
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
                 return response.json();
             })
             .then(data => {
@@ -166,13 +174,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     likeCountSpan.textContent = data.likes_count;
                     this.classList.toggle('liked', data.action === 'liked');
                 } else {
-                    console.error('Errore backend:', data.message);
+                    console.error('Errore restituito dal backend:', data.message);
                 }
             })
-            .catch(error => console.error('Errore like attività:', error));
+            .catch(error => console.error('Errore durante la richiesta di like:', error));
         });
     });
 });
-
 </script>
 {% endblock %}

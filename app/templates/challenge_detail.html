@@ -1,4 +1,4 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
 {% block title %}{{ challenge.name }}{% endblock %}
 
@@ -45,10 +45,13 @@
                 <h5>🎪 Amici Invitati</h5>
                 <div class="d-flex flex-wrap gap-2">
                     {% for invitation in invitations %}
-                    <span class="badge bg-{{ 'success' if invitation.status == 'accepted' else 'warning' if invitation.status == 'pending' else 'secondary' }}">
-                        {{ invitation.invited_user.username }} 
-                        ({{ invitation.status }})
-                    </span>
+                        <div class="partecipant">
+                            <a href="{{ url_for('main.user_profile', user_id=invitation.user.id) }}">
+                                <img src="{{ url_for('static', filename='profile_pics/' + invitation.user.profile_image) }}" ... >
+                                {{ invitation.user.username }}
+                            </a>
+                            <span>{{ invitation.status }}</span>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
@@ -106,6 +109,7 @@
                         <p>Sei stato invitato a questa sfida! Accetti la sfida?</p>
                         
                         <form action="{{ url_for('main.accept_challenge', challenge_id=challenge.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-success me-2">✅ Accetta Sfida</button>
                         </form>
                         

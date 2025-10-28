@@ -1,56 +1,54 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Esplora{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     
-    {# --- NUOVA SEZIONE: PERCORSI IN EVIDENZA --- #}
+    <!-- Intestazione Pagina -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Esplora la Community</h1>
+        <p class="lead text-muted">Scopri nuovi percorsi, utenti e gli ultimi aggiornamenti.</p>
+    </div>
+    
+    <!-- Percorsi in Evidenza -->
     <div class="mb-5">
-        <h2 class="h3 mb-3"><i class="bi bi-signpost-split-fill me-2"></i>Percorsi da non perdere</h2>
+        <h2 class="h3 mb-3"><i class="bi bi-signpost-split-fill me-2 text-primary"></i>Percorsi da non perdere</h2>
         <div id="featured-routes-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {# Le card dei percorsi verranno caricate qui da JavaScript #}
-            <p class="text-muted col-12">Caricamento percorsi...</p>
+            <!-- Placeholder per il caricamento -->
+            <div class="col-12 text-center text-muted py-5">
+                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                <p class="mt-2">Caricamento percorsi in evidenza...</p>
+            </div>
         </div>
     </div>
-    {# --- FINE NUOVA SEZIONE --- #}
 
-    <div class="row">
+    <div class="row g-4">
         <!-- Colonna Principale: Feed dei Contenuti -->
         <div class="col-lg-8">
-            <h1 class="h3 mb-4">Ultimi Aggiornamenti dalla Community</h1>
-            
-            {# Qui inseriremo il nostro feed unificato #}
-            <div id="explore-feed-container">
-                <p class="text-muted">Caricamento degli ultimi post...</p>
-            </div>
-            <div id="load-more-container" class="text-center mt-3">
-                {# Qui andrà il pulsante "Carica Altri" #}
-            </div>
+            <h2 class="h3 mb-4">Ultimi Aggiornamenti</h2>
+            <div id="explore-feed-container"></div>
+            <div id="load-more-container" class="text-center mt-3"></div>
         </div>
 
         <!-- Colonna Laterale: Tendenze e Suggerimenti -->
         <div class="col-lg-4">
-            <div class="sticky-top" style="top: 100px;"> {# Rende la colonna "appiccicosa" allo scroll #}
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-hash me-2"></i>Hashtag Popolari</h5>
-                    </div>
+            <div class="sticky-top" style="top: 100px;">
+                <!-- Hashtag Popolari -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white"><h5 class="mb-0"><i class="bi bi-hash me-2 text-primary"></i>Hashtag Popolari</h5></div>
                     <div class="list-group list-group-flush" id="trending-hashtags-container">
-                        <p class="text-muted p-3">Caricamento delle tendenze...</p>
+                        <div class="list-group-item text-muted">Caricamento...</div>
                     </div>
                 </div>
-                 {# --- NUOVA SEZIONE: UTENTI DA SCOPRIRE --- #}
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Utenti da Scoprire</h5>
-                    </div>
+                <!-- Utenti da Scoprire -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white"><h5 class="mb-0"><i class="bi bi-people-fill me-2 text-primary"></i>Utenti da Scoprire</h5></div>
                     <div class="list-group list-group-flush" id="suggested-users-container">
-                        <p class="text-muted p-3">Caricamento utenti...</p>
+                         <div class="list-group-item text-muted">Caricamento...</div>
                     </div>
                 </div>
-                {# --- FINE NUOVA SEZIONE --- #}
-
             </div>
         </div>
     </div>
@@ -59,65 +57,95 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const feedContainer = document.getElementById('explore-feed-container');
     const trendingContainer = document.getElementById('trending-hashtags-container');
     const loadMoreContainer = document.getElementById('load-more-container');
+    const featuredRoutesContainer = document.getElementById('featured-routes-container');
+    const suggestedUsersContainer = document.getElementById('suggested-users-container');
     let currentPage = 1;
 
-    // --- FUNZIONE PER CARICARE IL FEED ---
+    // --- FUNZIONI DI CARICAMENTO ---
+
     function loadFeed(page = 1) {
-        if (page === 1) {
-            feedContainer.innerHTML = '<p class="text-muted">Caricamento...</p>';
-        }
+        if (page === 1) feedContainer.innerHTML = '<div class="text-center text-muted p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
         
         fetch(`/api/feed?page=${page}`)
             .then(response => response.json())
             .then(data => {
-                if (page === 1) {
-                    feedContainer.innerHTML = ''; // Pulisce il messaggio di caricamento
-                }
+                if (page === 1) feedContainer.innerHTML = '';
                 feedContainer.insertAdjacentHTML('beforeend', data.html);
 
-                // Gestisce il pulsante "Carica Altri"
-                if (data.has_next_page) {
-                    currentPage++;
-                    loadMoreContainer.innerHTML = `<button id="load-more-btn" class="btn btn-outline-primary">Carica Altri</button>`;
-                } else {
-                    loadMoreContainer.innerHTML = '<p class="text-muted small">Hai raggiunto la fine.</p>';
-                }
+                loadMoreContainer.innerHTML = data.has_next_page
+                    ? `<button id="load-more-btn" class="btn btn-outline-primary">Carica Altri</button>`
+                    : '<p class="text-muted small">Hai raggiunto la fine.</p>';
+                currentPage = page + 1;
                 
-                // Applica timeago ai nuovi elementi
                 timeago.render(feedContainer.querySelectorAll('.timeago:not(.timeago-applied)'), 'it');
-            });
+            }).catch(() => feedContainer.innerHTML = '<div class="text-center text-danger p-5">Errore nel caricamento del feed.</div>');
     }
 
-    // --- FUNZIONE PER CARICARE GLI HASHTAG DI TENDENZA ---
     function loadTrendingHashtags() {
         fetch('/api/trending_tags')
             .then(response => response.json())
             .then(data => {
-                trendingContainer.innerHTML = ''; // Pulisce il messaggio di caricamento
-                if (data.length > 0) {
-                    data.forEach(tag => {
-                        const tagLink = `
-                            <a href="/tag/${tag.name}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <span>#${tag.name}</span>
-                                <span class="badge bg-primary rounded-pill">${tag.count}</span>
+                trendingContainer.innerHTML = data.length > 0 ? data.map(tag => `
+                    <a href="/tag/${tag.name}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>#${tag.name}</span>
+                        <span class="badge bg-primary rounded-pill">${tag.count}</span>
+                    </a>`).join('') : '<div class="list-group-item text-muted">Nessuna tendenza al momento.</div>';
+            }).catch(() => trendingContainer.innerHTML = '<div class="list-group-item text-danger">Errore.</div>');
+    }
+    
+    function loadFeaturedRoutes() {
+        fetch('/api/featured_routes')
+            .then(response => response.json())
+            .then(data => {
+                featuredRoutesContainer.innerHTML = data.length > 0 ? data.map(route => {
+                    const icon = route.activity_type === 'Corsa' ? 'bi-person-running' : (route.activity_type === 'Bici' ? 'bi-bicycle' : 'bi-activity');
+                    return `
+                        <div class="col">
+                            <a href="${route.url}" class="card h-100 shadow-sm text-decoration-none text-dark lift">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">${route.name}</h5>
+                                    <p class="card-text text-muted small mb-2">
+                                        <i class="bi ${icon} me-1"></i> ${route.distance ? route.distance.toFixed(2) + ' km' : 'N/D'}
+                                        <span class="mx-2">|</span>
+                                        <i class="bi bi-geo-alt-fill me-1"></i> ${route.city}
+                                    </p>
+                                    <p class="card-text small">Creato da: <strong>${route.creator_username}</strong></p>
+                                </div>
                             </a>
-                        `;
-                        trendingContainer.insertAdjacentHTML('beforeend', tagLink);
-                    });
-                } else {
-                    trendingContainer.innerHTML = '<p class="text-muted p-3">Nessuna tendenza al momento.</p>';
-                }
-            });
+                        </div>`;
+                }).join('') : '<div class="col-12 text-center text-muted py-5">Nessun percorso da mostrare.</div>';
+            }).catch(() => featuredRoutesContainer.innerHTML = '<div class="col-12 text-center text-danger py-5">Errore nel caricamento dei percorsi.</div>');
     }
 
-    // --- GESTIONE CLICK SU "CARICA ALTRI" ---
-    loadMoreContainer.addEventListener('click', function(event) {
-        if (event.target && event.target.id === 'load-more-btn') {
+    function loadSuggestedUsers() {
+        fetch('/api/suggested_users')
+            .then(response => response.json())
+            .then(data => {
+                suggestedUsersContainer.innerHTML = data.length > 0 ? data.map(user => `
+                    <a href="${user.url}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <img src="${user.profile_image}" alt="${user.username}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${user.username}</div>
+                            <small class="text-muted">${user.city || 'N/D'}</small>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill">${user.activity_count} attività</span>
+                    </a>`).join('') : '<div class="list-group-item text-muted">Nessun utente da suggerire.</div>';
+            }).catch(() => suggestedUsersContainer.innerHTML = '<div class="list-group-item text-danger">Errore.</div>');
+    }
+
+    // --- GESTIONE CLICK "CARICA ALTRI" ---
+    loadMoreContainer.addEventListener('click', event => {
+        if (event.target.id === 'load-more-btn') {
+            const btn = event.target;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Caricamento...';
+            btn.disabled = true;
             loadFeed(currentPage);
         }
     });
@@ -125,78 +153,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- CARICAMENTO INIZIALE ---
     loadFeed(1);
     loadTrendingHashtags();
-
-    // --- NUOVA FUNZIONE PER CARICARE I PERCORSI ---
-    const featuredRoutesContainer = document.getElementById('featured-routes-container');
-
-    function loadFeaturedRoutes() {
-        fetch('/api/featured_routes')
-            .then(response => response.json())
-            .then(data => {
-                featuredRoutesContainer.innerHTML = ''; // Pulisce il messaggio
-                if (data.length > 0) {
-                    data.forEach(route => {
-                        let icon = 'bi-activity';
-                        if (route.activity_type === 'Corsa') icon = 'bi-person-running';
-                        if (route.activity_type === 'Bici') icon = 'bi-bicycle';
-
-                        const routeCardHTML = `
-                            <div class="col">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${route.name}</h5>
-                                        <p class="card-text text-muted small">
-                                            <i class="bi ${icon} me-1"></i> ${route.distance ? route.distance.toFixed(2) + ' km' : 'N/D'}
-                                            <span class="mx-2">|</span>
-                                            <i class="bi bi-geo-alt-fill me-1"></i> ${route.city}
-                                        </p>
-                                        <p class="card-text small">Creato da: ${route.creator_username}</p>
-                                        <a href="${route.url}" class="btn btn-sm btn-outline-primary">Vedi Percorso</a>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        featuredRoutesContainer.insertAdjacentHTML('beforeend', routeCardHTML);
-                    });
-                } else {
-                    featuredRoutesContainer.innerHTML = '<p class="text-muted col-12">Nessun percorso da mostrare al momento.</p>';
-                }
-            });
-    }
-    
-    // --- AGGIUNGI LA CHIAMATA ALLA NUOVA FUNZIONE ---
     loadFeaturedRoutes();
-
-    // --- NUOVA FUNZIONE PER CARICARE GLI UTENTI SUGGERITI ---
-    const suggestedUsersContainer = document.getElementById('suggested-users-container');
-
-    function loadSuggestedUsers() {
-        fetch('/api/suggested_users')
-            .then(response => response.json())
-            .then(data => {
-                suggestedUsersContainer.innerHTML = ''; // Pulisce il messaggio
-                if (data.length > 0) {
-                    data.forEach(user => {
-                        const userHTML = `
-                            <a href="${user.url}" class="list-group-item list-group-item-action d-flex align-items-center">
-                                <img src="${user.profile_image}" alt="${user.username}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">${user.username}</div>
-                                    <small class="text-muted">${user.city || 'N/D'}</small>
-                                </div>
-                                <span class="badge bg-secondary rounded-pill">${user.activity_count} attività</span>
-                            </a>
-                        `;
-                        suggestedUsersContainer.insertAdjacentHTML('beforeend', userHTML);
-                    });
-                } else {
-                    suggestedUsersContainer.innerHTML = '<p class="text-muted p-3">Nessun utente da suggerire al momento.</p>';
-                }
-            });
-    }
-    
-    // --- AGGIUNGI LA CHIAMATA ALLA NUOVA FUNZIONE ---
     loadSuggestedUsers();
 });
 </script>
+
+<style>
+    /* Stile per un effetto "lift" al passaggio del mouse */
+    .lift {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
 {% endblock %}

@@ -1,40 +1,53 @@
-{% extends "index.html" %} {# Assicurati che sia index.html e non base.html se questo è il tuo layout principale #}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
-{% block title %}Login - StreetSport App{% endblock %}
+{% block title %}Login - PeakRankStreet App{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5"> {# Aggiunto pt-5 per dare spazio sotto la navbar fissa #}
+<div class="container mt-5 pt-5">
     <div class="row justify-content-center my-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h2 class="mb-0 text-center">Accedi</h2>
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h2 class="mb-0 h4"><i class="bi bi-box-arrow-in-right me-2"></i>Accedi</h2>
                 </div>
-                <div class="card-body">
-                    {# Il tag <form> non ha un 'action', quindi invia alla stessa URL (corretto) #}
+                <div class="card-body p-4 p-md-5">
+                    {# Il form invia i dati alla stessa URL, che è il comportamento standard e corretto per il login #}
                     <form method="POST" class="needs-validation" novalidate id="loginForm">
-                        {# --- AGGIUNGI QUESTO TOKEN CSRF QUI --- #}
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
-                        {# Assicurati che csrf_token() funzioni correttamente #}
+                        
+                        {# Il token CSRF è essenziale per la sicurezza con Flask-WTF #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username:</label>
-                            <input type="text" id="username" name="username" class="form-control" required>
-                            <div class="invalid-feedback">
-                                Per favore, inserisci il tuo username.
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" id="username" name="username" class="form-control" required>
+                                <div class="invalid-feedback">
+                                    Per favore, inserisci il tuo username.
+                                </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password:</label>
-                            <input type="password" id="password" name="password" class="form-control" required>
-                            <div class="invalid-feedback">
-                                Per favore, inserisci la tua password.
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Password</label>
+                             <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" id="password" name="password" class="form-control" required>
+                                <div class="invalid-feedback">
+                                    Per favore, inserisci la tua password.
+                                </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Login</button>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        </div>
                     </form>
-                    {# MODIFICATO: Aggiunto 'auth.' #}
-                    <p class="text-center mt-3">Non hai un account? <a href="{{ url_for('auth.register') }}">Registrati ora</a>.</p>
+                    
+                    <div class="text-center mt-4">
+                        <small class="text-muted">Non hai un account? <a href="{{ url_for('auth.register') }}">Registrati ora</a>.</small>
+                    </div>
                 </div>
             </div>
         </div>

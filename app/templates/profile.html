@@ -1,28 +1,32 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Profilo di {{ user.username }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-4">
+<div class="container my-5 pt-5">
 
     <!-- ======================= HEADER DEL PROFILO ======================= -->
-    <div class="card shadow-sm mb-4 profile-header-card">
-        <div class="card-body">
+    <div class="card shadow-lg mb-4 profile-header-card border-0">
+        <div class="card-body p-4">
             <div class="row align-items-center">
                 <div class="col-md-3 text-center">
-                    <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}" class="rounded-circle img-fluid border border-3" alt="Immagine di profilo" style="width: 150px; height: 150px; object-fit: cover;">
+                    <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}" class="rounded-circle img-fluid border border-3 border-light" alt="Immagine di profilo" style="width: 150px; height: 150px; object-fit: cover;">
                 </div>
                 <div class="col-md-6">
                     <h1 class="display-5 fw-bold mb-0">{{ user.username }}</h1>
-                    <span class="badge bg-primary fs-6">{{ user.title }}</span>
+                    {% if user.title %}
+                    <span class="badge bg-primary fs-6 fw-normal">{{ user.title }}</span>
+                    {% endif %}
                     <p class="text-muted mt-2">
                         <i class="bi bi-geo-alt-fill"></i> {{ user.city or 'Città non specificata' }}
-                        <span class="mx-2">|</span>
+                        <span class="mx-2 d-none d-md-inline">|</span>
+                        <br class="d-md-none">
                         <i class="bi bi-calendar-plus"></i> Iscritto dal: {{ user.created_at.strftime('%d %B %Y') }}
                     </p>
                     <div class="d-flex mt-3">
                         <div class="me-4"><strong>{{ followers_count }}</strong> Follower</div>
-                        <div><strong>{{ followed_count }}</strong> Seguiti</div>
+                        <div><strong>{{ followed_count }}</strong> Following</div>
                     </div>
                 </div>
                 <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
@@ -42,18 +46,10 @@
 
     <!-- ======================= NAVIGAZIONE A SCHEDE (TABS) ======================= -->
     <ul class="nav nav-pills nav-fill mb-4" id="profileTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Panoramica</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab">Attività</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">Contenuti Creati</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="community-tab" data-bs-toggle="tab" data-bs-target="#community" type="button" role="tab">Community</button>
-        </li>
+        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Panoramica</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#activities" type="button" role="tab">Attività</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">Contenuti</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#community" type="button" role="tab">Community</button></li>
     </ul>
 
     <!-- ======================= CONTENUTO DELLE SCHEDE ======================= -->
@@ -61,231 +57,99 @@
 
         <!-- ### SCHEDA 1: PANORAMICA ### -->
         <div class="tab-pane fade show active" id="overview" role="tabpanel">
-            
-            <!-- Barra del Prestigio -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Progresso Nobiliare</h5>
-                    {# Incolla qui il tuo codice per la barra del prestigio, è già corretto #}
-                    {% set data = namespace(next_title_name='Massimo Grado', next_title_threshold=user.prestige, found=false) %}
-                    {% for threshold, title_name in TITLES %}
-                        {% if threshold > user.prestige and not data.found %}
-                            {% set data.next_title_name = title_name %}
-                            {% set data.next_title_threshold = threshold %}
-                            {% set data.found = true %}
-                        {% endif %}
-                    {% endfor %}
-                    <p class="text-muted mb-1">Prossimo Titolo: <strong>{{ data.next_title_name }}</strong></p>
-                    <div class="progress" style="height: 20px;">
-                        {% set progress_percent = ((user.prestige / data.next_title_threshold) * 100) if data.next_title_threshold > 0 and data.next_title_threshold != user.prestige else 100 %}
-                        <div class="progress-bar" role="progressbar" style="width: {{ progress_percent }}%;" aria-valuenow="{{ user.prestige }}" aria-valuemin="0" aria-valuemax="{{ data.next_title_threshold }}">{{ user.prestige }} / {{ data.next_title_threshold if data.next_title_threshold != user.prestige else user.prestige }} Prestigio</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Statistiche -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Statistiche Riepilogative</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-primary">{{ "%.2f"|format(total_distance) }} km</h5><small class="text-muted">Distanza Totale</small></div>
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-success">{{ total_activities }}</h5><small class="text-muted">Attività</small></div>
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-info">{{ total_routes_created }}</h5><small class="text-muted">Percorsi Creati</small></div>
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-warning">{{ total_records_held }}</h5><small class="text-muted">Record Detenuti</small></div>
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-secondary">{{ followers_count }}</h5><small class="text-muted">Follower</small></div>
-                        <div class="col-6 col-md-4 mb-3"><h5 class="text-secondary">{{ followed_count }}</h5><small class="text-muted">Seguiti</small></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Badge -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">I Miei Badge</h5>
-                </div>
-                <div class="card-body">
-                    {# Incolla qui il tuo codice per i badge #}
-                    {% if user.user_badges.count() > 0 %}
-                        <div class="d-flex flex-wrap justify-content-center">
-                            {% for user_badge in user.user_badges %}
-                                <div class="text-center m-2 p-2 border rounded" style="width: 120px;">
-                                    <img src="{{ url_for('static', filename='badges/' + user_badge.badge.image_url) }}" class="img-fluid mb-1" alt="{{ user_badge.badge.name }}" style="width: 60px; height: 60px; object-fit: contain;">
-                                    <p class="fw-bold mb-0 small">{{ user_badge.badge.name }}</p>
-                                    <small class="text-muted">{{ user_badge.awarded_at.strftime('%d/%m/%Y') }}</small>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-center text-muted mt-3">Ancora nessun badge ottenuto.</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Scommesse -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">💰 Resoconto Scommesse</h5>
-                </div>
-                <div class="card-body">
-                    <!-- Tab Navigation -->
-                    <ul class="nav nav-tabs mb-3" id="betsTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
-                                ⏳ Attive ({{ (bets_won|selectattr('status', 'equalto', 'pending')|list|length) + (bets_lost|selectattr('status', 'equalto', 'pending')|list|length) }})
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
-                                📚 Storico ({{ (bets_won|selectattr('status', 'equalto', 'paid')|list|length) + (bets_lost|selectattr('status', 'equalto', 'paid')|list|length) }})
-                            </button>
-                        </li>
-                    </ul>
-
-                    <!-- Tab Content -->
-                    <div class="tab-content" id="betsTabContent">
-                        <!-- TAB ATTIVE -->
-                        <div class="tab-pane fade show active" id="active" role="tabpanel">
-                            <div class="row text-center">
-                                <div class="col-md-4 mb-3">
-                                    <h6>🍺 Ti Devono</h6>
-                                    {% set pending_won = bets_won|selectattr('status', 'equalto', 'pending')|list %}
-                                    <span class="badge bg-success fs-6">{{ pending_won|length }}</span>
-                                    <div class="mt-2">
-                                        {% for bet in pending_won %}
-                                        <small class="d-block text-muted border-bottom py-1">
-                                            <strong>{{ bet.bet_value }}</strong> da <a href="{{ url_for('main.user_profile', user_id=bet.loser.id) }}">{{ bet.loser.username }}</a>
-                                        </small>
-                                        {% else %}
-                                        <small class="text-muted">Nessuna scommessa attiva</small>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <h6>💸 Devi Pagare</h6>
-                                    {% set pending_lost = bets_lost|selectattr('status', 'equalto', 'pending')|list %}
-                                    <span class="badge bg-danger fs-6">{{ pending_lost|length }}</span>
-                                    <div class="mt-2">
-                                        {% for bet in pending_lost %}
-                                        <small class="d-block text-muted border-bottom py-1">
-                                            <strong>{{ bet.bet_value }}</strong> a <a href="{{ url_for('main.user_profile', user_id=bet.winner.id) }}">{{ bet.winner.username }}</a>
-                                            <a href="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}" class="badge bg-primary text-decoration-none" onclick="return confirm('Segnare come pagata?')">Paga</a>
-                                        </small>
-                                        {% else %}
-                                        <small class="text-muted">Nessun debito attivo</small>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <h6>⚖️ Saldo Attivo</h6>
-                                    {% set active_balance = pending_won|length - pending_lost|length %}
-                                    <span class="badge bg-{{ 'primary' if active_balance >= 0 else 'danger' }} fs-6">{{ active_balance }}</span>
-                                    <div class="mt-2">
-                                        <small class="text-muted">
-                                            {% if active_balance > 0 %}🎉 Sei in credito!
-                                            {% elif active_balance < 0 %}💸 Sei in debito!
-                                            {% else %}⚖️ In pari
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TAB STORICO -->
-                        <div class="tab-pane fade" id="history" role="tabpanel">
-                            <div class="row text-center">
-                                <div class="col-md-6">
-                                    <h6>✅ Riscosse</h6>
-                                    {% for bet in bets_won|selectattr('status', 'equalto', 'paid')|list %}
-                                        <small class="d-block text-muted border-bottom py-1">{{ bet.bet_value }} da {{ bet.loser.username }}</small>
-                                    {% else %}
-                                        <small class="text-muted">Nessuna scommessa riscossa</small>
-                                    {% endfor %}
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>💳 Pagate</h6>
-                                    {% for bet in bets_lost|selectattr('status', 'equalto', 'paid')|list %}
-                                        <small class="d-block text-muted border-bottom py-1">{{ bet.bet_value }} a {{ bet.winner.username }}</small>
-                                    {% else %}
-                                        <small class="text-muted">Nessuna scommessa pagata</small>
-                                    {% endfor %}
-                                </div>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title">Progresso Nobiliare</h5>
+                            {% set data = namespace(next_title_name='Massimo Grado', next_title_threshold=user.prestige, found=false) %}
+                            {% for threshold, title_name in TITLES %}{% if threshold > user.prestige and not data.found %}{% set data.next_title_name = title_name %}{% set data.next_title_threshold = threshold %}{% set data.found = true %}{% endif %}{% endfor %}
+                            <p class="text-muted mb-1">Prossimo Titolo: <strong>{{ data.next_title_name }}</strong></p>
+                            <div class="progress" style="height: 20px;">
+                                {% set progress_percent = ((user.prestige / data.next_title_threshold) * 100) if data.next_title_threshold > 0 and data.next_title_threshold != user.prestige else 100 %}
+                                <div class="progress-bar" role="progressbar" style="width: {{ progress_percent }}%;" aria-valuenow="{{ user.prestige }}" aria-valuemin="0" aria-valuemax="{{ data.next_title_threshold }}">{{ user.prestige }} / {{ data.next_title_threshold if data.next_title_threshold != user.prestige else user.prestige }} Prestigio</div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Statistiche Totali -->
-                    <div class="card-footer text-center small">
-                        <div class="row">
-                            <div class="col-4 border-end">Vinte: <strong class="text-success">{{ bets_won|length }}</strong></div>
-                            <div class="col-4 border-end">Perse: <strong class="text-danger">{{ bets_lost|length }}</strong></div>
-                            <div class="col-4">Totali: <strong>{{ bets_won|length + bets_lost|length }}</strong></div>
+                </div>
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white"><h5 class="mb-0">Statistiche Riepilogative</h5></div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-primary">{{ "%.2f"|format(total_distance) }} km</h5><small class="text-muted">Distanza Totale</small></div>
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-success">{{ total_activities }}</h5><small class="text-muted">Attività</small></div>
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-info">{{ total_routes_created }}</h5><small class="text-muted">Percorsi Creati</small></div>
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-warning">{{ total_records_held }}</h5><small class="text-muted">Record Detenuti</small></div>
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-secondary">{{ followers_count }}</h5><small class="text-muted">Follower</small></div>
+                                <div class="col-6 col-md-4 mb-3"><h5 class="text-secondary">{{ followed_count }}</h5><small class="text-muted">Following</small></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-</div>
+                 <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white"><h5 class="mb-0">💰 Resoconto Scommesse</h5></div>
+                        <div class="card-body">
+                           <div class="row text-center">
+                                <div class="col-4 border-end"><h6>Vinte</h6><span class="badge bg-success fs-6">{{ bets_won|length }}</span></div>
+                                <div class="col-4 border-end"><h6>Perse</h6><span class="badge bg-danger fs-6">{{ bets_lost|length }}</span></div>
+                                <div class="col-4"><h6>In Sospeso</h6><span class="badge bg-warning text-dark fs-6">{{ bets_lost|selectattr('status', 'equalto', 'pending')|list|length }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ### SCHEDA 2: ATTIVITÀ ### -->
         <div class="tab-pane fade" id="activities" role="tabpanel">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Attività Recenti</h5>
-                    {# Incolla qui il tuo codice per la lista delle attività #}
-                    <div class="list-group">
-                        {% for activity in user_activities %}
-                            <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">Attività su: {{ activity.route_activity.name }}</h6>
-                                    <small>{{ activity.created_at.strftime('%d/%m/%Y') }}</small>
-                                </div>
-                                <p class="mb-1 small">Distanza: <strong>{{ "%.2f"|format(activity.distance) }} km</strong> | Tempo: <strong>{{ "%02d:%02d:%02d"|format(activity.duration // 3600, (activity.duration % 3600) // 60, activity.duration % 60) }}</strong></p>
-                            </a>
-                        {% else %}
-                            <p class="text-muted">Nessuna attività registrata.</p>
-                        {% endfor %}
-                    </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white"><h5 class="mb-0">Attività Recenti</h5></div>
+                <div class="list-group list-group-flush">
+                    {% for activity in user_activities %}
+                        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ activity.route_activity.name if activity.route_activity else 'Attività Manuale' }}</h6>
+                                <small>{{ activity.created_at.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <p class="mb-1 small">Distanza: <strong>{{ "%.2f"|format(activity.distance) }} km</strong> | Tempo: <strong>{{ "%02d:%02d:%02d"|format(activity.duration // 3600, (activity.duration % 3600) // 60, activity.duration % 60) }}</strong></p>
+                        </a>
+                    {% else %}
+                        <div class="list-group-item text-muted">Nessuna attività registrata.</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
         
         <!-- ### SCHEDA 3: CONTENUTI CREATI ### -->
         <div class="tab-pane fade" id="content" role="tabpanel">
-            <ul class="nav nav-tabs mb-3" id="contentSubTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="routes-tab" data-bs-toggle="tab" data-bs-target="#routes" type="button">Percorsi Creati ({{ total_routes_created }})</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button">Post Pubblici ({{ user_posts|length }})</button>
-                </li>
-            </ul>
-            <div class="tab-content" id="contentSubTabContent">
-                <div class="tab-pane fade show active" id="routes" role="tabpanel">
-                    <div class="card card-body border-top-0">
-                        {# Incolla qui il tuo codice per i percorsi creati #}
-                        <div class="list-group">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0">Percorsi Creati ({{ total_routes_created }})</h5></div>
+                        <div class="list-group list-group-flush">
                             {% for route in user.routes.order_by(Route.created_at.desc()).all() %}
                                 <a href="{{ url_for('main.route_detail', route_id=route.id) }}" class="list-group-item list-group-item-action">
                                     {{ route.name }} - <small class="text-muted">{{ "%.2f"|format(route.distance_km) }} km</small>
                                 </a>
                             {% else %}
-                                <p class="text-muted">Nessun percorso creato.</p>
+                                <div class="list-group-item text-muted">Nessun percorso creato.</div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="posts" role="tabpanel">
-                    <div class="card card-body border-top-0">
-                        {# Riusiamo il nostro centralino per i post #}
+                <div class="col-lg-6">
+                     <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white"><h5 class="mb-0">Post Pubblici ({{ user_posts|length }})</h5></div>
                         <div class="list-group list-group-flush">
                             {% for item in user_posts %}
-                                {% include 'partials/_feed_item.html' %}
+                                <a href="{{ url_for('main.post_detail', post_id=item.id) }}" class="list-group-item list-group-item-action">
+                                    {{ item.content|striptags|truncate(80) }}
+                                    <small class="d-block text-muted">{{ item.created_at.strftime('%d/%m/%Y') }}</small>
+                                </a>
                             {% else %}
-                                <p class="text-muted">Nessun post pubblico creato.</p>
+                                <div class="list-group-item text-muted">Nessun post pubblico creato.</div>
                             {% endfor %}
                         </div>
                     </div>
@@ -295,34 +159,20 @@
 
         <!-- ### SCHEDA 4: COMMUNITY ### -->
         <div class="tab-pane fade" id="community" role="tabpanel">
-             <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Gruppi a cui partecipa ({{ user_groups|length }})</h5>
-                    <div class="list-group">
-                        {% for group in user_groups %}
-                            <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
-                                <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ group.name }}">
-                                <span>{{ group.name }}</span>
-                            </a>
-                        {% else %}
-                            <p class="text-muted">L'utente non partecipa a nessun gruppo.</p>
-                        {% endfor %}
-                    </div>
+             <div class="card shadow-sm border-0">
+                <div class="card-header bg-white"><h5 class="mb-0">Gruppi a cui partecipa ({{ user_groups|length }})</h5></div>
+                <div class="list-group list-group-flush">
+                    {% for group in user_groups %}
+                        <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ group.name }}">
+                            <span class="fw-semibold">{{ group.name }}</span>
+                        </a>
+                    {% else %}
+                        <div class="list-group-item text-muted">L'utente non partecipa a nessun gruppo.</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-    {{ super() }}
-    <script>
-        // Inizializza i tooltip di Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
-    </script>
 {% endblock %}

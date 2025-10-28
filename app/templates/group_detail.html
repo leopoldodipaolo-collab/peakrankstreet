@@ -1,16 +1,19 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}{{ group.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <!-- Header del Gruppo -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-lg mb-4 border-0">
         <div class="card-body p-4">
-            <div class="d-flex align-items-center">
-                <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" alt="{{ group.name }}" class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;">
-                <div class="flex-grow-1">
-                    <h1 class="mb-1">{{ group.name }}</h1>
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" alt="{{ group.name }}" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                </div>
+                <div class="col-md-7">
+                    <h1 class="fw-bold mb-1">{{ group.name }}</h1>
                     <p class="text-muted mb-2">
                         <i class="bi bi-geo-alt-fill"></i> {{ group.city or 'Globale' }} 
                         <span class="mx-2">|</span> 
@@ -19,79 +22,105 @@
                     <p class="mb-0">{{ group.description }}</p>
                 </div>
                 
-                <!-- Pulsanti Azione -->
-                <div class="ms-auto">
+                <div class="col-md-3 text-center text-md-end mt-3 mt-md-0">
                     {% if is_owner %}
-                        <a href="{{ url_for('main.manage_group', group_id=group.id) }}" class="btn btn-secondary">Gestisci Gruppo</a>
+                        <a href="{{ url_for('main.manage_group', group_id=group.id) }}" class="btn btn-secondary"><i class="bi bi-gear-fill me-1"></i> Gestisci Gruppo</a>
                     {% elif is_member %}
                         <form action="{{ url_for('main.leave_group', group_id=group.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline-danger">Abbandona Gruppo</button>
+                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Sei sicuro di voler abbandonare questo gruppo?');"><i class="bi bi-door-open-fill me-1"></i> Abbandona</button>
                         </form>
                     {% else %}
                         <form action="{{ url_for('main.join_group', group_id=group.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-primary">Iscriviti al Gruppo</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Iscriviti al Gruppo</button>
                         </form>
                     {% endif %}
                 </div>
             </div>
         </div>
-        
     </div>
 
-     {# --- NUOVA SEZIONE: EVENTI IMMINENTI --- #}
-        <div class="card shadow-sm mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Eventi Imminenti</h5>
-            </div>
-            <div class="list-group list-group-flush">
-                {% for event in upcoming_events %}
-                    <a href="{{ url_for('main.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
-                        <div class="fw-bold">{{ event.name }}</div>
-                        <small class="text-muted">{{ event.event_time.strftime('%d %B %Y - %H:%M') }}</small>
-                    </a>
-                {% else %}
-                    <div class="list-group-item">
-                        <p class="text-muted mb-0">Nessun evento imminente in programma.</p>
+    <!-- Navigazione a Schede (Tabs) -->
+    <ul class="nav nav-pills nav-fill mb-4" id="groupTab" role="tablist">
+        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#feed" type="button" role="tab">Bacheca</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab">Eventi</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab">Membri</button></li>
+    </ul>
+
+    <!-- Contenuto delle Schede -->
+    <div class="tab-content" id="groupTabContent">
+        
+        <!-- SCHEDA 1: BACHECA -->
+        <div class="tab-pane fade show active" id="feed" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    {% if is_member %}
+                        <form action="{{ url_for('main.create_post') }}" method="POST" class="mb-4">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="group_id" value="{{ group.id }}">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Scrivi qualcosa per il gruppo..." required></textarea>
+                            <button type="submit" class="btn btn-primary mt-2">Pubblica</button>
+                        </form>
+                        <hr>
+                    {% endif %}
+                    
+                    <div class="group-feed-container">
+                        {% for item in group_posts %}
+                            {% include 'partials/_feed_item.html' %}
+                        {% else %}
+                            <div class="text-center text-muted p-5">
+                                <i class="bi bi-chat-quote-fill fs-1"></i>
+                                <p class="mt-2">La bacheca è ancora vuota. Sii il primo a scrivere qualcosa!</p>
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
             </div>
         </div>
 
-    <!-- Contenuto Principale: Bacheca e Membri -->
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="mb-0">Bacheca del Gruppo</h5>
-            {# --- AGGIUNGI PULSANTE QUI --- #}
-            {% if is_member %}
-                <a href="{{ url_for('main.create_event', group_id=group.id) }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-calendar-plus me-1"></i> Crea Evento
-                </a>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            {# Aggiungiamo un box per creare post RAPIDAMENTE (opzionale ma consigliato) #}
-            {% if is_member %}
-                <form action="{{ url_for('main.create_post') }}" method="POST" class="mb-4">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="group_id" value="{{ group.id }}">
-                    <textarea name="content" class="form-control" rows="3" placeholder="Scrivi qualcosa per il gruppo..."></textarea>
-                    <button type="submit" class="btn btn-primary mt-2">Pubblica</button>
-                </form>
-                <hr>
-            {% endif %}
-
-            {# Visualizziamo i post del gruppo #}
-            <div class="list-group list-group-flush">
-                {% for item in group_posts %}
-                    {# Riusiamo il nostro magico centralino! #}
-                    {% include 'partials/_feed_item.html' %}
-                {% else %}
-                    <p class="text-muted">Nessun post ancora. Sii il primo a scrivere qualcosa!</p>
-                {% endfor %}
+        <!-- SCHEDA 2: EVENTI -->
+        <div class="tab-pane fade" id="events" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Eventi del Gruppo</h5>
+                    {% if is_member %}
+                        <a href="{{ url_for('main.create_event', group_id=group.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-calendar-plus me-1"></i> Crea Evento</a>
+                    {% endif %}
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for event in upcoming_events %}
+                        <a href="{{ url_for('main.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">{{ event.name }}</span>
+                                <small class="text-muted">{{ event.event_time.strftime('%a %d %b %Y - %H:%M') }}</small>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="list-group-item text-center text-muted p-4">Nessun evento imminente in programma.</div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
+
+        <!-- SCHEDA 3: MEMBRI -->
+        <div class="tab-pane fade" id="members" role="tabpanel">
+             <div class="card shadow-sm border-0">
+                <div class="card-header bg-white"><h5 class="mb-0"><i class="bi bi-people-fill me-2 text-primary"></i>Membri ({{ group.members.count() }})</h5></div>
+                <div class="list-group list-group-flush">
+                    {% for member in group.members %}
+                        <a href="{{ url_for('main.user_profile', user_id=member.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='profile_pics/' + member.profile_image) }}" alt="{{ member.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                            <span class="fw-semibold">{{ member.username }}</span>
+                             {% if member.id == group.owner_id %}
+                                <span class="badge bg-primary ms-auto">Admin</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

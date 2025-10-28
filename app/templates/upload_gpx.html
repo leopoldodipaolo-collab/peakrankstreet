@@ -1,41 +1,39 @@
-{% extends "index.html" %} {# Assumendo che index.html sia il tuo template base corretto #}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 {% block title %}Carica GPX - PeakRankStreet{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg border-success-custom">
-                <div class="card-header bg-success-custom text-white text-center">
-                    <h3 class="mb-0"><i class="bi bi-upload me-2"></i>Carica il tuo file GPX</h3>
-                    <p class="mb-0 small">Traccia la tua prossima avventura!</p>
+            <div class="card shadow-lg border-primary">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h1 class="h3 mb-0"><i class="bi bi-upload me-2"></i>Carica il tuo file GPX</h1>
                 </div>
-                <div class="card-body p-4">
-                    {# Form per caricare il file GPX #}
+                <div class="card-body p-4 p-md-5">
                     <form id="gpxUploadForm" action="{{ url_for('main.upload_gpx') }}" method="post" enctype="multipart/form-data">
                         
-                        {# --- Gestione CSRF Token Manuale --- #}
-                        {# Questo campo DEVE esistere se la tua app usa CSRF #}
+                        {# Campo CSRF Token essenziale per la sicurezza #}
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
                         
-                        <div class="mb-4">
-                            <label for="gpxFile" class="form-label fw-bold">Seleziona il tuo file GPX:</label>
+                        <div class="mb-4 text-center">
+                            <label for="gpxFile" class="form-label fs-5">Seleziona il tuo file GPX:</label>
                             <input class="form-control form-control-lg" type="file" id="gpxFile" name="gpx_file" accept=".gpx" required>
                             <div class="form-text mt-2">
-                                Assicurati che il file sia in formato .gpx. Puoi usare app come Strava, Garmin Connect, Komoot, ecc. per esportare i tuoi tracciati.
+                                Esporta i tracciati da Strava, Garmin, Komoot, ecc.
                             </div>
                         </div>
                         
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-lg btn-success-custom mt-3">
+                            <button type="submit" class="btn btn-lg btn-primary mt-3">
+                                <span id="uploadSpinner" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
                                 Carica e Analizza
-                                <span id="uploadSpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
                             </button>
                         </div>
                     </form>
                 </div>
-                 <div class="card-footer text-center bg-light-custom">
-                    <p class="mb-0 small text-muted">Una volta caricato, potrai rivedere i dettagli, salvarlo come attività o percorso, e poi decidere se creare una sfida!</p>
+                 <div class="card-footer text-center bg-light">
+                    <p class="mb-0 small text-muted">Dopo il caricamento, potrai rivedere i dettagli e salvare il tracciato come attività o come nuovo percorso.</p>
                 </div>
             </div>
         </div>
@@ -44,23 +42,28 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('gpxUploadForm');
-        const fileInput = document.getElementById('gpxFile');
-        const submitButton = form.querySelector('button[type="submit"]');
-        const spinner = document.getElementById('uploadSpinner');
+        if (form) {
+            const fileInput = document.getElementById('gpxFile');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const spinner = document.getElementById('uploadSpinner');
 
-        form.addEventListener('submit', function(event) {
-            if (!fileInput.value) {
-                alert('Per favore, seleziona un file GPX prima di procedere.');
-                event.preventDefault();
-                return;
-            }
-            
-            submitButton.disabled = true;
-            spinner.style.display = 'inline-block';
-        });
+            form.addEventListener('submit', function(event) {
+                // Semplice validazione per assicurarsi che un file sia stato scelto
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Per favore, seleziona un file GPX prima di procedere.');
+                    event.preventDefault(); // Blocca l'invio del form
+                    return;
+                }
+                
+                // Disabilita il pulsante e mostra lo spinner per evitare doppi click
+                submitButton.disabled = true;
+                spinner.style.display = 'inline-block';
+            });
+        }
     });
 </script>
 {% endblock %}

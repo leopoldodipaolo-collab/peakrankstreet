@@ -1,100 +1,112 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
 {% block title %}Classifica - Distanza Totale{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left-circle me-1"></i> Torna alla Home
-    </a>
-</div>
-
-<div class="card shadow-sm rounded-4">
-    <div class="card-header bg-primary text-white text-center rounded-top-4">
-        <h2 class="mb-0">
-            <i class="bi bi-star-fill me-2"></i>Classifica Generale: Distanza Totale
-        </h2>
+<div class="container mt-5 pt-5">
+    <div class="mb-4">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left-circle me-1"></i> Torna alla Home
+        </a>
     </div>
-    <div class="card-body">
-        {% if leaderboard_data %}
-        
-        <!-- Desktop Table -->
-        <div class="d-none d-md-block table-responsive">
-            <table class="table table-hover align-middle mt-3">
-                <thead class="table-primary text-center">
-                    <tr>
-                        <th>#</th>
-                        <th>Atleta</th>
-                        <th>Distanza Totale (km)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in leaderboard_data %}
-                    <tr class="{% if loop.index <= 3 %}table-warning{% endif %}">
-                        <td class="text-center">
-                            {% if loop.index == 1 %}
-                                <i class="bi bi-trophy-fill text-warning"></i>
-                            {% elif loop.index == 2 %}
-                                <i class="bi bi-trophy-fill text-secondary"></i>
-                            {% elif loop.index == 3 %}
-                                <i class="bi bi-trophy-fill text-dark"></i>
-                            {% else %}
-                                {{ loop.index }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                                     class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                                <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" 
-                                   class="text-decoration-none text-primary fw-semibold">
-                                    {{ entry.username }}
-                                    <span class="badge bg-secondary fw-normal ms-1">{{ entry.user_object.title }}</span> 
-                                </a>
-                            </div>
-                        </td>
-                        <td class="text-center fw-bold">{{ "%.2f"|format(entry.total_distance) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+    <div class="card shadow-sm rounded-4">
+        <div class="card-header bg-primary text-white text-center rounded-top-4">
+            <h2 class="mb-0">
+                <i class="bi bi-star-fill me-2"></i>Classifica Generale: Distanza Totale
+            </h2>
         </div>
-        
-        <!-- Mobile Cards -->
-        <div class="d-md-none">
-            {% for entry in leaderboard_data %}
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        {% if loop.index == 1 %}
-                            <i class="bi bi-trophy-fill text-warning fs-3 me-2"></i>
-                        {% elif loop.index == 2 %}
-                            <i class="bi bi-trophy-fill text-secondary fs-3 me-2"></i>
-                        {% elif loop.index == 3 %}
-                            <i class="bi bi-trophy-fill text-dark fs-3 me-2"></i>
-                        {% else %}
-                            <span class="fw-bold me-2">{{ loop.index }}</span>
-                        {% endif %}
-                        <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                             class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                        <div>
-                            <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="text-decoration-none text-primary fw-semibold">
-                                {{ entry.username }}
-                            </a>
-                        </div>
-                    </div>
-                    <div class="fw-bold">{{ "%.2f"|format(entry.total_distance) }} km</div>
-                </div>
+        <div class="card-body">
+            {% if leaderboard_data %}
+            
+            <!-- Desktop Table -->
+            <div class="d-none d-md-block table-responsive">
+                <table class="table table-hover align-middle mt-3">
+                    <thead class="table-primary text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Atleta</th>
+                            <th>Distanza Totale (km)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in leaderboard_data %}
+                        <tr class="{% if loop.index <= 3 %}table-warning{% endif %}">
+                            <td class="text-center">
+                                {% if loop.index == 1 %}
+                                    <i class="bi bi-trophy-fill text-warning"></i>
+                                {% elif loop.index == 2 %}
+                                    <i class="bi bi-trophy-fill" style="color: silver;"></i>
+                                {% elif loop.index == 3 %}
+                                    <i class="bi bi-trophy-fill" style="color: #cd7f32;"></i>
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
+                                         class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
+                                    <div>
+                                        <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" 
+                                           class="text-decoration-none text-primary fw-semibold">
+                                            {{ entry.username }}
+                                        </a>
+                                        {# --- CORREZIONE QUI --- #}
+                                        {# Mostra il badge solo se il titolo esiste #}
+                                        {% if entry.title %}
+                                            <span class="badge bg-secondary fw-normal ms-1">{{ entry.title }}</span> 
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center fw-bold">{{ "%.2f"|format(entry.total_distance) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            {% endfor %}
+            
+            <!-- Mobile Cards -->
+            <div class="d-md-none">
+                {% for entry in leaderboard_data %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            {% if loop.index == 1 %}
+                                <i class="bi bi-trophy-fill text-warning fs-3 me-2"></i>
+                            {% elif loop.index == 2 %}
+                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: silver;"></i>
+                            {% elif loop.index == 3 %}
+                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: #cd7f32;"></i>
+                            {% else %}
+                                <span class="fw-bold fs-4 me-3">{{ loop.index }}</span>
+                            {% endif %}
+                            <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
+                                 class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
+                            <div>
+                                <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="text-decoration-none text-primary fw-semibold">
+                                    {{ entry.username }}
+                                </a>
+                                {# --- CORREZIONE ANCHE QUI PER CONSISTENZA --- #}
+                                {% if entry.title %}
+                                    <div><span class="badge bg-secondary fw-normal">{{ entry.title }}</span></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="fw-bold">{{ "%.2f"|format(entry.total_distance) }} km</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-info-circle display-4 mb-3"></i>
+                <p>Nessuna distanza registrata.<br>Inizia a correre e scala la classifica!</p>
+            </div>
+            {% endif %}
         </div>
-        
-        {% else %}
-        <div class="text-center py-5 text-muted">
-            <i class="bi bi-info-circle display-4 mb-3"></i>
-            Nessuna distanza registrata.<br>Inizia a correre e scala la classifica!
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

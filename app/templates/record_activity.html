@@ -1,82 +1,84 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Registra Attività{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-3">&larr; Torna alla Home</a>
+<div class="container my-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h2 class="mb-0 h4"><i class="bi bi-play-circle-fill me-2"></i>Registra Nuova Attività</h2>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <p class="lead text-center mb-4">Carica il tuo file GPX e associalo a una sfida o a un percorso per registrare il tuo tempo.</p>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Registra Nuova Attività</h2>
-            </div>
-            <div class="card-body">
-                <p class="lead mb-4">Associa la tua attività a una sfida esistente o direttamente a un percorso caricando un file GPX.</p>
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate id="recordActivityForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate id="recordActivityForm">
-                    <!-- ✅ CSRF token corretto -->
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div class="mb-3">
-                        <label for="challenge_id" class="form-label">Seleziona una Sfida (opzionale):</label>
-                        <select id="challenge_id" name="challenge_id" class="form-select">
-                            <option value="">-- Nessuna Sfida Selezionata --</option>
-                            {% for challenge in challenges %}
-                                <option value="{{ challenge.id }}"
-                                        {% if pre_selected_challenge_id == challenge.id %}selected{% endif %}
-                                        data-route-id="{{ challenge.route_info.id }}">
-                                    {{ challenge.name }} (Percorso: {{ challenge.route_info.name }}) - Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}
-                                </option>
-                            {% else %}
-                                <option value="" disabled>Nessuna sfida attiva disponibile.</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Se selezioni una sfida, l'attività verrà associata al percorso della sfida.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="route_id" class="form-label">Seleziona un Percorso (se non è una sfida):</label>
-                        <select id="route_id" name="route_id" class="form-select">
-                            <option value="">-- Nessun Percorso Selezionato --</option>
-                            {% for route in routes %}
-                                <option value="{{ route.id }}" {% if pre_selected_route_id == route.id %}selected{% endif %}>
-                                    {{ route.name }} ({{ route.activity_type }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Seleziona un percorso qui solo se la tua attività non è parte di una sfida.</div>
-                        <div class="invalid-feedback" id="route-challenge-feedback">
-                            Devi selezionare una sfida OPPURE un percorso.
+                        <div class="mb-3">
+                            <label for="challenge_id" class="form-label"><strong>Opzione A:</strong> Seleziona una Sfida</label>
+                            <select id="challenge_id" name="challenge_id" class="form-select">
+                                <option value="">-- Nessuna Sfida Selezionata --</option>
+                                {% for challenge in challenges %}
+                                    <option value="{{ challenge.id }}"
+                                            {% if pre_selected_challenge_id == challenge.id %}selected{% endif %}>
+                                        {{ challenge.name }} (Percorso: {{ challenge.route_info.name }})
+                                    </option>
+                                {% else %}
+                                    <option value="" disabled>Nessuna sfida attiva disponibile.</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Selezionando una sfida, il percorso verrà impostato automaticamente.</div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="activity_type" class="form-label">Tipo di Attività:</label>
-                        <select id="activity_type" name="activity_type" class="form-select" required>
-                            <option value="Corsa">Corsa</option>
-                            <option value="Bici">Bici</option>
-                            <option value="Hike">Hike</option>
-                        </select>
-                        <div class="invalid-feedback">
-                            Per favore, seleziona il tipo di attività.
+                        <div class="text-center my-3 fw-bold text-muted">oppure</div>
+
+                        <div class="mb-3">
+                            <label for="route_id" class="form-label"><strong>Opzione B:</strong> Seleziona un Percorso</label>
+                            <select id="route_id" name="route_id" class="form-select">
+                                <option value="">-- Nessun Percorso Selezionato --</option>
+                                {% for route in routes %}
+                                    <option value="{{ route.id }}" {% if pre_selected_route_id == route.id %}selected{% endif %}>
+                                        {{ route.name }} ({{ route.activity_type }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Seleziona un percorso qui solo se non partecipi a una sfida.</div>
+                            <div class="invalid-feedback" id="route-challenge-feedback">
+                                Devi selezionare una sfida OPPURE un percorso.
+                            </div>
                         </div>
-                    </div>
+                        
+                        <hr class="my-4">
 
-                    <div class="mb-3">
-                        <label for="gpx_file" class="form-label">Carica il tuo file GPX dell'attività:</label>
-                        <input type="file" id="gpx_file" name="gpx_file" accept=".gpx" class="form-control" required>
-                        <div class="invalid-feedback">
-                            Per favore, carica un file GPX.
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="activity_type" class="form-label">Tipo di Attività*</label>
+                                <select id="activity_type" name="activity_type" class="form-select" required>
+                                    <option value="Corsa">Corsa</option>
+                                    <option value="Bici">Bici</option>
+                                    <option value="Hike">Hike</option>
+                                </select>
+                                <div class="invalid-feedback">Seleziona il tipo di attività.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="gpx_file" class="form-label">Carica il tuo file GPX*</label>
+                                <input type="file" id="gpx_file" name="gpx_file" accept=".gpx" class="form-control" required>
+                                <div class="invalid-feedback">Carica un file GPX.</div>
+                            </div>
                         </div>
-                        <div class="form-text">Il tracciato GPS e la distanza verranno verificati per assicurare la corrispondenza con il percorso selezionato.</div>
-                    </div>
+                        <div class="form-text mt-2 text-center">Il tracciato GPS e i dati verranno analizzati per validare l'attività.</div>
 
-                    <button type="submit" class="btn btn-success w-100 mt-4" id="recordActivityButton">
-                        Registra Attività
-                        <span id="recordActivitySpinner" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
-                    </button>
-                </form>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="recordActivityButton">
+                                <span id="recordActivitySpinner" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                Registra Attività
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -90,39 +92,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const challengeSelect = document.getElementById('challenge_id');
     const routeSelect = document.getElementById('route_id');
     const form = document.getElementById('recordActivityForm');
+    
+    if (!form) return;
+
     const recordActivityButton = document.getElementById('recordActivityButton');
     const recordActivitySpinner = document.getElementById('recordActivitySpinner');
 
-    function updateFormValidation() {
+    // Funzione per gestire la logica di abilitazione/disabilitazione
+    function handleSelectChange() {
         const isChallengeSelected = challengeSelect.value !== "";
-        const isRouteSelected = routeSelect.value !== "";
-
         routeSelect.disabled = isChallengeSelected;
-
-        if (isChallengeSelected || isRouteSelected) {
-            challengeSelect.setCustomValidity("");
-            routeSelect.setCustomValidity("");
-        } else {
-            challengeSelect.setCustomValidity("Devi selezionare una sfida o un percorso.");
-            routeSelect.setCustomValidity("Devi selezionare una sfida o un percorso.");
+        if (isChallengeSelected) {
+            routeSelect.value = ""; // Pulisce la selezione del percorso se si sceglie una sfida
         }
     }
 
-    challengeSelect.addEventListener('change', updateFormValidation);
-    routeSelect.addEventListener('change', updateFormValidation);
-    updateFormValidation();
+    // Funzione per la validazione custom
+    function validateSelection() {
+        const isChallengeSelected = challengeSelect.value !== "";
+        const isRouteSelected = routeSelect.value !== "";
+        
+        if (isChallengeSelected || isRouteSelected) {
+            challengeSelect.setCustomValidity("");
+            routeSelect.setCustomValidity("");
+            return true;
+        } else {
+            // Applica il messaggio di errore al primo select per la visualizzazione
+            challengeSelect.setCustomValidity("Devi selezionare una sfida o un percorso.");
+            routeSelect.setCustomValidity("Devi selezionare una sfida o un percorso.");
+            return false;
+        }
+    }
+
+    challengeSelect.addEventListener('change', handleSelectChange);
+    routeSelect.addEventListener('change', handleSelectChange);
+    
+    // Inizializza lo stato all'avvio
+    handleSelectChange();
 
     form.addEventListener('submit', function(event) {
-        updateFormValidation();
-
-        if (!form.checkValidity()) {
+        // Esegui prima la nostra validazione custom
+        if (!validateSelection()) {
             event.preventDefault();
             event.stopPropagation();
+            // Forza la visualizzazione del feedback di validazione
+            form.classList.add('was-validated');
             return;
         }
 
-        recordActivityButton.disabled = true;
-        recordActivitySpinner.style.display = 'inline-block';
+        // Poi, lascia che Bootstrap gestisca il resto
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            // Se tutto è valido, mostra lo spinner
+            recordActivityButton.disabled = true;
+            recordActivitySpinner.style.display = 'inline-block';
+        }
+
+        form.classList.add('was-validated');
     });
 });
 </script>

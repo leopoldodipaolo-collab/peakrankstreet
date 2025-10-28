@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Sala Scommesse{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold"><i class="bi bi-gem me-3"></i>Sala Scommesse</h1>
+        <a href="{{ url_for('main.create_challenge') }}" class="btn btn-warning fw-bold">
+            <i class="bi bi-plus-circle me-1"></i> Lancia una Nuova Sfida
+        </a>
+    </div>
+
+    <!-- Navigazione a Tab -->
+    <ul class="nav nav-pills nav-fill mb-4" id="betsHallTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="my-bets-tab" data-bs-toggle="tab" data-bs-target="#my-bets" type="button" role="tab">Le Mie Scommesse</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="community-bets-tab" data-bs-toggle="tab" data-bs-target="#community-bets" type="button" role="tab">Community</button>
+        </li>
+    </ul>
+
+    <!-- Contenuto delle Tab -->
+    <div class="tab-content" id="betsHallTabContent">
+
+        <!-- ### SCHEDA 1: LE MIE SCOMMESSE ### -->
+        <div class="tab-pane fade show active" id="my-bets" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {# Qui riutilizziamo lo stesso identico codice che avevamo nel profilo utente #}
+                    {# Questo è un caso perfetto per creare una macro o un include in futuro! #}
+                    
+                    <!-- Tab Navigation Interna -->
+                    <ul class="nav nav-tabs mb-3" id="myBetsSubTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#my-active-bets">⏳ Attive</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#my-history-bets">📚 Storico</button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Contenuto Tab Interna -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="my-active-bets" role="tabpanel">
+                            {# Incolla qui il codice del tab "Attive" dalla tua pagina profilo #}
+                            {# ... (con i box "Ti Devono", "Devi Pagare", "Saldo") ... #}
+                        </div>
+                        <div class="tab-pane fade" id="my-history-bets" role="tabpanel">
+                            {# Incolla qui il codice del tab "Storico" dalla tua pagina profilo #}
+                            {# ... (con i box "Riscosse" e "Pagate") ... #}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center small">
+                    {# Incolla qui il codice del footer con le statistiche totali #}
+                </div>
+            </div>
+        </div>
+
+        <!-- ### SCHEDA 2: SCOMMESSE DELLA COMMUNITY ### -->
+        <div class="tab-pane fade" id="community-bets" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Ultime Scommesse Onorate</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for bet in recent_community_bets %}
+                        <div class="list-group-item">
+                            <p class="mb-1">
+                                <i class="bi bi-trophy-fill text-warning me-1"></i>
+                                <a href="{{ url_for('main.user_profile', user_id=bet.winner.id) }}" class="fw-bold text-dark text-decoration-none">{{ bet.winner.username }}</a>
+                                ha vinto <strong>{{ bet.bet_value }}</strong> contro
+                                <a href="{{ url_for('main.user_profile', user_id=bet.loser.id) }}" class="fw-bold text-dark text-decoration-none">{{ bet.loser.username }}</a>.
+                            </p>
+                            <small class="text-muted">
+                                Nella sfida <a href="{{ url_for('main.challenge_detail', challenge_id=bet.challenge.id) }}">'{{ bet.challenge.name }}'</a>
+                                • Onorata il {{ bet.paid_at.strftime('%d %B %Y') }}
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            Nessuna scommessa recente da mostrare.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

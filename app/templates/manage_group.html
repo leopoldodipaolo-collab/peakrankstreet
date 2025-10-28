@@ -1,62 +1,83 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Gestisci {{ group.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
-    <h1 class="mb-4">Gestione Gruppo: {{ group.name }}</h1>
+<div class="container my-5 pt-5">
+    <!-- Intestazione della Pagina -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-pencil-square me-2"></i>Gestione Gruppo: {{ group.name }}</h1>
+        <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Torna al Gruppo
+        </a>
+    </div>
 
-    <div class="row">
+    <div class="row g-4">
         <!-- Colonna Modifica Dettagli -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Modifica Dettagli</h5>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-card-list me-2"></i>Modifica Dettagli</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    {# --- CORREZIONE: Aggiunto enctype per il caricamento di file --- #}
+                    <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="text-center mb-4">
+                            <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" alt="Logo attuale di {{ group.name }}" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profile_image" class="form-label">Cambia Immagine del Gruppo</label>
+                            <input type="file" class="form-control" id="profile_image" name="profile_image">
+                        </div>
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome Gruppo</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ group.name }}">
+                            <input type="text" class="form-control" id="name" name="name" value="{{ form.name.data or group.name }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="description" class="form-label">Descrizione</label>
-                            <textarea class="form-control" id="description" name="description" rows="5">{{ group.description }}</textarea>
+                            <textarea class="form-control" id="description" name="description" rows="5" required>{{ form.description.data or group.description }}</textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="city" class="form-label">Città</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{ group.city }}">
+                            <label for="city" class="form-label">Città (opzionale)</label>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ form.city.data or group.city }}">
                         </div>
-                        {# Aggiungi qui <input type="file"> per l'immagine #}
-                        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
         <!-- Colonna Gestione Membri -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Gestisci Membri ({{ members|length }})</h5>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Gestisci Membri ({{ members|length }})</h5>
                 </div>
                 <div class="list-group list-group-flush">
                     {% for member in members %}
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center">
                                 <img src="{{ url_for('static', filename='profile_pics/' + member.profile_image) }}" alt="{{ member.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
-                                <a href="{{ url_for('main.user_profile', user_id=member.id) }}" class="text-dark text-decoration-none">{{ member.username }}</a>
+                                <a href="{{ url_for('main.user_profile', user_id=member.id) }}" class="text-dark text-decoration-none fw-semibold">{{ member.username }}</a>
                             </div>
                             
                             {% if member.id == group.owner_id %}
-                                <span class="badge bg-primary">Admin</span>
-                            {% else %}
-                                <form action="{{ url_for('main.remove_member', group_id=group.id, user_id=member.id) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler rimuovere questo membro dal gruppo?');">
+                                <span class="badge bg-primary rounded-pill">Admin</span>
+                            {% elif current_user.id == group.owner_id %}
+                                <form action="{{ url_for('main.remove_member', group_id=group.id, user_id=member.id) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler rimuovere {{ member.username }} dal gruppo?');">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">Rimuovi</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash-fill"></i></button>
                                 </form>
                             {% endif %}
                         </div>
+                    {% else %}
+                        <div class="list-group-item text-muted">Questo gruppo non ha ancora membri.</div>
                     {% endfor %}
                 </div>
             </div>

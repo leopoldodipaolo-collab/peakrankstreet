@@ -1,33 +1,54 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Crea Nuovo Evento per {{ group.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-body p-5">
-                    <h1 class="mb-1">Crea un Nuovo Evento</h1>
-                    <p class="text-muted mb-4">Stai organizzando un evento per il gruppo <strong>{{ group.name }}</strong>.</p>
-                    <form method="POST">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h1 class="h3 mb-0"><i class="bi bi-calendar-plus-fill me-2"></i>Crea un Nuovo Evento</h1>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <p class="text-center text-muted mb-4">Stai organizzando un evento per il gruppo <strong>{{ group.name }}</strong>.</p>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome Evento*</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Es. Corsa di gruppo al parco" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-flag-fill"></i></span>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="Es. Corsa di gruppo al parco" required>
+                                <div class="invalid-feedback">Il nome dell'evento è obbligatorio.</div>
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label for="event_time" class="form-label">Data e Ora*</label>
                             <input type="datetime-local" class="form-control" id="event_time" name="event_time" required>
+                            <div class="invalid-feedback">La data e l'ora sono obbligatorie.</div>
                         </div>
+
                         <div class="mb-3">
                             <label for="location" class="form-label">Luogo di Ritrovo</label>
-                            <input type="text" class="form-control" id="location" name="location" placeholder="Es. Ingresso Villa Borghese, lato Pincio">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
+                                <input type="text" class="form-control" id="location" name="location" placeholder="Es. Ingresso Villa Borghese, lato Pincio">
+                            </div>
                         </div>
-                        <div class="mb-3">
+
+                        <div class="mb-4">
                             <label for="description" class="form-label">Descrizione / Dettagli</label>
                             <textarea class="form-control" id="description" name="description" rows="5" placeholder="Dettagli sul percorso, ritmo, equipaggiamento consigliato, etc."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg">Crea Evento</button>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="btn btn-secondary">Annulla</a>
+                            <button type="submit" class="btn btn-primary">Crea Evento</button>
+                        </div>
                     </form>
                 </div>
             </div>

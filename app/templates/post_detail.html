@@ -1,4 +1,5 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {# --- BLOCCHI SEO OTTIMIZZATI --- #}
 {% block title %}{{ post.content|striptags|truncate(60, True) }} - PeakRankStreet{% endblock %}
@@ -6,20 +7,32 @@
 {# --- FINE BLOCCHI SEO --- #}
 
 {% block content %}
-<div class="container mt-5 pt-5">
+<div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card post-detail-card shadow-lg mb-5">
-                <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-chat-dots me-2"></i>Post di {{ post.user.username }}
+
+            <div class="mb-4">
+                <a href="{{ url_for('main.feed') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Torna al Feed
+                </a>
+            </div>
+
+            <div class="card post-detail-card shadow-lg mb-5 border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}">
+                            <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle me-3" alt="Avatar di {{ post.user.username }}" style="width:45px; height:45px; object-fit:cover;">
+                        </a>
+                        <div>
+                            <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="text-dark text-decoration-none fw-bold">{{ post.user.username }}</a>
+                            <div class="text-muted small timeago" datetime="{{ post.created_at.isoformat() }}Z" title="{{ post.created_at.strftime('%d/%m/%Y %H:%M') }}">{{ post.created_at.strftime('%d/%m/%Y') }}</div>
+                        </div>
                     </div>
-                    <div class="text-white-50 small timeago" datetime="{{ post.created_at.isoformat() }}Z">{{ post.created_at.strftime('%d/%m/%Y') }}</div>
                 </div>
                 <div class="card-body">
                     <div class="post-content mb-4 pb-3 border-bottom">
                         {% if post.image_url %}
-                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mb-3" alt="Post Image">
+                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mb-3" alt="Immagine del post">
                         {% endif %}
                         <p class="lead">{{ post.content | safe }}</p>
                         {% if post.post_type == 'link' and post.meta_data and post.meta_data.url %}
@@ -29,24 +42,24 @@
                     
                     <div class="post-actions d-flex justify-content-between align-items-center">
                         <div>
-                            <button class="btn btn-link btn-sm text-decoration-none {% if user_liked_post %}text-danger{% else %}text-muted{% endif %} like-button" data-post-id="{{ post.id }}">
+                            <button class="btn btn-link text-decoration-none {% if user_liked_post %}text-danger{% else %}text-muted{% endif %} like-button" data-post-id="{{ post.id }}">
                                 <i class="bi {% if user_liked_post %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
                                 <span class="like-count">{{ post.likes.count() }}</span> Mi Piace
                             </button>
                             
-                            <a href="#comments-section" class="btn btn-link btn-sm text-decoration-none text-muted">
+                            <a href="#comments-section" class="btn btn-link text-decoration-none text-muted">
                                 <i class="bi bi-chat-dots"></i> <span id="comment-count-link">{{ post.comments.count() }}</span> Commenti
                             </a>
                         </div>
                         <div>
                             <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#shareModal{{ post.id }}">
-                                <i class="bi bi-share"></i> Condividi
+                                <i class="bi bi-share-fill"></i> Condividi
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card-footer" id="comments-section">
+                <div class="card-footer bg-light" id="comments-section">
                     <h5 class="mb-3">
                         Commenti (<span id="comment-count">{{ post.comments.count() }}</span>)
                     </h5>
@@ -77,6 +90,7 @@
     </div>
 </div>
 
+<!-- Share Modal -->
 <div class="modal fade" id="shareModal{{ post.id }}" tabindex="-1" aria-labelledby="shareModalLabel{{ post.id }}" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -88,7 +102,7 @@
                 <p>Copia il link per condividere:</p>
                 <div class="input-group">
                     <input type="text" id="shareLinkInput" class="form-control" value="{{ url_for('main.post_detail', post_id=post.id, _external=True) }}" readonly>
-                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('shareLinkInput').select(); document.execCommand('copy');">Copia</button>
+                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('shareLinkInput').select(); document.execCommand('copy'); this.innerHTML = 'Copiato!';">Copia</button>
                 </div>
             </div>
         </div>
@@ -99,63 +113,61 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Inizializza timeago per le date relative
+    timeago.render(document.querySelectorAll('.timeago'), 'it');
+
     const csrfToken = '{{ csrf_token() }}';
     const mainPostId = {{ post.id }};
 
+    // Gestione unificata degli eventi click sul body
     document.body.addEventListener('click', function(event) {
-
+        
+        // --- GESTIONE LIKE ---
         const likeButton = event.target.closest('.like-button');
         if (likeButton) {
             event.preventDefault();
             const postId = likeButton.dataset.postId;
-            const apiUrl = `/post/${postId}/like`;
-            fetch(apiUrl, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
+            fetch(`/post/${postId}/like`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
                     const icon = likeButton.querySelector('i');
                     const countSpan = likeButton.querySelector('.like-count');
                     countSpan.textContent = data.new_like_count;
-                    if (data.action === 'liked') {
-                        likeButton.classList.remove('text-muted');
-                        likeButton.classList.add('text-danger');
-                        icon.classList.remove('bi-heart');
-                        icon.classList.add('bi-heart-fill');
-                    } else {
-                        likeButton.classList.remove('text-danger');
-                        likeButton.classList.add('text-muted');
-                        icon.classList.remove('bi-heart-fill');
-                        icon.classList.add('bi-heart');
-                    }
+                    likeButton.classList.toggle('text-danger', data.action === 'liked');
+                    likeButton.classList.toggle('text-muted', data.action !== 'liked');
+                    icon.classList.toggle('bi-heart-fill', data.action === 'liked');
+                    icon.classList.toggle('bi-heart', data.action !== 'liked');
                 }
             });
         }
 
+        // --- GESTIONE CANCELLAZIONE COMMENTO ---
         const deleteBtn = event.target.closest('.delete-comment-btn');
-        if (deleteBtn) {
+        if (deleteBtn && confirm('Sei sicuro di voler eliminare questo commento?')) {
             event.preventDefault();
-            if (confirm('Sei sicuro di voler eliminare questo commento?')) {
-                const url = deleteBtn.dataset.deleteUrl;
-                fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        document.getElementById(`comment-${deleteBtn.dataset.commentId}`).remove();
-                        document.getElementById('comment-count').textContent = data.new_comment_count;
-                        document.getElementById('comment-count-link').textContent = data.new_comment_count;
-                    } else { alert('Errore: ' + data.message); }
-                });
-            }
+            const url = deleteBtn.dataset.deleteUrl;
+            fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }})
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`comment-${deleteBtn.dataset.commentId}`).remove();
+                    document.getElementById('comment-count').textContent = data.new_comment_count;
+                    document.getElementById('comment-count-link').textContent = data.new_comment_count;
+                } else { alert('Errore: ' + data.message); }
+            });
         }
 
+        // --- GESTIONE MODIFICA COMMENTO (APERTURA FORM) ---
         const editBtn = event.target.closest('.edit-comment-btn');
         if (editBtn) {
             event.preventDefault();
             const commentId = editBtn.dataset.commentId;
-            const commentDiv = document.getElementById(`comment-${commentId}`);
-            const contentContainer = commentDiv.querySelector('.comment-content-container');
+            const contentContainer = document.querySelector(`#comment-${commentId} .comment-content-container`);
             const originalContentP = contentContainer.querySelector('.comment-content');
             if (originalContentP) {
                 const originalContent = originalContentP.innerHTML;
@@ -167,17 +179,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     </form>
                 `;
                 contentContainer.innerHTML = editFormHTML;
+                contentContainer.querySelector('textarea').focus();
             }
         }
 
+        // --- GESTIONE ANNULLA MODIFICA ---
         const cancelBtn = event.target.closest('.cancel-edit-btn');
         if (cancelBtn) {
-            const commentDiv = cancelBtn.closest('.comment');
-            const contentContainer = commentDiv.querySelector('.comment-content-container');
+            const contentContainer = cancelBtn.closest('.comment-content-container');
             const originalContent = cancelBtn.closest('form').querySelector('textarea').defaultValue;
             contentContainer.innerHTML = `<p class="comment-content mb-0">${originalContent}</p>`;
         }
         
+        // --- GESTIONE RISPOSTA A COMMENTO (APERTURA FORM) ---
         const replyBtn = event.target.closest('.reply-btn');
         if (replyBtn) {
             event.preventDefault();
@@ -185,13 +199,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const formContainer = document.getElementById(`reply-form-for-${commentId}`);
             if (formContainer.style.display === 'block') {
                 formContainer.style.display = 'none';
-                formContainer.innerHTML = '';
                 return;
             }
             const actionUrl = `/api/post/${mainPostId}/add_comment`;
-            const replyFormHTML = `
-                <form method="POST" action="${actionUrl}" class="comment-form-reply">
-                    <input type="hidden" name="csrf_token" value="${csrfToken}"/>
+            formContainer.innerHTML = `
+                <form method="POST" action="${actionUrl}" class="comment-form-reply mt-2">
                     <input type="hidden" name="parent_id" value="${commentId}"/>
                     <div class="d-flex">
                         <textarea class="form-control me-2" name="content" rows="2" placeholder="Rispondi..." required></textarea>
@@ -199,20 +211,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </form>
             `;
-            formContainer.innerHTML = replyFormHTML;
             formContainer.style.display = 'block';
             formContainer.querySelector('textarea').focus();
         }
     });
 
+    // Gestione unificata degli eventi submit sul body
     document.body.addEventListener('submit', function(event) {
         
+        // --- INVIO COMMENTO O RISPOSTA ---
         const commentForm = event.target.closest('#comment-form, .comment-form-reply');
         if (commentForm) {
             event.preventDefault();
             const formData = new FormData(commentForm);
             const actionUrl = commentForm.getAttribute('action');
-            const commentTextarea = commentForm.querySelector('textarea[name="content"]');
             fetch(actionUrl, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
             .then(response => response.json())
             .then(data => {
@@ -221,21 +233,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (parentId) {
                         document.getElementById(`replies-for-${parentId}`).insertAdjacentHTML('beforeend', data.comment_html);
                         commentForm.parentElement.style.display = 'none';
-                        commentForm.parentElement.innerHTML = '';
                     } else {
                         document.getElementById('comments-list').insertAdjacentHTML('afterbegin', data.comment_html);
-                        if(commentTextarea) commentTextarea.value = '';
+                        commentForm.querySelector('textarea').value = '';
                     }
                     document.getElementById('comment-count').textContent = data.new_comment_count;
                     document.getElementById('comment-count-link').textContent = data.new_comment_count;
-                    const noCommentsMsg = document.getElementById('no-comments-message');
-                    if (noCommentsMsg) noCommentsMsg.remove();
-                } else {
-                    alert('Errore: ' + data.message);
-                }
+                    document.getElementById('no-comments-message')?.remove();
+                } else { alert('Errore: ' + data.message); }
             });
         }
         
+        // --- INVIO MODIFICA COMMENTO ---
         const editForm = event.target.closest('.edit-comment-form');
         if (editForm) {
             event.preventDefault();

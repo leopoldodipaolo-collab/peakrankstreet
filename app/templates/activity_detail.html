@@ -1,60 +1,58 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
 
 {% block title %}Dettaglio Attività{% endblock %}
 
-{% block content %}
+{# --- CORREZIONE: Stili spostati nel blocco corretto per essere inseriti nell'HEAD --- #}
+{% block styles %}
+{{ super() }}
 <style>
-    /*
-    * ===============================================
-    *  Stili per i Marcatori Personalizzati sulla Mappa
-    * ===============================================
-    */
-
     /* Stile base per tutti i marcatori (cerchio bianco con ombra) */
     .map-marker-icon {
-        border-radius: 50%; /* Crea la forma circolare */
-        border: 2px solid white; /* Bordo bianco per risaltare sulla linea */
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* Ombra per dare profondità */
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
 
     /* Colore specifico per il marcatore di PARTENZA */
     .start-marker {
-        background-color: #28a745; /* Verde successo */
+        background-color: #28a745; /* Verde */
     }
 
     /* Colore specifico per il marcatore di ARRIVO */
     .end-marker {
-        background-color: #dc3545; /* Rosso pericolo */
+        background-color: #dc3545; /* Rosso */
     }
 
-    /*
-    * ===============================================
-    *  Stili Corrispondenti per la Legenda della Mappa
-    * ===============================================
-    */
-
-    /* Aggiorniamo anche la legenda per coerenza visiva */
-    .legend-marker.start-marker {
-        background-color: #28a745; /* Stesso verde della partenza */
+    /* Stili per la legenda della mappa */
+    .legend-marker {
         border-radius: 50%;
         display: inline-block;
         width: 12px;
         height: 12px;
         border: 1px solid #ccc;
         margin-right: 5px;
+        vertical-align: middle;
     }
-
-    .legend-marker.end-marker {
-        background-color: #dc3545; /* Stesso rosso dell'arrivo */
-        border-radius: 50%;
+    .legend-marker.start-marker { background-color: #28a745; }
+    .legend-marker.end-marker { background-color: #dc3545; }
+    
+    .legend-color-box {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 20px;
+        height: 10px;
         border: 1px solid #ccc;
         margin-right: 5px;
+        vertical-align: middle;
     }
+    .legend-color-box.activity-track { background-color: var(--bs-primary); }
+    .legend-color-box.route-track { background-color: #FF7800; border-style: dashed;}
 </style>
-<div class="container my-5">
+{% endblock %}
+
+{% block content %}
+{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
+<div class="container my-5 pt-5">
     <!-- Pulsante di navigazione per tornare all'elenco principale -->
     <div class="mb-4">
         <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-secondary">
@@ -65,7 +63,7 @@
     <div class="row g-4">
         <!-- COLONNA SINISTRA: RIEPILOGO ATTIVITÀ E STATISTICHE -->
         <div class="col-lg-4">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 border-0">
                 <div class="card-body d-flex flex-column">
                     <h4 class="card-title border-bottom pb-3 mb-3">
                         <i class="bi bi-clipboard-data-fill me-2 text-primary"></i>Riepilogo Attività
@@ -125,17 +123,16 @@
 
         <!-- COLONNA DESTRA: MAPPA -->
         <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary border-bottom">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0 fw-normal"><i class="bi bi-map-fill me-2 text-primary"></i>Tracciato GPS</h5>
                 </div>
-                <!-- Il contenitore della mappa ha un aspect-ratio per un rendering migliore su schermi diversi -->
-                <div class="map-container" id="activityMap" style="aspect-ratio: 16/9; min-height: 400px;"></div>
+                <div class="map-container" id="activityMap" style="aspect-ratio: 16/9; min-height: 400px; background-color: #f8f9fa;"></div>
                 <div class="card-footer bg-light">
                     <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 small">
                         <div class="legend-item"><span class="legend-color-box activity-track"></span>Tracciato Attività</div>
                         {% if route %}
-                        <div class="legend-item"><span class="legend-color-box route-track"></span>Percorso di Riferimento</div>
+                        <div class="legend-item"><span class="legend-color-box route-track"></span>Percorso Riferimento</div>
                         {% endif %}
                         <div class="legend-item"><span class="legend-marker start-marker"></span>Partenza</div>
                         <div class="legend-item"><span class="legend-marker end-marker"></span>Arrivo</div>
@@ -153,43 +150,32 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // 1. Inizializzazione Mappa
-        const activityMap = L.map('activityMap').setView([41.9028, 12.4964], 6); // Centro Italia come vista di default
+        const activityMap = L.map('activityMap').setView([41.9028, 12.4964], 6); // Centro Italia
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(activityMap);
 
-        // 2. Icone Personalizzate per Partenza e Arrivo
-        const startIcon = L.divIcon({
-            className: 'map-marker-icon start-marker',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
-        const endIcon = L.divIcon({
-            className: 'map-marker-icon end-marker',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
+        // 2. Icone Personalizzate
+        const startIcon = L.divIcon({ className: 'map-marker-icon start-marker', iconSize: [16, 16], iconAnchor: [8, 8] });
+        const endIcon = L.divIcon({ className: 'map-marker-icon end-marker', iconSize: [16, 16], iconAnchor: [8, 8] });
 
-        // 3. Funzione Helper per creare contenuti Popup
+        // 3. Funzione Helper per Popup
         function createPopupContent(title, lat, lon) {
             return `<div class="map-popup"><strong>${title}</strong><br><small>Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}</small></div>`;
         }
         
-        // 4. Caricamento e Visualizzazione dei Dati GeoJSON
+        // 4. Caricamento Dati GeoJSON
         const allLayers = L.featureGroup();
         let hasData = false;
         
-        // Dati del tracciato dell'attività
         const activityGeoJSONData = {{ activity_geojson_data | safe if activity_geojson_data else 'null' }};
-        console.log("Valore di activityGeoJSONData:", activityGeoJSONData);
         if (activityGeoJSONData && activityGeoJSONData.coordinates && activityGeoJSONData.coordinates.length > 0) {
             const activityLayer = L.geoJSON(activityGeoJSONData, {
                 style: { color: 'var(--bs-primary)', weight: 5, opacity: 0.9 }
             });
             allLayers.addLayer(activityLayer);
 
-            // Aggiungi marker di partenza e arrivo
             const coordinates = activityGeoJSONData.coordinates;
             const startPoint = coordinates[0];
             const endPoint = coordinates[coordinates.length - 1];
@@ -205,7 +191,6 @@
             hasData = true;
         }
 
-        // Dati del percorso di riferimento (se presenti)
         const routeGeoJSONData = {{ route_geojson_data | safe if route_geojson_data else 'null' }};
         if (routeGeoJSONData) {
             const routeLayer = L.geoJSON(routeGeoJSONData, {
@@ -215,18 +200,19 @@
             hasData = true;
         }
 
-        // 5. Adattamento della Vista Mappa o Messaggio di fallback
+        // 5. Adattamento Vista Mappa
         if (hasData) {
             allLayers.addTo(activityMap);
-            // Adatta la vista della mappa per includere tutti i tracciati con un po' di padding
             activityMap.fitBounds(allLayers.getBounds().pad(0.1));
         } else {
-            // Se non ci sono dati GPS, mostra un messaggio sulla mappa
-            activityMap.setView([45.4642, 9.1900], 13); // Vista su Milano come fallback
-            L.popup()
-             .setLatLng([45.4642, 9.1900])
-             .setContent("Nessun tracciato GPS disponibile per questa attività.")
-             .openOn(activityMap);
+            const mapContainer = document.getElementById('activityMap');
+            mapContainer.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100 text-center text-muted">
+                    <div>
+                        <i class="bi bi-geo-alt-fill" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Nessun tracciato GPS disponibile per questa attività.</p>
+                    </div>
+                </div>`;
         }
     });
 </script>

@@ -1,32 +1,77 @@
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Esplora i Gruppi{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-people-fill me-2"></i>Esplora i Gruppi</h1>
+<div class="container my-5 pt-5">
+    <!-- Intestazione della Pagina -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h1 class="h3 fw-bold mb-0"><i class="bi bi-people-fill me-2"></i>Esplora i Gruppi</h1>
         <a href="{{ url_for('main.create_group') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i> Crea un Nuovo Gruppo
         </a>
     </div>
 
-    <div class="list-group">
-        {% for group in groups_pagination.items %}
-            <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" alt="{{ group.name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                    <div>
-                        <h5 class="mb-1">{{ group.name }}</h5>
-                        <small class="text-muted">{{ group.city or 'Globale' }}</small>
+    {% if groups_pagination.items %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for group in groups_pagination.items %}
+            <div class="col">
+                <a href="{{ url_for('main.group_detail', group_id=group.id) }}" class="card group-card h-100 text-decoration-none text-dark shadow-sm border-0">
+                    <div class="card-body text-center d-flex flex-column">
+                        <img src="{{ url_for('static', filename='group_pics/' + group.profile_image) }}" alt="Logo {{ group.name }}" class="rounded-circle mb-3 mx-auto" style="width: 100px; height: 100px; object-fit: cover;">
+                        <h5 class="card-title fw-bold">{{ group.name }}</h5>
+                        <p class="card-text text-muted mb-3">
+                            <i class="bi bi-geo-alt-fill me-1"></i>{{ group.city or 'Globale' }}
+                        </p>
+                        <div class="mt-auto">
+                            <span class="badge bg-primary rounded-pill fs-6 fw-normal">{{ group.members.count() }} membri</span>
+                        </div>
                     </div>
-                </div>
-                <span class="badge bg-primary rounded-pill">{{ group.members.count() }} membri</span>
-            </a>
-        {% else %}
-            <p class="text-muted">Nessun gruppo è stato ancora creato. Sii il primo!</p>
-        {% endfor %}
-    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center p-5 border rounded-3 bg-light mt-5">
+            <i class="bi bi-collection-fill display-4 text-muted mb-3"></i>
+            <h4>Nessun Gruppo Trovato</h4>
+            <p class="text-muted">Non ci sono ancora gruppi da esplorare. Sii il primo a <a href="{{ url_for('main.create_group') }}">crearne uno!</a></p>
+        </div>
+    {% endif %}
     
-    <!-- Aggiungi qui la paginazione se vuoi -->
+    <!-- Paginazione -->
+    {% if groups_pagination and groups_pagination.pages > 1 %}
+    <nav aria-label="Navigazione gruppi" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not groups_pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.list_groups', page=groups_pagination.prev_num) }}">&laquo;</a>
+            </li>
+            {% for page_num in groups_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == groups_pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.list_groups', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not groups_pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.list_groups', page=groups_pagination.next_num) }}">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+    /* Stile per rendere le card interattive al passaggio del mouse */
+    .group-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .group-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
 {% endblock %}

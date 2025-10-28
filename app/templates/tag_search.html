@@ -1,27 +1,39 @@
-`html
-{% extends "index.html" %}
+{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
+{% extends "base.html" %}
+
 {% block title %}Post con #{{ tag.name }}{% endblock %}
+
 {% block content %}
-<div class="container mt-5 pt-5">
-<div class="row justify-content-center">
-<div class="col-lg-8">
-code
-Code
-<div class="pb-3 mb-4 border-bottom">
-            <h1 class="h2">#{{ tag.name }}</h1>
-            <p class="text-muted">{{ posts|length }} post trovati con questo hashtag.</p>
-        </div>
+<div class="container my-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-        <div class="list-group list-group-flush">
-            {% for item in posts %}
-                {# Riusiamo il nostro "centralino" per visualizzare ogni post #}
-                {% include 'partials/_feed_item.html' %}
-            {% else %}
-                <p class="text-center text-muted">Nessun post trovato con questo hashtag.</p>
-            {% endfor %}
-        </div>
+            <!-- Intestazione della Pagina -->
+            <div class="pb-3 mb-4 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 fw-bold mb-1">#{{ tag.name }}</h1>
+                    <p class="text-muted mb-0">{{ posts|length }} post trovati con questo hashtag.</p>
+                </div>
+                <a href="{{ url_for('main.feed') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Torna al Feed
+                </a>
+            </div>
 
+            <!-- Elenco dei Post -->
+            <div class="feed-container">
+                {% for item in posts %}
+                    {# Riusiamo il partial _feed_item.html per visualizzare ogni post in modo consistente #}
+                    {% include 'partials/_feed_item.html' %}
+                {% else %}
+                    <div class="text-center p-5 border rounded-3 bg-light mt-4">
+                        <i class="bi bi-tag-fill display-4 text-muted mb-3"></i>
+                        <h4>Nessun Post Trovato</h4>
+                        <p class="text-muted">Non ci sono ancora post con l'hashtag #{{ tag.name }}.</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
     </div>
-</div>
 </div>
 {% endblock %}
