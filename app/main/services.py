@@ -1,73 +1,96 @@
-# File: app/main/services.py
-from app import db
-from app.models import Post, PostLike
-from sqlalchemy.orm import joinedload
 from flask_login import current_user
+from sqlalchemy import union_all, literal_column, or_
+from sqlalchemy.orm import joinedload
+from app import db
+from app.models import Post, Activity, PostLike, ActivityLike
 
-# In app/main/services.py
-
-from sqlalchemy import union_all, select, literal_column
-from app.models import Post, Activity, ActivityLike # Assicurati di importare entrambi
-
-def get_unified_feed_items(page=1, per_page=5):
+def get_unified_feed_items(user=None, page=1, per_page=10):
     """
-    Recupera una lista unificata e impaginata di Post e Activity,
-    ordinata per data di creazione.
+    Recupera un feed unificato e impaginato.
+    - Se l'utente è loggato (`user` viene passato), mostra un feed personalizzato.
+    - Se l'utente non è loggato (`user` è None), mostra il feed pubblico globale.
     """
-     # 1. Query per i Post PUBBLICI
-    posts_query = db.session.query(
-        Post.id.label('item_id'),
-        Post.created_at.label('timestamp'),
-        literal_column("'post'").label('item_type')
-    ).filter(
-        Post.group_id == None  # <-- QUESTO È IL FILTRO FONDAMENTALE
-    )
+    
+    if user and user.is_authenticated:
+        # --- FEED PERSONALIZZATO PER UTENTE LOGGATO ---
+        followed_user_ids = [u.id for u in user.followed]
+        joined_group_ids = [g.id for g in user.joined_groups]
+        special_categories = ['admin_announcement', 'weekly_tip', 'system_record', 'system_badge', 'system_new_classic']
 
-    # 2. Query per le Activity
-    activities_query = db.session.query(
-        Activity.id.label('item_id'),
-        Activity.created_at.label('timestamp'),
-        literal_column("'activity'").label('item_type')
-    )
+        posts_query = db.session.query(
+            Post.id.label('item_id'),
+            Post.created_at.label('timestamp'),
+            literal_column("'post'").label('item_type')
+        ).filter(
+            or_(
+                Post.user_id.in_(followed_user_ids),
+                Post.user_id == user.id,
+                Post.group_id.in_(joined_group_ids),
+                Post.post_category.in_(special_categories)
+            )
+        )
+        
+        activities_query = db.session.query(
+            Activity.id.label('item_id'),
+            Activity.created_at.label('timestamp'),
+            literal_column("'activity'").label('item_type')
+        ).filter(
+            or_(
+                Activity.user_id.in_(followed_user_ids),
+                Activity.user_id == user.id
+            )
+        )
 
-
-    # 3. Uniamo le due query. `union_all` è più veloce di `union`.
+    else:
+        # --- FEED PUBBLICO PER VISITATORI ---
+        special_categories = ['admin_announcement', 'weekly_tip']
+         # Mostriamo gli annunci e i post pubblici (non di gruppo)
+        posts_query = db.session.query(
+            Post.id.label('item_id'),
+            Post.created_at.label('timestamp'),
+            literal_column("'post'").label('item_type')
+        ).filter(
+            Post.group_id.is_(None) # Escludi i post dei gruppi
+        )
+        
+        # Mostriamo tutte le attività
+        activities_query = db.session.query(
+            Activity.id.label('item_id'),
+            Activity.created_at.label('timestamp'),
+            literal_column("'activity'").label('item_type')
+        )
+    
+    # --- LOGICA COMUNE ---
     unified_query = union_all(posts_query, activities_query).alias('unified')
-
-    # 4. Ordiniamo i risultati uniti e applichiamo la paginazione
     paginated_ids = db.session.query(unified_query).order_by(
         unified_query.c.timestamp.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # 5. Ora abbiamo una lista di ID e tipi. Dobbiamo "idratare" questi dati,
-    #    cioè recuperare gli oggetti completi.
     post_ids_to_fetch = [item.item_id for item in paginated_ids.items if item.item_type == 'post']
     activity_ids_to_fetch = [item.item_id for item in paginated_ids.items if item.item_type == 'activity']
 
-    posts = Post.query.filter(Post.id.in_(post_ids_to_fetch)).all()
-    # --- MODIFICA QUESTA RIGA ---
-    activities = Activity.query.options(
-        joinedload(Activity.user_activity),
-        joinedload(Activity.route_activity)
-    ).filter(Activity.id.in_(activity_ids_to_fetch)).all()
-    # --- FINE MODIFICA ---
+    posts = []
+    if post_ids_to_fetch:
+        posts = Post.query.options(
+            joinedload(Post.user)
+        ).filter(Post.id.in_(post_ids_to_fetch)).all()
+        
+    activities = []
+    if activity_ids_to_fetch:
+        activities = Activity.query.options(
+            joinedload(Activity.user_activity),
+            joinedload(Activity.route_activity)
+        ).filter(Activity.id.in_(activity_ids_to_fetch)).all()
 
-    # Uniamo gli oggetti in un'unica mappa per un recupero veloce
     items_map = {f'post_{p.id}': p for p in posts}
     items_map.update({f'activity_{a.id}': a for a in activities})
+    final_items = [items_map.get(f'{item.item_type}_{item.item_id}') for item in paginated_ids.items if items_map.get(f'{item.item_type}_{item.item_id}') is not None]
 
-    # 6. Ricostruiamo la lista finale nell'ordine corretto
-    final_items = [items_map[f'{item.item_type}_{item.item_id}'] for item in paginated_ids.items]
-
-    # Arricchiamo i post con le informazioni sui like (codice che già hai)
-    # (Questa logica può essere ottimizzata ulteriormente, ma per ora va bene)
-    if current_user.is_authenticated:
+    if user and user.is_authenticated:
         for item in final_items:
             if isinstance(item, Post):
-                # La logica dei like per i Post
-                item.current_user_liked = PostLike.query.filter_by(user_id=current_user.id, post_id=item.id).first() is not None
+                item.current_user_liked = PostLike.query.filter_by(user_id=user.id, post_id=item.id).first() is not None
             elif isinstance(item, Activity):
-                # La logica dei like per le Activity
-                item.current_user_liked = ActivityLike.query.filter_by(user_id=current_user.id, activity_id=item.id).first() is not None
+                item.current_user_liked = ActivityLike.query.filter_by(user_id=user.id, activity_id=item.id).first() is not None
     
     return final_items, paginated_ids.has_next

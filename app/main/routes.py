@@ -103,7 +103,7 @@ def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
     # --- UNICA FONTE DI VERITÀ PER IL FEED ---
-    community_items, has_next_feed_page = get_unified_feed_items(page=1, per_page=5)
+    community_items, has_next_feed_page = get_unified_feed_items(user=current_user, page=1, per_page=5)
     # --- FINE LOGICA FEED ---
 
     # --- DATI AGGIUNTIVI PER LA HOME PAGE (Il tuo codice, che va bene) ---
@@ -943,28 +943,28 @@ def challenges_list():
 
 @main.route("/leaderboards/total_distance")
 def leaderboard_total_distance():
-    # Query: somma totale delle distanze per utente
     results = (
         db.session.query(
-            User,
+            User.id,
+            User.username,
+            User.profile_image,
             func.sum(Activity.distance).label('total_distance')
         )
         .join(Activity)
-        .group_by(User)
+        .group_by(User.id, User.username, User.profile_image)
         .order_by(func.sum(Activity.distance).desc())
         .limit(20)
         .all()
     )
 
-    # Conversione in dizionari per un accesso più comodo nel template
     leaderboard_data = [
         {
-            'id': user.id,
-            'username': user.username,
-            'profile_image': user.profile_image,
+            'id': id,
+            'username': username,
+            'profile_image': profile_image,
             'total_distance': total_distance or 0
         }
-        for user, total_distance in results
+        for id, username, profile_image, total_distance in results
     ]
 
     return render_template(
@@ -973,31 +973,30 @@ def leaderboard_total_distance():
         is_homepage=False
     )
 
-
 @main.route("/leaderboards/most_routes")
 def leaderboard_most_routes():
-    # Query: conteggio totale dei percorsi creati per utente
     results = (
         db.session.query(
-            User,
+            User.id,
+            User.username,
+            User.profile_image,
             func.count(Route.id).label('total_routes_created')
         )
         .join(Route, User.id == Route.created_by)
-        .group_by(User)
+        .group_by(User.id, User.username, User.profile_image)
         .order_by(func.count(Route.id).desc())
         .limit(20)
         .all()
     )
 
-    # Conversione in dizionari per compatibilità con i template
     leaderboard_data = [
         {
-            'id': user.id,
-            'username': user.username,
-            'profile_image': user.profile_image,
+            'id': id,
+            'username': username,
+            'profile_image': profile_image,
             'total_routes_created': total_routes_created or 0
         }
-        for user, total_routes_created in results
+        for id, username, profile_image, total_routes_created in results
     ]
 
     return render_template(
@@ -2019,6 +2018,8 @@ def add_comment_to_post_ajax(post_id):
 @main.route('/api/feed')
 def api_feed():
     page = request.args.get('page', 1, type=int)
+    # Passiamo 'current_user' anche qui
+    items, has_next = get_unified_feed_items(user=current_user, page=page, per_page=5)
     items, has_next = get_unified_feed_items(page=page, per_page=5)
     
     items_html = render_template('partials/_feed_posts_chunk.html', items=items)

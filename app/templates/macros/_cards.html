@@ -3,9 +3,23 @@
 {% macro feed_card(id, title, icon_class, items, footer_links=[], current_user=None, has_next_feed_page=False) %}
 
 <div class="card shadow-sm mb-4" id="{{ id }}">
-    <div class="card-header bg-white border-bottom-0">
+    <div class="card-header  bg-primary border-bottom-0">
+        {# --- TITOLO DINAMICO --- #}
+        {% if current_user.is_authenticated %}
+            <h4 class="h5 mb-0 d-flex align-items-center">  
+                <i class="bi bi-rss-fill me-2 text-grey"></i>
+                Il Tuo Feed Personale
+            </h4>
+        {% else %}
+            <h4 class="h5 mb-0 d-flex align-items-center">
+                <i class="bi bi-newspaper me-2 text-primary"></i>
+                Ultimi Aggiornamenti dalla Community
+            </h4>
+        {% endif %}
+        {# --- FINE TITOLO DINAMICO --- #}
+        
         <h4 class="h5 mb-0 d-flex align-items-center">
-            <i class="bi {{ icon_class }} me-2 text-primary"></i>
+            <i class="bi {{ icon_class }} me-2 text-white"></i>
             {{ title }}
         </h4>
     </div>

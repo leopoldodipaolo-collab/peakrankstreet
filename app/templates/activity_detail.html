@@ -1,59 +1,99 @@
-{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
 {% extends "base.html" %}
 
 {% block title %}Dettaglio Attività{% endblock %}
 
-{# --- CORREZIONE: Stili spostati nel blocco corretto per essere inseriti nell'HEAD --- #}
 {% block styles %}
 {{ super() }}
 <style>
-    /* Stile base per tutti i marcatori (cerchio bianco con ombra) */
+    /* ===== Marcatori Mappe ===== */
     .map-marker-icon {
         border-radius: 50%;
         border: 2px solid white;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 10px rgba(0,0,0,0.4);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Colore specifico per il marcatore di PARTENZA */
+    .map-marker-icon:hover {
+        transform: scale(1.3);
+        box-shadow: 0 0 15px rgba(0,0,0,0.6);
+    }
+
     .start-marker {
-        background-color: #28a745; /* Verde */
+        background: radial-gradient(circle, #28a745 0%, #218838 100%);
+        animation: pulse 2s infinite;
     }
 
-    /* Colore specifico per il marcatore di ARRIVO */
     .end-marker {
-        background-color: #dc3545; /* Rosso */
+        background: radial-gradient(circle, #dc3545 0%, #b02a37 100%);
     }
 
-    /* Stili per la legenda della mappa */
-    .legend-marker {
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(40,167,69,0.5); }
+        70% { box-shadow: 0 0 0 15px rgba(40,167,69,0); }
+        100% { box-shadow: 0 0 0 0 rgba(40,167,69,0); }
+    }
+
+    /* ===== Legenda ===== */
+    .legend-marker, .legend-color-box {
         border-radius: 50%;
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         border: 1px solid #ccc;
-        margin-right: 5px;
+        margin-right: 6px;
         vertical-align: middle;
     }
+
     .legend-marker.start-marker { background-color: #28a745; }
     .legend-marker.end-marker { background-color: #dc3545; }
-    
-    .legend-color-box {
-        display: inline-block;
-        width: 20px;
-        height: 10px;
-        border: 1px solid #ccc;
-        margin-right: 5px;
-        vertical-align: middle;
+    .legend-color-box.activity-track { background: linear-gradient(90deg, #0d6efd, #6610f2); }
+    .legend-color-box.route-track { background-color: #FF7800; border-style: dashed; }
+
+    /* ===== Tracciati Mappe ===== */
+    .leaflet-overlay-pane svg path.glow {
+        stroke: var(--bs-primary);
+        stroke-width: 6;
+        filter: drop-shadow(0 0 8px var(--bs-primary));
+        transition: stroke-width 0.3s ease, filter 0.3s ease;
     }
-    .legend-color-box.activity-track { background-color: var(--bs-primary); }
-    .legend-color-box.route-track { background-color: #FF7800; border-style: dashed;}
+
+    /* ===== Card e UI ===== */
+    .card {
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        background: linear-gradient(90deg, #0d6efd, #6610f2);
+        color: white;
+        font-weight: 500;
+    }
+
+    .card-title i {
+        color: #0d6efd;
+        transition: transform 0.3s ease;
+    }
+
+    .card-title i:hover {
+        transform: rotate(15deg);
+    }
+
+    .display-4 {
+        background: linear-gradient(to right, #0d6efd, #6610f2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-{# --- Aggiunto contenitore per allineamento e margini corretti --- #}
 <div class="container my-5 pt-5">
-    <!-- Pulsante di navigazione per tornare all'elenco principale -->
     <div class="mb-4">
         <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Torna a Tutte le Attività
@@ -61,15 +101,13 @@
     </div>
 
     <div class="row g-4">
-        <!-- COLONNA SINISTRA: RIEPILOGO ATTIVITÀ E STATISTICHE -->
+        <!-- ===== Riepilogo ===== -->
         <div class="col-lg-4">
             <div class="card shadow-sm h-100 border-0">
                 <div class="card-body d-flex flex-column">
                     <h4 class="card-title border-bottom pb-3 mb-3">
                         <i class="bi bi-clipboard-data-fill me-2 text-primary"></i>Riepilogo Attività
                     </h4>
-
-                    <!-- Sezione Statistiche Principali -->
                     <div class="row text-center mb-4">
                         <div class="col-12">
                             <h5 class="text-muted fw-light">Distanza Totale</h5>
@@ -88,8 +126,6 @@
                             <p class="h5 fw-semibold mb-0">{{ "%.2f"|format(activity.avg_speed) }} <span class="fw-light fs-6">km/h</span></p>
                         </div>
                     </div>
-
-                    <!-- Lista Dettagli Informativi -->
                     <div class="list-group list-group-flush mt-auto">
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span class="text-muted"><i class="bi bi-person-circle me-2"></i>Atleta</span>
@@ -121,13 +157,13 @@
             </div>
         </div>
 
-        <!-- COLONNA DESTRA: MAPPA -->
+        <!-- ===== Mappa ===== -->
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="mb-0 fw-normal"><i class="bi bi-map-fill me-2 text-primary"></i>Tracciato GPS</h5>
+                <div class="card-header">
+                    <h5 class="mb-0 fw-normal"><i class="bi bi-map-fill me-2 text-white"></i>Tracciato GPS</h5>
                 </div>
-                <div class="map-container" id="activityMap" style="aspect-ratio: 16/9; min-height: 400px; background-color: #f8f9fa;"></div>
+                <div class="map-container" id="activityMap" style="aspect-ratio:16/9; min-height:400px; background-color:#f8f9fa;"></div>
                 <div class="card-footer bg-light">
                     <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 small">
                         <div class="legend-item"><span class="legend-color-box activity-track"></span>Tracciato Attività</div>
@@ -146,74 +182,76 @@
 
 {% block scripts %}
 {{ super() }}
-<!-- Script per l'inizializzazione e la gestione della mappa Leaflet.js -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. Inizializzazione Mappa
-        const activityMap = L.map('activityMap').setView([41.9028, 12.4964], 6); // Centro Italia
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(activityMap);
+// ===== Animazione tracciato progressivo =====
+document.addEventListener('DOMContentLoaded', function() {
+    const activityMap = L.map('activityMap').setView([41.9028,12.4964],6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom:19
+    }).addTo(activityMap);
 
-        // 2. Icone Personalizzate
-        const startIcon = L.divIcon({ className: 'map-marker-icon start-marker', iconSize: [16, 16], iconAnchor: [8, 8] });
-        const endIcon = L.divIcon({ className: 'map-marker-icon end-marker', iconSize: [16, 16], iconAnchor: [8, 8] });
+    const createPopupContent = (title, lat, lon) =>
+        `<div><strong>${title}</strong><br><small>Lat:${lat.toFixed(5)}, Lon:${lon.toFixed(5)}</small></div>`;
 
-        // 3. Funzione Helper per Popup
-        function createPopupContent(title, lat, lon) {
-            return `<div class="map-popup"><strong>${title}</strong><br><small>Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}</small></div>`;
-        }
-        
-        // 4. Caricamento Dati GeoJSON
-        const allLayers = L.featureGroup();
-        let hasData = false;
-        
-        const activityGeoJSONData = {{ activity_geojson_data | safe if activity_geojson_data else 'null' }};
-        if (activityGeoJSONData && activityGeoJSONData.coordinates && activityGeoJSONData.coordinates.length > 0) {
-            const activityLayer = L.geoJSON(activityGeoJSONData, {
-                style: { color: 'var(--bs-primary)', weight: 5, opacity: 0.9 }
-            });
-            allLayers.addLayer(activityLayer);
+    const allLayers = L.featureGroup();
+    let hasData = false;
 
-            const coordinates = activityGeoJSONData.coordinates;
-            const startPoint = coordinates[0];
-            const endPoint = coordinates[coordinates.length - 1];
-            
-            L.marker([startPoint[1], startPoint[0]], { icon: startIcon })
-                .bindPopup(createPopupContent('Partenza', startPoint[1], startPoint[0]))
-                .addTo(allLayers);
-            
-            L.marker([endPoint[1], endPoint[0]], { icon: endIcon })
-                .bindPopup(createPopupContent('Arrivo', endPoint[1], endPoint[0]))
-                .addTo(allLayers);
-            
-            hasData = true;
-        }
+    const activityGeoJSONData = {{ activity_geojson_data|safe if activity_geojson_data else 'null' }};
+    if(activityGeoJSONData && activityGeoJSONData.coordinates && activityGeoJSONData.coordinates.length>0){
+        const coords = activityGeoJSONData.coordinates.map(c=>[c[1],c[0]]);
+        const progressiveLine = L.polyline([], {color:'var(--bs-primary)', weight:5, opacity:0.9}).addTo(activityMap);
+        const runner = L.circleMarker(coords[0], {radius:6, color:'#ff0000', fillColor:'#ff0000', fillOpacity:1}).addTo(activityMap);
 
-        const routeGeoJSONData = {{ route_geojson_data | safe if route_geojson_data else 'null' }};
-        if (routeGeoJSONData) {
-            const routeLayer = L.geoJSON(routeGeoJSONData, {
-                style: { color: '#FF7800', weight: 4, opacity: 0.8, dashArray: '5, 10' }
-            });
-            allLayers.addLayer(routeLayer);
-            hasData = true;
-        }
+        let idx = 0;
+        const step = 5;
+        const interval = setInterval(()=>{
+            if(idx>=coords.length){ clearInterval(interval); return; }
+            progressiveLine.setLatLngs(coords.slice(0, idx+1));
+            runner.setLatLng(coords[idx]);
+            idx += step;
+        },15);
 
-        // 5. Adattamento Vista Mappa
-        if (hasData) {
-            allLayers.addTo(activityMap);
-            activityMap.fitBounds(allLayers.getBounds().pad(0.1));
-        } else {
-            const mapContainer = document.getElementById('activityMap');
-            mapContainer.innerHTML = `
-                <div class="d-flex justify-content-center align-items-center h-100 text-center text-muted">
-                    <div>
-                        <i class="bi bi-geo-alt-fill" style="font-size: 3rem;"></i>
-                        <p class="mt-2">Nessun tracciato GPS disponibile per questa attività.</p>
-                    </div>
-                </div>`;
-        }
-    });
+        // ===== START / END con icone Bootstrap =====
+        const startIcon = L.divIcon({
+            html: '<i class="bi bi-flag-fill text-success fs-3"></i>',
+            className: '',
+            iconSize: [24,24],
+            iconAnchor: [12,24],
+            popupAnchor: [0,-24]
+        });
+
+        const endIcon = L.divIcon({
+            html: '<i class="bi bi-flag-fill text-danger fs-3"></i>',
+            className: '',
+            iconSize: [24,24],
+            iconAnchor: [12,24],
+            popupAnchor: [0,-24]
+        });
+
+        L.marker(coords[0], {icon: startIcon}).bindPopup(createPopupContent('Partenza', coords[0][0], coords[0][1])).addTo(allLayers);
+        L.marker(coords[coords.length-1], {icon: endIcon}).bindPopup(createPopupContent('Arrivo', coords[coords.length-1][0], coords[coords.length-1][1])).addTo(allLayers);
+
+        hasData = true;
+    }
+
+    const routeGeoJSONData = {{ route_geojson_data|safe if route_geojson_data else 'null' }};
+    if(routeGeoJSONData){
+        const routeLayer = L.geoJSON(routeGeoJSONData, {style:{color:'#FF7800', weight:4, opacity:0.8, dashArray:'5,10'}});
+        allLayers.addLayer(routeLayer);
+        hasData = true;
+    }
+
+    if(hasData){
+        allLayers.addTo(activityMap);
+        activityMap.flyToBounds(allLayers.getBounds().pad(0.1), {duration:2});
+    } else {
+        document.getElementById('activityMap').innerHTML = `
+        <div class="d-flex justify-content-center align-items-center h-100 text-center text-muted">
+            <div><i class="bi bi-geo-alt-fill" style="font-size:3rem"></i>
+            <p class="mt-2">Nessun tracciato GPS disponibile per questa attività.</p></div>
+        </div>`;
+    }
+});
+
 </script>
 {% endblock %}
