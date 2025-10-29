@@ -28,6 +28,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#28a745">
+
+    {# --- AGGIUNGI IL CSS DI TRIBUTE.JS --- #}
+    <link rel="stylesheet" href="https://unpkg.com/tributejs/dist/tribute.css" />
+
 </head>
 <body class="d-flex flex-column min-vh-100">
     <div class="main-wrapper"> 
@@ -186,6 +190,8 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
+    {# --- AGGIUNGI LO SCRIPT DI TRIBUTE.JS --- #}
+    <script src="https://unpkg.com/tributejs/dist/tribute.min.js"></script>
 
     {# Blocco per gli script specifici della pagina #}
     {% block scripts %}{% endblock %}

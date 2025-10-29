@@ -25,11 +25,10 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="content" class="form-label">Contenuto del Post*</label>
-                            <textarea class="form-control" id="content" name="content" rows="6" placeholder="Scrivi qui il tuo aggiornamento..." required></textarea>
-                            <div class="invalid-feedback">Il contenuto del post non può essere vuoto.</div>
+                            <label for="postContent" class="form-label">Contenuto del Post*</label>
+                            <textarea class="form-control" id="postContent" name="content" rows="5" placeholder="Scrivi qui il tuo aggiornamento..."></textarea>
                         </div>
-                        
+                                                
                         {# Campo per l'immagine (mostrato/nascosto con JS) #}
                         <div class="mb-3" id="image-field" style="display: none;">
                             <label for="image" class="form-label">Allega un'immagine*</label>
@@ -69,33 +68,59 @@
 {% endblock %} {# --- CORREZIONE: Sintassi di chiusura corretta --- #}
 
 {% block scripts %}
-{{ super() }} {# --- CORREZIONE: Aggiunto super() per includere gli script di base --- #}
+{{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const postTypeSelect = document.getElementById('post_type');
-    const linkField = document.getElementById('link-field');
-    const imageField = document.getElementById('image-field');
-    const linkInput = document.getElementById('link');
-    const imageInput = document.getElementById('image');
-    const contentTextarea = document.getElementById('content');
 
-    function toggleFields() {
-        const selectedType = postTypeSelect.value;
-        
-        // Gestione visibilità
-        linkField.style.display = (selectedType === 'link') ? 'block' : 'none';
-        imageField.style.display = (selectedType === 'image') ? 'block' : 'none';
-        
-        // Gestione attributo 'required' per validazione
-        linkInput.required = (selectedType === 'link');
-        imageInput.required = (selectedType === 'image');
-    }
+// ===============================================================
+// LOGICA PER MOSTRARE/NASCONDERE I CAMPI (IL TUO CODICE)
+// ===============================================================
+const postTypeSelect = document.getElementById('post_type');
+const linkField = document.getElementById('link-field');
+const imageField = document.getElementById('image-field');
+const linkInput = document.getElementById('link');
+const imageInput = document.getElementById('image');
 
-    if (postTypeSelect) {
-        postTypeSelect.addEventListener('change', toggleFields);
-        // Imposta lo stato iniziale al caricamento della pagina
-        toggleFields();
-    }
+function toggleFields() {
+const selectedType = postTypeSelect.value;
+linkField.style.display = (selectedType === 'link') ? 'block' : 'none';
+imageField.style.display = (selectedType === 'image') ? 'block' : 'none';
+linkInput.required = (selectedType === 'link');
+imageInput.required = (selectedType === 'image');
+}
+
+if (postTypeSelect) {
+postTypeSelect.addEventListener('change', toggleFields);
+toggleFields();
+}
+
+// ===============================================================
+// NUOVA LOGICA PER L'AUTOCOMPLETAMENTO DELLE MENZIONI
+// ===============================================================
+var tribute = new Tribute({
+trigger: '@',
+values: function(text, callback) {
+fetch(`/api/search_users?q=${text}`)
+.then(response => response.json())
+.then(data => callback(data))
+.catch(error => callback([]));
+},
+menuItemTemplate: function(item) {
+return `
+<img src="${item.original.avatar}" class="rounded-circle me-2" style="width: 25px; height: 25px; object-fit: cover;">
+${item.string}
+`;
+},
+selectClass: 'highlight',
+noMatchTemplate: () => '<li class="no-match">Nessun utente trovato</li>'
+});
+
+// Colleghiamo Tribute.js specificamente alla textarea di questa pagina
+const postTextarea = document.getElementById('postContent');
+if (postTextarea) {
+tribute.attach(postTextarea);
+console.log("DEBUG: Tribute.js collegato a #postContent."); // Messaggio di debug
+}
 });
 </script>
-{% endblock %} {# --- CORREZIONE: Sintassi di chiusura corretta --- #}
+{% endblock %}

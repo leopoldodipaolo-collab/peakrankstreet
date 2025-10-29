@@ -57,7 +57,7 @@ class User(db.Model, UserMixin):
     prestige = db.Column(db.Integer, default=0, nullable=False, index=True)
     title = db.Column(db.String(50), default='Popolano', nullable=False)
     # --- FINE NUOVI CAMPI ---
-    
+    onboarding_steps = db.Column(db.JSON, nullable=True)
     followed = db.relationship(
         'User', secondary=followers,
         primaryjoin=(followers.c.follower_id == id),

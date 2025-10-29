@@ -259,6 +259,52 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+     // --- INIZIALIZZAZIONE DI TRIBUTE.JS ---
+    
+    var tribute = new Tribute({
+        // Il carattere che attiva il menu
+        trigger: '@',
+        
+        // La funzione che viene chiamata per ottenere i dati
+        values: function(text, callback) {
+            // Chiamiamo la nostra API
+            fetch(`/api/search_users?q=${text}`)
+                .then(response => response.json())
+                .then(data => callback(data))
+                .catch(error => callback([]));
+        },
+        
+        // Come appare ogni elemento nel menu a tendina
+        menuItemTemplate: function(item) {
+            return `
+                <img src="${item.original.avatar}" class="rounded-circle me-2" style="width: 25px; height: 25px; object-fit: cover;">
+                ${item.string}
+            `;
+        },
+        
+        // Non selezionare il primo risultato automaticamente
+        selectClass: 'highlight',
+        noMatchTemplate: function() {
+            return '<li class="no-match">Nessun utente trovato</li>';
+        }
+    });
+
+    // Colleghiamo Tribute.js alle caselle di testo
+    // 1. Per il form principale dei commenti
+    const mainCommentTextarea = document.querySelector('#comment-form textarea[name="content"]');
+    if (mainCommentTextarea) {
+        tribute.attach(mainCommentTextarea);
+    }
+    
+    // 2. Per i form di risposta (che vengono creati dinamicamente)
+    // Usiamo la delegazione di eventi per "attaccare" Tribute.js quando appare un nuovo form
+    document.body.addEventListener('focusin', function(event) {
+        if (event.target.matches('.comment-form-reply textarea')) {
+            tribute.attach(event.target);
+        }
+    });
+    
+    // --- FINE INIZIALIZZAZIONE ---
 });
 </script>
 {% endblock %}

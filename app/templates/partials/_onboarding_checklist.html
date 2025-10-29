@@ -1,0 +1,72 @@
+<div class="card shadow-sm mb-4 bg-light border-primary">
+    <div class="card-body">
+        <h4 class="card-title">Benvenuto, Nobile Viandante!</h4>
+        <p class="text-muted">Inizia la tua scalata verso la gloria. Completa questi primi passi per aumentare il tuo Prestigio e farti conoscere nella community.</p>
+
+        <ul class="list-group">
+            <!-- Passo 1: Profilo -->
+            <li class="list-group-item d-flex justify-content-between align-items-center {% if onboarding_status.profile_complete %}list-group-item-success{% endif %}">
+                <div>
+                    {% if onboarding_status.profile_complete %}
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Crea il tuo Stemma</strong> <small>(Fatto!)</small>
+                    {% else %}
+                        <i class="bi bi-person-bounding-box me-2"></i>
+                        Crea il tuo Stemma (Completa il profilo)
+                    {% endif %}
+                </div>
+                {% if not onboarding_status.profile_complete %}
+                    <a href="{{ url_for('main.edit_profile') }}" class="btn btn-sm btn-primary">Vai</a>
+                {% endif %}
+            </li>
+
+            <!-- Passo 2: Segui Utenti -->
+            <li class="list-group-item d-flex justify-content-between align-items-center {% if onboarding_status.followed_users %}list-group-item-success{% endif %}">
+                <div>
+                    {% if onboarding_status.followed_users %}
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Giura Fedeltà</strong> <small>(Fatto!)</small>
+                    {% else %}
+                         <i class="bi bi-people me-2"></i>
+                        Giura Fedeltà (Segui 3 utenti)
+                    {% endif %}
+                </div>
+                {% if not onboarding_status.followed_users %}
+                    <a href="{{ url_for('main.explore') }}" class="btn btn-sm btn-primary">Esplora</a>
+                {% endif %}
+            </li>
+            
+            <!-- Passo 3: Iscriviti a un Gruppo -->
+            <li class="list-group-item d-flex justify-content-between align-items-center {% if onboarding_status.joined_group %}list-group-item-success{% endif %}">
+                <div>
+                    {% if onboarding_status.joined_group %}
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Unisciti a una Gilda</strong> <small>(Fatto!)</small>
+                    {% else %}
+                         <i class="bi bi-shield-shaded me-2"></i>
+                        Unisciti a una Gilda (Iscriviti a un gruppo)
+                    {% endif %}
+                </div>
+                {% if not onboarding_status.joined_group %}
+                    <a href="{{ url_for('main.list_groups') }}" class="btn btn-sm btn-primary">Cerca</a>
+                {% endif %}
+            </li>
+
+            <!-- Passo 4: Primo Post -->
+            <li class="list-group-item d-flex justify-content-between align-items-center {% if onboarding_status.first_post %}list-group-item-success{% endif %}">
+                <div>
+                    {% if onboarding_status.first_post %}
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>Lascia il Segno</strong> <small>(Fatto!)</small>
+                    {% else %}
+                         <i class="bi bi-pencil-square me-2"></i>
+                        Lascia il Segno (Pubblica il tuo primo post)
+                    {% endif %}
+                </div>
+                {% if not onboarding_status.first_post %}
+                    <a href="{{ url_for('main.create_post') }}" class="btn btn-sm btn-primary">Scrivi</a>
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+</div>

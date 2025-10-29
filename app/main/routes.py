@@ -22,6 +22,7 @@ import json
 from .services import get_unified_feed_items
 import re # <-- Aggiungi questo import all'inizio del file
 from .gamification import add_prestige,TITLES
+from .onboarding import complete_onboarding_step, get_onboarding_status
 
 main = Blueprint('main', __name__)
 
@@ -109,8 +110,14 @@ def index():
     recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
     
     top_users_data = (
-        db.session.query(User, func.sum(Activity.distance).label('total_distance'))
-        .join(Activity).group_by(User).order_by(func.sum(Activity.distance).desc()).limit(5).all()
+        db.session.query(
+            User, 
+            func.sum(Activity.distance).label('total_distance')
+        )
+        .join(Activity)
+        .group_by(User.id)  # <-- MODIFICA CHIAVE QUI
+        .order_by(func.sum(Activity.distance).desc())
+        .limit(5).all()
     )
     top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
     
@@ -123,7 +130,16 @@ def index():
             Challenge.bet_type != 'none'
         ).order_by(Challenge.start_date.asc()).limit(3).all()
         recent_challenges_in_city = challenges_city_query
-        
+
+    show_onboarding = False
+    onboarding_status = {}
+    
+    if current_user.is_authenticated:
+        status, is_complete = get_onboarding_status(current_user)
+        if not is_complete:
+            show_onboarding = True
+            onboarding_status = status
+
     # --- PASSAGGIO DATI AL TEMPLATE ---
     return render_template("index.html", 
                            user_city=user_city, 
@@ -134,6 +150,8 @@ def index():
                            # Passiamo la variabile corretta con il nome corretto
                            community_items=community_items, 
                            has_next_feed_page=has_next_feed_page,
+                           show_onboarding=show_onboarding,
+                           onboarding_status=onboarding_status,
                            now=datetime.utcnow()
                            )
 
@@ -229,6 +247,10 @@ def edit_profile():
         if new_city is not None:
             current_user.city = new_city
 
+        # Se l'utente ha aggiunto una foto profilo e una città, consideriamo il profilo completo
+        if current_user.profile_image != 'default.png' and current_user.city:
+            complete_onboarding_step(current_user, 'profile_complete')
+
         db.session.commit()
         flash('Profilo aggiornato con successo!', 'success')
         return redirect(url_for('main.user_profile', user_id=current_user.id))
@@ -262,7 +284,12 @@ def follow(username):
     # --- FINE NUOVA LOGICA ---
     
     db.session.commit()
+    # Controlliamo se ha raggiunto la soglia
+    if current_user.followed.count() >= 3:
+        complete_onboarding_step(current_user, 'followed_users')
+        
     flash(f'Ora segui {username}!', 'success')
+
     return redirect(url_for('main.user_profile', user_id=user.id))
     
 @main.route('/unfollow/<username>')
@@ -1813,7 +1840,8 @@ def create_post():
                     db.session.add(notification)
             
             add_prestige(current_user, 'new_post')
-
+            if len(current_user.posts) == 1:
+                complete_onboarding_step(current_user, 'first_post')
             db.session.commit()
             
             flash('Post creato con successo!', 'success')
@@ -3027,6 +3055,7 @@ def join_group(group_id):
         return redirect(url_for('main.group_detail', group_id=group.id))
 
     group.members.append(current_user)
+    complete_onboarding_step(current_user, 'joined_group')
     db.session.commit()
 
     flash(f"Ti sei iscritto con successo a '{group.name}'!", 'success')
@@ -3239,3 +3268,32 @@ def bets_hall():
                            my_bets_lost=my_bets_lost,
                            recent_community_bets=recent_community_bets,
                            is_homepage=False)
+
+@main.route('/api/search_users')
+@login_required
+def search_users_api():
+    query = request.args.get('q', '', type=str)
+    
+    # Restituisci una lista vuota se la ricerca è troppo breve per evitare risultati inutili
+    if len(query) < 2:
+        return jsonify([])
+    
+    # Cerca utenti il cui username inizia con la query (case-insensitive)
+    # e che non siano l'utente corrente
+    users = User.query.filter(
+        User.username.ilike(f'{query}%'),
+        User.id != current_user.id
+    ).limit(5).all()
+    
+    # Formattiamo i dati nel modo specifico che Tribute.js si aspetta:
+    # una lista di oggetti con chiavi 'key' (il testo da mostrare) e 'value' (il testo da inserire).
+    users_list = [
+        {
+            'key': user.username, 
+            'value': user.username,
+            'avatar': url_for('static', filename=f'profile_pics/{user.profile_image}')
+        } 
+        for user in users
+    ]
+    
+    return jsonify(users_list)
