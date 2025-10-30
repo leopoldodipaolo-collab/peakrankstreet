@@ -23,6 +23,7 @@ from .services import get_unified_feed_items
 import re # <-- Aggiungi questo import all'inizio del file
 from .gamification import add_prestige,TITLES
 from .onboarding import complete_onboarding_step, get_onboarding_status
+from .gamification import TITLES
 
 main = Blueprint('main', __name__)
 
@@ -90,34 +91,51 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- Route Principali e Social ---
 
-# In app/main/routes.py
-
-# Assicurati di avere questo import all'inizio del file
-from sqlalchemy import case, func
-
-# ... (gli altri import e le altre rotte) ...
 @main.route('/')
 def index():
     user_city = current_user.city if current_user.is_authenticated else None
     
-    # --- UNICA FONTE DI VERITÀ PER IL FEED ---
-    community_items, has_next_feed_page = get_unified_feed_items(user=current_user, page=1, per_page=5)
-    # --- FINE LOGICA FEED ---
+    # Inizializziamo le variabili che dipendono dal login
+    community_items = []
+    has_next_feed_page = False
+    upcoming_events = []
+    show_onboarding = False
+    onboarding_status = {}
 
-    # --- DATI AGGIUNTIVI PER LA HOME PAGE (Il tuo codice, che va bene) ---
+    if current_user.is_authenticated:
+        # --- SE L'UTENTE È LOGGATO, CARICHIAMO I DATI DELLA SUA DASHBOARD ---
+        
+        # 1. Carica il feed personalizzato
+        community_items, has_next_feed_page = get_unified_feed_items(user=current_user, page=1, per_page=5)
+        
+        # 2. Carica la checklist di onboarding (se non completata)
+        status, is_complete = get_onboarding_status(current_user)
+        if not is_complete:
+            show_onboarding = True
+            onboarding_status = status
+            
+        # 3. NUOVA LOGICA: Carica gli eventi imminenti dei gruppi dell'utente
+        now = datetime.utcnow()
+        joined_group_ids = [g.id for g in current_user.joined_groups]
+        if joined_group_ids:
+            upcoming_events = Event.query.filter(
+                Event.group_id.in_(joined_group_ids),
+                Event.event_time >= now
+            ).order_by(Event.event_time.asc()).limit(3).all()
+
+    else:
+        # --- SE L'UTENTE NON È LOGGATO, CARICHIAMO IL FEED PUBBLICO ---
+        community_items, has_next_feed_page = get_unified_feed_items(user=None, page=1, per_page=5)
+
+    # --- DATI AGGIUNTIVI E PUBBLICI PER LA HOME PAGE ---
+    
     recent_activities = Activity.query.order_by(Activity.created_at.desc()).limit(5).all()
     
     top_users_data = (
-        db.session.query(
-            User, 
-            func.sum(Activity.distance).label('total_distance')
-        )
-        .join(Activity)
-        .group_by(User.id)  # <-- MODIFICA CHIAVE QUI
-        .order_by(func.sum(Activity.distance).desc())
-        .limit(5).all()
+        db.session.query(User, func.sum(Activity.distance).label('total_distance'))
+        .join(Activity).group_by(User.id)
+        .order_by(func.sum(Activity.distance).desc()).limit(5).all()
     )
     top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
     
@@ -130,16 +148,7 @@ def index():
             Challenge.bet_type != 'none'
         ).order_by(Challenge.start_date.asc()).limit(3).all()
         recent_challenges_in_city = challenges_city_query
-
-    show_onboarding = False
-    onboarding_status = {}
-    
-    if current_user.is_authenticated:
-        status, is_complete = get_onboarding_status(current_user)
-        if not is_complete:
-            show_onboarding = True
-            onboarding_status = status
-
+        
     # --- PASSAGGIO DATI AL TEMPLATE ---
     return render_template("index.html", 
                            user_city=user_city, 
@@ -147,11 +156,12 @@ def index():
                            recent_activities=recent_activities,
                            recent_challenges_in_city=recent_challenges_in_city,
                            top_users=top_users,
-                           # Passiamo la variabile corretta con il nome corretto
                            community_items=community_items, 
                            has_next_feed_page=has_next_feed_page,
                            show_onboarding=show_onboarding,
                            onboarding_status=onboarding_status,
+                           upcoming_events=upcoming_events,  # <-- Passiamo la nuova variabile
+                           TITLES=TITLES,
                            now=datetime.utcnow()
                            )
 
@@ -3018,31 +3028,27 @@ def create_group():
 @login_required
 def group_detail(group_id):
     group = Group.query.get_or_404(group_id)
-    members = group.members
-    is_member = current_user in members
+
+    # Controlliamo lo stato dell'utente corrente in modo efficiente
+    is_member = group.members.filter(User.id == current_user.id).first() is not None
     is_owner = group.owner_id == current_user.id
     
-    # --- NUOVA LOGICA: RECUPERA I POST DEL GRUPPO ---
-    # Usiamo la relazione 'posts' che abbiamo definito nel modello
+    # La logica per i post del gruppo è corretta
     group_posts = group.posts.order_by(Post.created_at.desc()).all()
-
-    # Arricchiamo i post con le info sui like (logica riutilizzata)
     if current_user.is_authenticated:
         for post in group_posts:
             post.current_user_liked = post.likes.filter_by(user_id=current_user.id).first() is not None
-    # --- FINE NUOVA LOGICA ---
-
-    # --- NUOVA LOGICA: RECUPERA GLI EVENTI IMMINENTI ---
+            
+    # La logica per gli eventi è corretta
     now = datetime.utcnow()
     upcoming_events = group.events.filter(Event.event_time >= now).order_by(Event.event_time.asc()).limit(5).all()
-    # --- FINE NUOVA LOGICA ---
 
     return render_template('group_detail.html', 
                            group=group, 
-                           members=members, 
+                           # 'members' non viene più passato
                            is_member=is_member,
                            is_owner=is_owner,
-                           group_posts=group_posts, # <-- Passiamo i post al template
+                           group_posts=group_posts,
                            upcoming_events=upcoming_events,
                            is_homepage=False)
 

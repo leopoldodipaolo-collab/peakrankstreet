@@ -3,7 +3,7 @@
 {% block title %}Home - PeakRankStreet App{% endblock %}
 
 {% block content %}
-    <!-- Hero Section -->
+    <!-- ======================= HERO SECTION ======================= -->
     <section class="hero-section text-white text-center d-flex align-items-center justify-content-center">
         <div class="container">
             <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
@@ -50,6 +50,30 @@
                 </div>
             </div>
         </div>
+
+        <div class="row">
+            <!-- Colonna Principale con il Feed -->
+            <div class="col-lg-8">
+                {# Widget Onboarding (se visibile) #}
+                {% if show_onboarding %}
+                    {% include 'partials/_onboarding_checklist.html' %}
+                {% endif %}
+
+            </div>
+
+            <!-- Colonna Laterale per i Widget -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 100px;">
+                    {# --- WIDGET PRESTIGIO AGGIUNTO QUI --- #}
+                    {% if current_user.is_authenticated %}
+                        {% include 'partials/_prestige_widget.html' %}
+                    {% endif %}
+
+                    {# In futuro, qui potremmo mettere anche altri widget come 
+                    "Hashtag di Tendenza" o "Utenti da Scoprire" #}
+                </div>
+            </div>
+        </div>
         
         <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
             <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
@@ -61,13 +85,6 @@
                 </a>
             </div>
         </div>
-
-        {# ========================================================== #}
-        {# --- POSIZIONE PERFETTA PER LA CHECKLIST DI ONBOARDING --- #}
-        {# ========================================================== #}
-        {% if show_onboarding %}
-            {% include 'partials/_onboarding_checklist.html' %}
-        {% endif %}
 
         <div class="card shadow-lg mb-5 map-card-custom">
             <div class="card-header bg-primary-custom text-white d-flex justify-content-between align-items-center">
@@ -333,7 +350,14 @@
                     </div>
                 </div>
             </div>
-
+            {# In index.html #}
+            {% if current_user.is_authenticated and upcoming_events %}
+                <div class="row mb-4">
+                    <div class="col-lg-8 mx-auto">
+                        {% include 'partials/_upcoming_events_widget.html' %}
+                    </div>
+                </div>
+            {% endif %}
             <!-- AGGIORNAMENTI DALLA COMMUNITY -->
             {% include 'partials/_create_post_box.html' %}
             {% from 'macros/_cards.html' import feed_card %}
@@ -385,6 +409,11 @@
     <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.locales.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
             function applyTimeago(container) {
                 const elements = container.querySelectorAll('.timeago:not(.timeago-applied)');
                 if (elements.length > 0) {

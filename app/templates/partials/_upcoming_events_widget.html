@@ -1,0 +1,24 @@
+{# Contenuto CORRETTO di _upcoming_events_widget.html #}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>I Prossimi Eventi dei Tuoi Gruppi</h5>
+    </div>
+    {% if upcoming_events %}
+        <div class="list-group list-group-flush">
+            {% for event in upcoming_events %}
+                <a href="{{ url_for('main.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1 fw-bold">{{ event.name }}</h6>
+                        <small class="text-primary fw-bold">{{ event.event_time.strftime('%d %b') }}</small>
+                    </div>
+                    <p class="mb-1 small">Organizzato da: <strong>{{ event.group.name }}</strong></p>
+                    <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ event.location or 'Luogo da definire' }}</small>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card-body">
+            <p class="text-muted mb-0 small">Nessun evento in programma nei tuoi gruppi al momento.</p>
+        </div>
+    {% endif %}
+</div>
