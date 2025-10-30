@@ -51,29 +51,56 @@
             </div>
         </div>
 
-        <div class="row">
-            <!-- Colonna Principale con il Feed -->
-            <div class="col-lg-8">
-                {# Widget Onboarding (se visibile) #}
+        <div class="container">
+            <div class="row">
+                <!-- Colonna SINISTRA -->
+                <div class="col-lg-6">
                 {% if show_onboarding %}
+                    <div class="mb-4">
                     {% include 'partials/_onboarding_checklist.html' %}
+                    </div>
                 {% endif %}
 
-            </div>
+                {% if current_user.is_authenticated %}
+                    <div class="mb-4">
+                    {% include 'partials/_prestige_widget.html' %}
+                    </div>
+                {% endif %}
+                </div>
 
-            <!-- Colonna Laterale per i Widget -->
-            <div class="col-lg-4">
-                <div class="sticky-top" style="top: 100px;">
-                    {# --- WIDGET PRESTIGIO AGGIUNTO QUI --- #}
-                    {% if current_user.is_authenticated %}
-                        {% include 'partials/_prestige_widget.html' %}
-                    {% endif %}
+                <!-- Colonna DESTRA -->
+                <div class="col-lg-6">
+                {% if current_user.is_authenticated and upcoming_events %}
+                    <div class="mb-4">
+                    {% include 'partials/_upcoming_events_widget.html' %}
+                    </div>
+                {% endif %}
 
-                    {# In futuro, qui potremmo mettere anche altri widget come 
-                    "Hashtag di Tendenza" o "Utenti da Scoprire" #}
+                {% if recent_challenges_in_city %}
+                    <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-bullseye me-2"></i>Sfide nella tua zona</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for challenge in recent_challenges_in_city %}
+                        <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                            <p class="mb-1 fw-bold">{{ challenge.name }}</p>
+                            <small>{{ challenge.end_date.strftime('%d %b') }}</small>
+                            </div>
+                            <small class="text-muted">Su: {{ challenge.route_info.name }}</small>
+                        </a>
+                        {% endfor %}
+                        <a href="{{ url_for('main.challenges_list') }}" class="list-group-item list-group-item-action text-center text-primary fw-bold">
+                        Vedi tutte le sfide...
+                        </a>
+                    </div>
+                    </div>
+                {% endif %}
                 </div>
             </div>
-        </div>
+            </div>
+
         
         <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
             <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
@@ -214,18 +241,7 @@
                 </div>
 
                 <div class="card shadow-lg my-5">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h2 class="mb-0"><i class="bi bi-bullseye me-2"></i>Tutte le Sfide</h2>
-                        <div class="d-flex align-items-center flex-grow-1 justify-content-end">
-                            <label for="statusFilter" class="form-label mb-0 me-2 text-white-50 d-none d-md-block">Filtra:</label>
-                            <select id="statusFilter" class="form-select form-select-sm w-auto">
-                                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tutte</option>
-                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Attive</option>
-                                <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminate</option>
-                                <option value="closed_only" {% if status_filter == 'closed_only' %}selected{% endif %}>Chiuse</option>
-                            </select>
-                        </div>
-                    </div>
+            
                     <div class="card-body p-4">
                         {% if invited_challenges %}
                         <div class="card shadow-sm mb-4 bet-card">
@@ -340,24 +356,11 @@
                                     </li>
                                 </ul>
                             </nav>
-
-                        {% else %}
-                            <p class="text-center text-muted mt-4 p-3 border rounded">
-                                <i class="bi bi-info-circle me-2"></i>Ancora nessuna sfida creata con i filtri selezionati. Sii il primo a 
-                                <a href="{{ url_for('main.create_challenge') }}" class="text-primary fw-bold">crearne una!</a>
-                            </p>
                         {% endif %}
                     </div>
                 </div>
             </div>
-            {# In index.html #}
-            {% if current_user.is_authenticated and upcoming_events %}
-                <div class="row mb-4">
-                    <div class="col-lg-8 mx-auto">
-                        {% include 'partials/_upcoming_events_widget.html' %}
-                    </div>
-                </div>
-            {% endif %}
+
             <!-- AGGIORNAMENTI DALLA COMMUNITY -->
             {% include 'partials/_create_post_box.html' %}
             {% from 'macros/_cards.html' import feed_card %}

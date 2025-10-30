@@ -1,57 +1,154 @@
 {% extends "base.html" %}
 
-{% block title %}{{ challenge.name }}{% endblock %}
+{% block title %}{{ challenge.name }} - Sfida{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Intestazione Sfida -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">🎯 {{ challenge.name }}</h2>
-                <span class="badge bg-{{ 'success' if challenge.is_active else 'secondary' }}">
-                    {{ 'Attiva' if challenge.is_active else 'Terminata' }}
-                </span>
+<div class="container py-4">
+    <!-- Header Sfida -->
+    <div class="card border-0 shadow-lg mb-5">
+        <div class="card-header bg-gradient-primary text-white py-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-container bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                            <i class="fas fa-trophy fa-lg text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="h2 mb-1">{{ challenge.name }}</h1>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-{{ 'success' if challenge.is_active else 'dark' }} fs-6">
+                                    {{ '🟢 Attiva' if challenge.is_active else '🔴 Terminata' }}
+                                </span>
+                                <span class="badge bg-{{ 'info' if challenge.challenge_type == 'open' else 'warning' }} fs-6">
+                                    {{ '🌐 Aperta' if challenge.challenge_type == 'open' else '🔒 Privata' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    {% if challenge.is_active %}
+                    <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" 
+                       class="btn btn-light btn-lg px-4">
+                        <i class="fas fa-running me-2"></i>Partecipa
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Percorso:</strong> {{ challenge.route_info.name }}</p>
-                    <p><strong>Data inizio:</strong> {{ challenge.start_date.strftime('%d/%m/%Y') }}</p>
-                    <p><strong>Data fine:</strong> {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
-                    <p><strong>Tipo:</strong> 
-                        <span class="badge bg-{{ 'info' if challenge.challenge_type == 'open' else 'warning' }}">
-                            {{ 'Aperta' if challenge.challenge_type == 'open' else 'Chiusa' }}
-                        </span>
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Creato da:</strong> 
-                        <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}">
-                            {{ challenge.challenger.username }}
-                        </a>
-                    </p>
+        
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <!-- Informazioni Sfida -->
+                <div class="col-lg-6">
+                    <h5 class="text-primary mb-3"><i class="fas fa-info-circle me-2"></i>Informazioni Sfida</h5>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                <i class="fas fa-route me-2 text-primary"></i>
+                                <strong>Percorso:</strong>
+                            </div>
+                            <p class="ms-4">{{ challenge.route_info.name }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                <strong>Periodo:</strong>
+                            </div>
+                            <p class="ms-4">{{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                <strong>Creatore:</strong>
+                            </div>
+                            <p class="ms-4">
+                                <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" 
+                                   class="text-decoration-none">
+                                    {{ challenge.challenger.username }}
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center text-muted mb-2">
+                                <i class="fas fa-users me-2 text-primary"></i>
+                                <strong>Partecipanti:</strong>
+                            </div>
+                            <p class="ms-4">{{ activities|length }}</p>
+                        </div>
+                    </div>
+                    
                     {% if challenge.bet_type != 'none' %}
-                    <p><strong>Scommessa:</strong> {{ challenge.bet_value }}</p>
+                    <div class="mt-3 p-3 bg-warning bg-opacity-10 rounded">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-coins me-2 text-warning"></i>
+                            <strong class="text-warning">Scommessa:</strong>
+                        </div>
+                        <p class="mb-0 ms-4">{{ challenge.bet_value }}</p>
+                    </div>
                     {% endif %}
-                    <p><strong>Partecipanti:</strong> {{ activities|length }}</p>
+                </div>
+                
+                <!-- Statistiche Rapide -->
+                <div class="col-lg-6">
+                    <h5 class="text-primary mb-3"><i class="fas fa-chart-bar me-2"></i>Statistiche</h5>
+                    <div class="row g-3 text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="text-primary mb-1">
+                                    <i class="fas fa-users fa-lg"></i>
+                                </div>
+                                <h4 class="mb-0 text-dark">{{ activities|length }}</h4>
+                                <small class="text-muted">Partecipanti</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="text-success mb-1">
+                                    <i class="fas fa-trophy fa-lg"></i>
+                                </div>
+                                <h4 class="mb-0 text-dark">
+                                    {% if activities %}
+                                        {{ (activities|sort(attribute='duration')|first).duration // 60 }}min
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </h4>
+                                <small class="text-muted">Miglior tempo</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="text-info mb-1">
+                                    <i class="fas fa-calendar-day fa-lg"></i>
+                                </div>
+                                <h4 class="mb-0 text-dark">{{ (challenge.end_date - challenge.start_date).days }}</h4>
+                                <small class="text-muted">Giorni</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Sezione Invitati (solo per sfide chiuse) -->
+            <!-- Sezione Invitati -->
             {% if challenge.challenge_type == 'closed' and invitations %}
-            <div class="mt-3">
-                <h5>🎪 Amici Invitati</h5>
-                <div class="d-flex flex-wrap gap-2">
+            <div class="mt-4 pt-3 border-top">
+                <h5 class="text-primary mb-3"><i class="fas fa-user-plus me-2"></i>Amici Invitati</h5>
+                <div class="d-flex flex-wrap gap-3">
                     {% for invitation in invitations %}
-                        <div class="partecipant">
-                            <a href="{{ url_for('main.user_profile', user_id=invitation.user.id) }}">
-                                <img src="{{ url_for('static', filename='profile_pics/' + invitation.user.profile_image) }}" ... >
-                                {{ invitation.user.username }}
-                            </a>
-                            <span>{{ invitation.status }}</span>
-                        </div>
+                    <div class="participant-card d-flex align-items-center bg-light rounded-pill px-3 py-2">
+                        <img src="{{ url_for('static', filename='profile_pics/' + invitation.user.profile_image) }}" 
+                             class="rounded-circle me-2" width="32" height="32" 
+                             style="object-fit: cover;"
+                             onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
+                        <a href="{{ url_for('main.user_profile', user_id=invitation.user.id) }}" 
+                           class="text-decoration-none fw-medium me-2">
+                            {{ invitation.user.username }}
+                        </a>
+                        <span class="badge bg-{{ 'success' if invitation.status == 'accepted' else 'warning' if invitation.status == 'pending' else 'secondary' }} fs-7">
+                            {{ invitation.status }}
+                        </span>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -60,62 +157,114 @@
     </div>
 
     <!-- Classifica -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-success text-white">
-            <h4 class="mb-0">🏆 Classifica</h4>
+    <div class="card border-0 shadow-lg mb-5">
+        <div class="card-header bg-gradient-success text-white py-3">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-trophy me-2"></i>
+                <h4 class="mb-0">Classifica</h4>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             {% if activities %}
-                <div class="list-group">
+                <div class="list-group list-group-flush">
                     {% for activity in activities|sort(attribute='duration') %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <span class="badge bg-primary me-3">#{{ loop.index }}</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 
+                                {{ 'bg-winner' if loop.index == 1 else '' }}">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <div class="position-indicator me-3">
+                                {% if loop.index == 1 %}
+                                <div class="gold-medal">
+                                    <i class="fas fa-crown text-warning"></i>
+                                </div>
+                                {% elif loop.index == 2 %}
+                                <div class="silver-medal text-secondary">
+                                    <i class="fas fa-medal"></i>
+                                </div>
+                                {% elif loop.index == 3 %}
+                                <div class="bronze-medal text-bronze">
+                                    <i class="fas fa-medal"></i>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-light text-dark fs-6">#{{ loop.index }}</span>
+                                {% endif %}
+                            </div>
+                            
                             <img src="{{ url_for('static', filename='profile_pics/' + activity.user_activity.profile_image) }}" 
-                                 class="rounded-circle me-2" width="40" height="40" 
+                                 class="rounded-circle me-3" width="50" height="50" 
                                  style="object-fit: cover;"
                                  onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
-                            <div>
-                                <strong>{{ activity.user_activity.username }}</strong>
-                                <br>
-                                <small class="text-muted">
-                                    Tempo: {{ (activity.duration // 60)|int }}:{{ "%02d"|format(activity.duration % 60) }}
-                                    • Velocità: {{ "%.1f"|format(activity.avg_speed) }} km/h
-                                </small>
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ activity.user_activity.username }}</h6>
+                                        <div class="text-muted small">
+                                            <span class="me-3">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ (activity.duration // 60)|int }}:{{ "%02d"|format(activity.duration % 60) }}
+                                            </span>
+                                            <span>
+                                                <i class="fas fa-gauge-high me-1"></i>
+                                                {{ "%.1f"|format(activity.avg_speed) }} km/h
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        
                         <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" 
-                           class="btn btn-outline-primary btn-sm">
-                            Dettagli
+                           class="btn btn-outline-primary btn-sm ms-3">
+                            <i class="fas fa-external-link-alt me-1"></i>Dettagli
                         </a>
                     </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p class="text-center text-muted">Nessuna attività registrata per questa sfida.</p>
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nessuna attività registrata</h5>
+                    <p class="text-muted">Sii il primo a partecipare a questa sfida!</p>
+                </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Sezione Accetta Invito (solo per utenti invitati a sfide chiuse) -->
+    <!-- Sezione Invito in Sospeso -->
     {% if challenge.challenge_type == 'closed' and current_user.is_authenticated and current_user.id != challenge.created_by %}
         {% for invitation in invitations %}
             {% if invitation.invited_user_id == current_user.id and invitation.status == 'pending' %}
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">📬 Invito in Sospeso</h5>
+                <div class="card border-0 shadow-lg mb-5">
+                    <div class="card-header bg-gradient-warning text-dark py-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-envelope me-2"></i>
+                            <h5 class="mb-0">Invito in Sospeso</h5>
+                        </div>
                     </div>
-                    <div class="card-body text-center">
-                        <p>Sei stato invitato a questa sfida! Accetti la sfida?</p>
-                        
-                        <form action="{{ url_for('main.accept_challenge', challenge_id=challenge.id) }}" method="POST" class="d-inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button type="submit" class="btn btn-success me-2">✅ Accetta Sfida</button>
-                        </form>
-                        
-                        <form action="{{ url_for('main.decline_challenge', challenge_id=challenge.id) }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-danger">❌ Rifiuta</button>
-                        </form>
+                    <div class="card-body text-center p-4">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <i class="fas fa-question-circle fa-3x text-warning mb-3"></i>
+                                <h4 class="mb-3">Sei stato invitato a questa sfida!</h4>
+                                <p class="text-muted mb-4">Accetti la sfida contro {{ challenge.challenger.username }}?</p>
+                                
+                                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                    <form action="{{ url_for('main.accept_challenge', challenge_id=challenge.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-success btn-lg px-4">
+                                            <i class="fas fa-check me-2"></i>Accetta Sfida
+                                        </button>
+                                    </form>
+                                    
+                                    <form action="{{ url_for('main.decline_challenge', challenge_id=challenge.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-outline-danger btn-lg px-4">
+                                            <i class="fas fa-times me-2"></i>Rifiuta
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -124,72 +273,114 @@
 
     <!-- Sezione Sfida Terminata -->
     {% if not challenge.is_active %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">🏁 Sfida Terminata</h5>
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-gradient-secondary text-white py-3">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-flag-checkered me-2"></i>
+                <h5 class="mb-0">Sfida Terminata</h5>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="mb-2"><strong>Questa sfida è terminata il {{ challenge.end_date.strftime('%d/%m/%Y') }}</strong></p>
-            
-            {% if activities %}
-                <div class="alert alert-success">
-                    <strong>🏆 Vincitore: </strong>
-                    {% set winner = activities|sort(attribute='duration')|first %}
-                    {{ winner.user_activity.username }} con {{ (winner.duration // 60)|int }}:{{ "%02d"|format(winner.duration % 60) }}
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p class="mb-3"><strong>Questa sfida è terminata il {{ challenge.end_date.strftime('%d/%m/%Y') }}</strong></p>
+                    
+                    {% if activities %}
+                        <div class="alert alert-success border-0">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-trophy fa-2x me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">🏆 Vincitore</h5>
+                                    {% set winner = activities|sort(attribute='duration')|first %}
+                                    <strong>{{ winner.user_activity.username }}</strong> con un tempo di {{ (winner.duration // 60)|int }}:{{ "%02d"|format(winner.duration % 60) }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
-            {% else %}
-                <p class="text-muted">Nessuna attività registrata per questa sfida.</p>
-            {% endif %}
-            
-            <!-- Statistiche -->
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <h6>Partecipanti</h6>
-                    <span class="badge bg-primary">{{ activities|length }}</span>
-                </div>
-                <div class="col-md-4">
-                    <h6>Miglior Tempo</h6>
-                    <span class="badge bg-success">
-                        {% if activities %}
-                            {{ (activities|sort(attribute='duration')|first).duration // 60 }}min
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="col-md-4">
-                    <h6>Durata Sfida</h6>
-                    <span class="badge bg-info">
-                        {{ (challenge.end_date - challenge.start_date).days }} giorni
-                    </span>
+                <div class="col-md-4 text-center">
+                    <div class="bg-light rounded p-3">
+                        <i class="fas fa-calendar-times fa-2x text-secondary mb-2"></i>
+                        <h6>Durata Sfida</h6>
+                        <h4 class="text-secondary mb-0">{{ (challenge.end_date - challenge.start_date).days }} giorni</h4>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
-
-    <!-- Pulsante Partecipa (per tutti quando la sfida è attiva) -->
-    {% if challenge.is_active %}
-    <div class="text-center">
-        <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" 
-           class="btn btn-success btn-lg">
-            🏃 Partecipa alla Sfida
-        </a>
-    </div>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+.bg-gradient-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+}
+
+.bg-winner {
+    background-color: rgba(255, 215, 0, 0.1);
+    border-left: 4px solid #ffc107;
+}
+
+.gold-medal, .silver-medal, .bronze-medal {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-bronze {
+    color: #cd7f32;
+}
+
+.participant-card {
+    transition: transform 0.2s ease;
+}
+
+.participant-card:hover {
+    transform: translateY(-2px);
+}
+
+.icon-container {
+    backdrop-filter: blur(10px);
+}
+
+.list-group-item {
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-// Debug leggero per sviluppo
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🎯 Pagina sfida caricata:", {
         challengeId: {{ challenge.id }},
         challengeName: "{{ challenge.name }}",
         challengeType: "{{ challenge.challenge_type }}",
-        isActive: {{ challenge.is_active|lower }}
+        isActive: {{ challenge.is_active|lower }},
+        participants: {{ activities|length }}
     });
 });
 </script>

@@ -28,6 +28,7 @@ import random
 from app import csrf
 from flask_wtf.csrf import validate_csrf # Aggiungi questo import
 from wtforms import ValidationError
+from werkzeug.security import check_password_hash # Assicurati che l'import sia corretto
 
 main = Blueprint('main', __name__)
 
@@ -96,6 +97,77 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
+
+# Aggiungi 'timedelta' agli import di datetime
+from datetime import datetime, timedelta
+
+# ... (le tue altre rotte)
+
+@main.route('/test/create_finished_bet')
+@login_required
+def create_finished_bet_test():
+    """
+    Crea uno scenario di test completo per una scommessa terminata.
+    """
+    try:
+        # --- 1. SETUP DEGLI UTENTI ---
+        vincitore = User.query.filter_by(username='tester_vincitore').first()
+        if not vincitore:
+            vincitore = User(username='tester_vincitore', email='vincitore@test.com')
+            vincitore.set_password('password')
+            db.session.add(vincitore)
+
+        perdente = User.query.filter_by(username='tester_perdente').first()
+        if not perdente:
+            perdente = User(username='tester_perdente', email='perdente@test.com')
+            perdente.set_password('password')
+            db.session.add(perdente)
+        
+        db.session.commit() # Salva gli utenti qui per assicurarti che abbiano un ID
+
+        # --- 2. SETUP PERCORSO E SFIDA ---
+        route = Route.query.first()
+        if not route:
+            return "ERRORE: Nessun percorso trovato. Crea un percorso prima."
+        
+        challenge = Challenge(
+            name="Test Sfida Conclusa",
+            route_id=route.id,
+            created_by=perdente.id,
+            start_date=datetime.utcnow() - timedelta(days=2),
+            end_date=datetime.utcnow() - timedelta(days=1),
+            is_active=False,
+            challenge_type='closed',
+            bet_type='beer',
+            bet_value='🍺 1 Birra'
+        )
+        db.session.add(challenge)
+        db.session.commit() # Salva la sfida qui
+
+        # --- 3. CREA ATTIVITÀ ---
+        vincitore_activity = Activity(user_id=vincitore.id, challenge_id=challenge.id, route_id=route.id, duration=600, distance=5, avg_speed=30, gps_track='{}')
+        perdente_activity = Activity(user_id=perdente.id, challenge_id=challenge.id, route_id=route.id, duration=700, distance=5, avg_speed=25, gps_track='{}')
+        db.session.add_all([vincitore_activity, perdente_activity])
+        db.session.commit() # Salva le attività qui
+
+        # --- 4. ESEGUI LA LOGICA FINALE ---
+        # Ora che tutto è salvato, le relazioni (come challenge.name, winner.username) funzioneranno
+        create_bet_notification(challenge, vincitore, perdente)
+        db.session.commit() # Commit finale per salvare i post e le notifiche
+
+        return f"""
+            <h1>✅ Scenario di Test Creato con Successo!</h1>
+            <p>Ricarica la home page per vedere i post della scommessa.</p>
+            <a href="{url_for('main.index')}" class="btn btn-primary">Vai alla Home Page</a>
+        """
+
+    except Exception as e:
+        db.session.rollback()
+        # Aggiungiamo il traceback per un debug più facile
+        import traceback
+        return f"❌ Errore durante la creazione dello scenario: <pre>{e}\n{traceback.format_exc()}</pre>"
+    
 @main.route('/')
 def index():
     user_city = current_user.city if current_user.is_authenticated else None

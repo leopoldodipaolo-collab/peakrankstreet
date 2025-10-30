@@ -18,6 +18,13 @@
         {# Possiamo riutilizzare lo stile dei record, che è celebrativo #}
         {% include 'partials/feed_items/_system_record.html' with context %}
     {# --- FINE BLOCCO --- #}
+
+    {# --- AGGIUNGI QUESTI BLOCCHI ELIF --- #}
+    {% elif post.post_category == 'system_bet_win' %}
+        {% include 'partials/feed_items/_system_bet_win.html' with context %}
+    {% elif post.post_category == 'system_bet_loss' or post.post_category == 'system_bet_paid' %}
+        {% include 'partials/feed_items/_system_bet_loss.html' with context %}
+    {# --- FINE BLOCCHI AGGIUNTI --- #}
     
     {% elif post.post_category == 'system_record' %}
         {# È un post automatico per un nuovo record #}

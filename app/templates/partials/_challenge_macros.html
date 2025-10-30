@@ -1,0 +1,38 @@
+{% macro render_challenge_item(challenge, now, current_user, invited_challenges=[]) %}
+<div class="list-group-item mb-3 border rounded-3 shadow-sm p-3">
+    <div class="row align-items-center">
+        <div class="col-md-7">
+            <h5 class="mb-1 d-flex align-items-center">
+                {% if challenge.bet_type != 'none' %}
+                    <span class="bet-icon me-2" title="Scommessa: {{ challenge.bet_value }}">
+                        {% if challenge.bet_type == 'beer' %}🍺{% elif challenge.bet_type == 'dinner' %}🍝{% else %}🎁{% endif %}
+                    </span>
+                {% endif %}
+                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="text-dark text-decoration-none">{{ challenge.name }}</a>
+            </h5>
+            <p class="mb-1 small text-muted">
+                Su: <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}">{{ challenge.route_info.name }}</a>
+            </p>
+            <small class="text-muted"><i class="bi bi-calendar3"></i> 
+                {{ challenge.start_date.strftime('%d %b') }} - {{ challenge.end_date.strftime('%d %b %Y') }}
+            </small>
+        </div>
+        <div class="col-md-2 text-center my-2 my-md-0">
+            {% if challenge.end_date < now %}
+                <span class="badge bg-secondary">Terminata</span>
+            {% elif challenge in invited_challenges %}
+                <span class="badge bg-warning text-dark">Invito</span>
+            {% else %}
+                <span class="badge bg-success">Attiva</span>
+            {% endif %}
+        </div>
+        <div class="col-md-3 text-end">
+            {% if challenge in invited_challenges %}
+                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm">Visualizza Invito</a>
+            {% else %}
+                <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-outline-secondary btn-sm">Classifica</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}

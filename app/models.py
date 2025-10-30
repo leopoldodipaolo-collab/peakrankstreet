@@ -5,7 +5,7 @@ from . import db
 from sqlalchemy import event
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm.attributes import get_history
-
+import random
 # =====================================================================
 # TABELLE DI ASSOCIAZIONE (Molti-a-Molti)
 # Definite qui all'inizio per essere disponibili a tutti i modelli.
@@ -388,7 +388,7 @@ class Bet(db.Model):
     challenge = db.relationship('Challenge', backref='bets')
     winner = db.relationship('User', foreign_keys=[winner_id], backref='bets_won')
     loser = db.relationship('User', foreign_keys=[loser_id], backref='bets_lost')
-
+    related_post_id = db.Column(db.Integer, nullable=True)
 # =====================================================================
 # FUNZIONI HELPER (associate ai modelli)
 # =====================================================================
@@ -435,10 +435,12 @@ def close_expired_challenges():
         db.session.rollback()
         return 0
     
+# Se questa funzione è in models.py, assicurati di avere:
+# from app.main.gamification import create_bet_notification
+
 def process_challenge_bet(challenge):
     """Processa la scommessa di una sfida terminata"""
     try:
-        # Trova il vincitore (miglior tempo)
         winner_activity = Activity.query.filter_by(
             challenge_id=challenge.id
         ).order_by(Activity.duration.asc()).first()
@@ -447,17 +449,17 @@ def process_challenge_bet(challenge):
             print(f"❌ Nessuna attività per la sfida {challenge.id} - scommessa saltata")
             return
         
-        winner = winner_activity.user_activity
+        # --- CORREZIONE QUI ---
+        winner = winner_activity.user
         print(f"🎯 Vincitore sfida {challenge.id}: {winner.username}")
         
-        # Per sfide chiuse, tutti gli altri partecipanti perdono
         if challenge.challenge_type == 'closed':
             participants = Activity.query.filter_by(challenge_id=challenge.id).all()
             for activity in participants:
                 if activity.user_id != winner.id:
-                    create_bet_notification(challenge, winner, activity.user_activity)
+                    # --- E CORREZIONE QUI ---
+                    create_bet_notification(challenge, winner, activity.user)
         
-        # Per sfide aperte, solo il creatore paga (se non ha vinto)
         elif challenge.challenge_type == 'open' and challenge.created_by != winner.id:
             creator = User.query.get(challenge.created_by)
             create_bet_notification(challenge, winner, creator)
@@ -468,9 +470,11 @@ def process_challenge_bet(challenge):
         print(f"❌ Errore nel processare scommessa per sfida {challenge.id}: {e}")
 
 def create_bet_notification(challenge, winner, loser):
-    """Crea le notifiche per vincitore e perdente"""
+    """
+    Crea il record Bet, le notifiche E i post automatici per il feed.
+    """
     try:
-        # Crea record scommessa
+        # 1. Crea il record della scommessa (logica esistente)
         new_bet = Bet(
             challenge_id=challenge.id,
             winner_id=winner.id,
@@ -481,30 +485,51 @@ def create_bet_notification(challenge, winner, loser):
         )
         db.session.add(new_bet)
         
-        # Notifica per il VINCITORE
-        winner_notification = Notification(
-            recipient_id=winner.id,
-            actor_id=loser.id,
-            action='bet_won',
-            object_id=challenge.id,
-            object_type='bet'
-        )
+        # 2. Crea le notifiche (logica esistente)
+        winner_notification = Notification(...)
         db.session.add(winner_notification)
-        
-        # Notifica per il PERDENTE
-        loser_notification = Notification(
-            recipient_id=loser.id,
-            actor_id=winner.id,
-            action='bet_lost',
-            object_id=challenge.id,
-            object_type='bet'
-        )
+        loser_notification = Notification(...)
         db.session.add(loser_notification)
+
+        # --- NUOVA LOGICA: CREA I POST PER IL FEED ---
         
-        print(f"💰 Scommessa creata: {winner.username} → {loser.username}: {challenge.bet_value}")
+        # Frasi per il vincitore
+        win_phrases = [
+            f"🍻 Vittoria! {winner.username} ha appena vinto {challenge.bet_value} da {loser.username}",
+            f"👑 Gloria Eterna! {winner.username} ha dominato e ora attende il suo tributo ({challenge.bet_value}) da {loser.username}.",
+            f"SCONFITTO! {loser.username} si inchina a {winner.username} e ora gli deve {challenge.bet_value}."
+        ]
+        winner_post = Post(
+            user_id=winner.id,
+            content=random.choice(win_phrases) + f" nella sfida '{challenge.name}'.",
+            post_category='system_bet_win', # Nuova categoria per uno stile unico!
+            group_id=challenge.route.group_id if hasattr(challenge, 'route') and hasattr(challenge.route, 'group_id') else None # Associa al gruppo se la sfida è di gruppo
+        )
+        db.session.add(winner_post)
+
+        # Frasi per il perdente
+        loss_phrases = [
+            f"💸 Debito d'onore! {loser.username} ha perso {challenge.bet_value} contro {winner.username}.",
+            f"Lezione di umiltà per {loser.username}, che ora deve pagare {challenge.bet_value} a {winner.username}.",
+            f"C'è chi vince e c'è chi... paga da bere. {loser.username} deve {challenge.bet_value} a {winner.username}!"
+        ]
+        loser_post_content = random.choice(loss_phrases) + " E il debito è ancora in sospeso! ⏳"
+        
+        loser_post = Post(
+            user_id=loser.id,
+            content=loser_post_content,
+            post_category='system_bet_loss' # Nuova categoria!
+        )
+        db.session.add(loser_post)
+        
+        # Colleghiamo il post del perdente alla scommessa per poterlo aggiornare
+        db.session.flush() 
+        new_bet.related_post_id = loser_post.id
+        
+        print(f"💰 Scommessa e Post creati: {winner.username} vince, {loser.username} perde.")
         
     except Exception as e:
-        print(f"❌ Errore creazione scommessa: {e}")
+        print(f"❌ Errore durante la creazione dei post di scommessa: {e}")
 
 
 def after_route_approved(mapper, connection, target):

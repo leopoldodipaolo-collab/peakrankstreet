@@ -90,6 +90,8 @@
                  <div class="col-12">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white"><h5 class="mb-0">💰 Resoconto Scommesse</h5></div>
+                        {# --- USA L'INCLUDE QUI --- #}
+                        {% include 'partials/_bets_summary.html' %}
                         <div class="card-body">
                            <div class="row text-center">
                                 <div class="col-4 border-end"><h6>Vinte</h6><span class="badge bg-success fs-6">{{ bets_won|length }}</span></div>
