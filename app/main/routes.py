@@ -21,9 +21,8 @@ from app import csrf  # <-- IMPORT CORRETTO
 import json
 from .services import get_unified_feed_items
 import re # <-- Aggiungi questo import all'inizio del file
-from .gamification import add_prestige,TITLES
 from .onboarding import complete_onboarding_step, get_onboarding_status
-from .gamification import TITLES
+from .gamification import add_prestige, TITLES, create_bet_notification # <-- Assicurati che sia così
 import random
 from app import csrf
 from flask_wtf.csrf import validate_csrf # Aggiungi questo import

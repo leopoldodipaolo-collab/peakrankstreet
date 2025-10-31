@@ -140,7 +140,7 @@ def create_app():
     # --- Gestione Sfide Scadute (All'avvio) ---
     with app.app_context():
         try:
-            from .models import close_expired_challenges
+            from .main.gamification import close_expired_challenges
             closed_count = close_expired_challenges()
             if closed_count > 0:
                 print(f"🚀 All'avvio: chiuse {closed_count} sfide scadute.")
@@ -150,8 +150,8 @@ def create_app():
     # --- Scheduler per attività periodiche ---
     try:
         if not scheduler.running:
-            from .models import close_expired_challenges
-
+            from .main.gamification import close_expired_challenges
+            
             @scheduler.scheduled_job('cron', hour=0, minute=0)
             def close_daily_expired_challenges_job():
                 with app.app_context():
