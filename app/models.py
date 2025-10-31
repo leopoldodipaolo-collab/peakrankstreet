@@ -157,6 +157,14 @@ class Route(db.Model):
     # 'proposed' -> Proposto come classico, in attesa di revisione
     # 'approved' -> Approvato come classico dall'admin
     # 'rejected' -> Rifiutato come classico dall'admin
+    def get_fastest_time(self):
+        """Restituisce il record più veloce per questo percorso"""
+        from sqlalchemy import func
+        
+        # Trova l'attività con la durata minima per questo percorso
+        fastest_activity = Activity.query.filter_by(route_id=self.id).order_by(Activity.duration.asc()).first()
+        
+        return fastest_activity
 
     def __repr__(self):
         return f'<Route {self.name}>'

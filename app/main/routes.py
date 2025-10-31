@@ -385,12 +385,83 @@ def create_route():
 @main.route("/route/<int:route_id>", methods=["GET", "POST"])
 def route_detail(route_id):
     route = Route.query.options(joinedload(Route.creator)).get_or_404(route_id)
-    route_geojson_data = json.dumps(json.loads(route.coordinates)) if route.coordinates else "{}"
+    
+    # DEBUG: Verifica i dati del percorso
+    print(f"=== DEBUG PERCORSO {route_id} ===")
+    print(f"Nome: {route.name}")
+    print(f"Descrizione: {route.description}")
+    print(f"Tipo attività: {route.activity_type}")
+    print(f"Creato da: {route.creator.username if route.creator else 'N/A'}")
+    print(f"Distanza: {route.distance_km}")
+    print(f"Coordinate: {route.coordinates[:100] if route.coordinates else 'Nessuna'}...")  # Solo primi 100 caratteri
+    print(f"Difficoltà: {route.difficulty}")
+    print(f"Dislivello: {route.elevation_gain}")
+    print("================================")
+    
+    # Gestione corretta delle coordinate GeoJSON
+    route_geojson_data = None
+    if route.coordinates:
+        try:
+            # Se le coordinate sono già in formato JSON, usale direttamente
+            if isinstance(route.coordinates, str) and route.coordinates.strip().startswith('{'):
+                geojson_obj = json.loads(route.coordinates)
+                print("✅ Coordinate già in formato GeoJSON")
+            else:
+                # Altrimenti, converti le coordinate in GeoJSON
+                print("🔄 Conversione coordinate in GeoJSON...")
+                coords_list = [list(map(float, coord.split(','))) for coord in route.coordinates.split(';')]
+                geojson_obj = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": coords_list
+                    },
+                    "properties": {}
+                }
+            
+            # Verifica che la struttura GeoJSON sia corretta
+            if 'geometry' in geojson_obj and 'coordinates' in geojson_obj['geometry']:
+                route_geojson_data = json.dumps(geojson_obj)
+                print("✅ GeoJSON creato correttamente")
+            else:
+                print("❌ Struttura GeoJSON non valida")
+                route_geojson_data = "{}"
+                
+        except Exception as e:
+            print(f"❌ Errore conversione coordinate: {e}")
+            route_geojson_data = "{}"
+    else:
+        route_geojson_data = "{}"
+        print("ℹ️ Nessuna coordinata disponibile")
 
     challenges_for_route = Challenge.query.filter(
         Challenge.route_id == route.id,
         Challenge.end_date >= datetime.utcnow()
     ).order_by(Challenge.start_date).all()
+
+    # Query per le attività top
+    top_5_activities_for_route = db.session.query(
+        Activity, User
+    ).join(
+        User, Activity.user_id == User.id
+    ).filter(
+        Activity.route_id == route_id
+    ).order_by(
+        Activity.duration.asc()
+    ).limit(5).all()
+
+    # Prepara i dati per i commenti con like info
+    comments_with_like_info = []
+    for comment in route.comments.order_by(Comment.created_at.desc()).all():
+        like_count = comment.likes.count()
+        has_liked = False
+        if current_user.is_authenticated:
+            has_liked = comment.likes.filter_by(user_id=current_user.id).first() is not None
+        comments_with_like_info.append({
+            'comment': comment,
+            'like_count': like_count,
+            'has_liked': has_liked
+        })
 
     if request.method == "POST":
         if not current_user.is_authenticated:
@@ -408,31 +479,13 @@ def route_detail(route_id):
         flash('Commento aggiunto con successo!', 'success')
         return redirect(url_for('main.route_detail', route_id=route.id))
 
-    # Commenti e info like
-    comments = Comment.query.options(joinedload(Comment.author)).filter_by(route_id=route.id).order_by(Comment.created_at.desc()).all()
-    comments_with_like_info = []
-    for c in comments:
-        has_liked = False
-        if current_user.is_authenticated and c.likes.filter_by(user_id=current_user.id).first():
-            has_liked = True
-        comments_with_like_info.append({
-            'comment': c,
-            'like_count': c.likes.count(),
-            'has_liked': has_liked
-        })
-
-    route_record = RouteRecord.query.filter_by(route_id=route.id).order_by(RouteRecord.duration.asc()).first()
-    top_5_activities_for_route = Activity.query.filter_by(route_id=route.id).order_by(Activity.duration.asc()).limit(5).all()
-
     return render_template(
-        "route_detail.html",
+        'route_detail.html',
         route=route,
         route_geojson_data=route_geojson_data,
         challenges_for_route=challenges_for_route,
-        comments_with_like_info=comments_with_like_info,
-        route_record=route_record,
         top_5_activities_for_route=top_5_activities_for_route,
-        is_homepage=False
+        comments_with_like_info=comments_with_like_info
     )
 
 @main.route("/comment/<int:comment_id>/like", methods=["POST"])
