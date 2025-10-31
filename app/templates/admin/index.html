@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StreetSport Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stat-card {
+            border-radius: 10px;
+            transition: transform 0.2s;
+            border: none;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .bg-users { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .bg-routes { background: linear-gradient(45deg, #f093fb, #f5576c); }
+        .bg-activities { background: linear-gradient(45deg, #4facfe, #00f2fe); }
+        .bg-posts { background: linear-gradient(45deg, #43e97b, #38f9d7); }
+        .bg-groups { background: linear-gradient(45deg, #fa709a, #fee140); }
+        .bg-challenges { background: linear-gradient(45deg, #ff9a9e, #fecfef); }
+        .bg-badges { background: linear-gradient(45deg, #a18cd1, #fbc2eb); }
+        .bg-notifications { background: linear-gradient(45deg, #fad0c4, #ffd1ff); color: #333; }
+        .admin-header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Admin StreetSport</h1>
+                    <p class="mb-0">Panoramica completa di tutti i 23 modelli della piattaforma</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row g-4 mb-4">
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-users">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h2>{{ stats.total_users }}</h2>
+                        <h5>Utenti</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-routes">
+                    <div class="card-body text-center">
+                        <i class="fas fa-route fa-3x mb-3"></i>
+                        <h2>{{ stats.total_routes }}</h2>
+                        <h5>Percorsi</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-activities">
+                    <div class="card-body text-center">
+                        <i class="fas fa-running fa-3x mb-3"></i>
+                        <h2>{{ stats.total_activities }}</h2>
+                        <h5>Attività</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-posts">
+                    <div class="card-body text-center">
+                        <i class="fas fa-newspaper fa-3x mb-3"></i>
+                        <h2>{{ stats.total_posts }}</h2>
+                        <h5>Post</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-groups">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h2>{{ stats.total_groups }}</h2>
+                        <h5>Gruppi</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-challenges">
+                    <div class="card-body text-center">
+                        <i class="fas fa-trophy fa-3x mb-3"></i>
+                        <h2>{{ stats.total_challenges }}</h2>
+                        <h5>Sfide</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-badges">
+                    <div class="card-body text-center">
+                        <i class="fas fa-award fa-3x mb-3"></i>
+                        <h2>{{ stats.total_badges }}</h2>
+                        <h5>Badge</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card bg-notifications">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bell fa-3x mb-3"></i>
+                        <h2>{{ stats.unread_notifications }}</h2>
+                        <h5>Notifiche</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card" style="background: linear-gradient(45deg, #ffecd2, #fcb69f); color: #333;">
+                    <div class="card-body text-center">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <h2>{{ stats.total_comments }}</h2>
+                        <h5>Commenti</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card" style="background: linear-gradient(45deg, #84fab0, #8fd3f4);">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star fa-3x mb-3"></i>
+                        <h2>{{ stats.featured_routes }}</h2>
+                        <h5>In Evidenza</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card" style="background: linear-gradient(45deg, #d4fc79, #96e6a1);">
+                    <div class="card-body text-center">
+                        <i class="fas fa-crown fa-3x mb-3"></i>
+                        <h2>{{ stats.classic_routes }}</h2>
+                        <h5>Classici</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <div class="card stat-card" style="background: linear-gradient(45deg, #a6c0fe, #f68084);">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-3x mb-3"></i>
+                        <h2>{{ stats.active_challenges }}</h2>
+                        <h5>Sfide Attive</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-rocket"></i> Azioni Rapide</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <a href="/admin/user/" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="fas fa-users"></i> Utenti
+                                </a>
+                                <a href="/admin/route/" class="btn btn-outline-success w-100 mb-2">
+                                    <i class="fas fa-route"></i> Percorsi
+                                </a>
+                                <a href="/admin/activity/" class="btn btn-outline-info w-100 mb-2">
+                                    <i class="fas fa-running"></i> Attività
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="/admin/post/" class="btn btn-outline-warning w-100 mb-2">
+                                    <i class="fas fa-newspaper"></i> Post
+                                </a>
+                                <a href="/admin/challenge/" class="btn btn-outline-danger w-100 mb-2">
+                                    <i class="fas fa-trophy"></i> Sfide
+                                </a>
+                                <a href="/admin/group/" class="btn btn-outline-secondary w-100 mb-2">
+                                    <i class="fas fa-users"></i> Gruppi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Statistiche Dettagliate</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Utenti Registrati
+                                <span class="badge bg-primary rounded-pill">{{ stats.total_users }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Percorsi Totali
+                                <span class="badge bg-success rounded-pill">{{ stats.total_routes }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Attività Registrate
+                                <span class="badge bg-info rounded-pill">{{ stats.total_activities }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Sfide Attive
+                                <span class="badge bg-warning rounded-pill">{{ stats.active_challenges }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Notifiche da Leggere
+                                <span class="badge bg-danger rounded-pill">{{ stats.unread_notifications }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <p class="mb-0 text-muted">StreetSport Admin Panel &copy; 2024 - 23 modelli gestiti</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
