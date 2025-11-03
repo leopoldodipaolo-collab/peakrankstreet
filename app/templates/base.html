@@ -36,65 +36,67 @@
 <body class="d-flex flex-column min-vh-100">
     <div class="main-wrapper"> 
         <header>
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3"> 
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3" aria-label="Navigazione principale">
                 <div class="container">
+                    <!-- Brand e Toggler rimangono invariati -->
                     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2"> 
+                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2">
                         <span class="fw-bold">PeakRankStreet</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
+
                     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                         <ul class="navbar-nav align-items-center">
                             <li class="nav-item">
-                                <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" aria-current="page" href="{{ url_for('main.index') }}">Home</a>
+                                <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" {% if request.endpoint == 'main.index' %}aria-current="page"{% endif %} href="{{ url_for('main.index') }}">Home</a>
                             </li>
+
                             {% if current_user.is_authenticated %}
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.create_route' %}active{% endif %}" href="{{ url_for('main.create_route') }}"><i class="bi bi-geo-alt me-1"></i>Crea Percorso</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.create_challenge' %}active{% endif %}" href="{{ url_for('main.create_challenge') }}"><i class="bi bi-award me-1"></i>Crea Sfida</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.challenges_list' %}active{% endif %}" href="{{ url_for('main.challenges_list') }}"><i class="bi bi-grid-3x3-gap-fill me-1"></i>Sfide</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.explore_users' %}active{% endif %}" href="{{ url_for('main.explore_users') }}"><i class="bi bi-people-fill me-1"></i>Esplora</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.all_activities' %}active{% endif %}" href="{{ url_for('main.all_activities') }}"><i class="bi bi-activity me-1"></i>Attività</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.feed' %}active{% endif %}" href="{{ url_for('main.feed') }}"><i class="bi bi-rss-fill me-1"></i>Feed</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link position-relative {% if request.endpoint == 'main.notifications' %}active{% endif %}" 
-                                    href="{{ url_for('main.notifications') }}">
-                                        <i class="bi bi-bell-fill"></i>
-                                        {% if unread_notifications_count > 0 %}
-                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge">
-                                                {{ unread_notifications_count }}
-                                                <span class="visually-hidden">notifiche non lette</span>
-                                            </span>
-                                        {% endif %}
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.track_activity' %}active{% endif %}" 
-                                    href="{{ url_for('main.track_activity') }}">
-                                        <i class="bi bi-geo-alt-fill me-1"></i>Traccia Live
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'main.bets_hall' %}active{% endif %}" href="{{ url_for('main.bets_hall') }}">
-                                        <i class="bi bi-gem me-1"></i>Scommesse
-                                    </a>
-                                </li>
+                                <!-- DROPDOWN: Crea -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-trophy-fill me-1"></i>Classifiche
+                                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['main.create_route', 'main.create_challenge', 'main.propose_classic_route'] %}active{% endif %}" href="#" id="navbarDropdownCreate" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i>Crea
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownCreate">
+                                        <li><a class="dropdown-item" href="{{ url_for('main.create_route') }}">Crea Percorso</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.create_challenge') }}">Crea Sfida</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <!-- AGGIUNTO -->
+                                        <li><a class="dropdown-item" href="{{ url_for('main.propose_classic_route') }}">Proponi un Classico</a></li>
+                                    </ul>
+                                </li>
+
+                                <!-- NUOVO DROPDOWN: Esplora -->
+                                <li class="nav-item dropdown">
+                                    <!-- Aggiunto 'main.explore' e 'main.list_groups' al controllo 'active' -->
+                                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['main.challenges_list', 'main.explore_users', 'main.all_activities', 'main.feed', 'main.bets_hall', 'main.explore', 'main.list_groups'] %}active{% endif %}" href="#" id="navbarDropdownExplore" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-compass-fill me-1" aria-hidden="true"></i>Esplora
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownExplore">
+                                        <!-- AGGIUNTO -->
+                                        <li><a class="dropdown-item" href="{{ url_for('main.explore') }}">Esplora Mappa</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.list_groups') }}">Gruppi</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.challenges_list') }}">Sfide</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.explore_users') }}">Utenti</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.all_activities') }}">Attività</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.feed') }}">Feed</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.bets_hall') }}">Scommesse</a></li>
+                                    </ul>
+                                </li>
+
+                                <!-- Voci principali rimaste -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.endpoint == 'main.track_activity' %}active{% endif %}" href="{{ url_for('main.track_activity') }}"><i class="bi bi-geo-alt-fill me-1" aria-hidden="true"></i>Traccia Live</a>
+                                </li>
+                                
+                                <!-- Dropdown Classifiche e Profilo (invariati) -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['main.leaderboard_total_distance', 'main.leaderboard_most_routes', 'main.finished_challenges'] %}active{% endif %}" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-trophy-fill me-1" aria-hidden="true"></i>Classifiche
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownLeaderboards">
                                         <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_total_distance') }}">Distanza Totale</a></li>
@@ -103,24 +105,38 @@
                                         <li><a class="dropdown-item" href="{{ url_for('main.finished_challenges') }}">🏁 Sfide Terminate</a></li>
                                     </ul>
                                 </li>
+                                
+                                <!-- Link Notifiche e Dropdown Profilo (spostati alla fine per coerenza) -->
+                                <li class="nav-item">
+                                    <a class="nav-link position-relative {% if request.endpoint == 'main.notifications' %}active{% endif %}" href="{{ url_for('main.notifications') }}" aria-label="{{ unread_notifications_count }} notifiche non lette">
+                                        <i class="bi bi-bell-fill" aria-hidden="true"></i>
+                                        {% if unread_notifications_count > 0 %}
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge">
+                                                {{ unread_notifications_count }}<span class="visually-hidden">notifiche non lette</span>
+                                            </span>
+                                        {% endif %}
+                                    </a>
+                                </li>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar">
-                                        <span class="d-lg-none d-xl-inline">Profilo ({{ current_user.username }})</span>
+                                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
+                                        <span class="d-lg-none d-xl-inline">Profilo</span>
                                     </a>
-                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownMenuLink">
+                                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
                                         <li><a class="dropdown-item" href="{{ url_for('main.user_profile', user_id=current_user.id) }}">Il mio profilo</a></li>
                                         <li><a class="dropdown-item" href="{{ url_for('main.edit_profile') }}">Modifica profilo</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
                                     </ul>
                                 </li>
+
                             {% else %}
+                                <!-- Blocco utenti non autenticati (invariato) -->
                                 <li class="nav-item">
-                                    <a class="nav-link btn btn-outline-success mx-2 px-3 {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Login</a>
+                                    <a class="nav-link btn btn-outline-success mx-2 px-3" href="{{ url_for('auth.login') }}">Login</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link btn btn-success px-3 {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">Registrati</a>
+                                    <a class="nav-link btn btn-success px-3" href="{{ url_for('auth.register') }}">Registrati</a>
                                 </li>
                             {% endif %}
                         </ul>

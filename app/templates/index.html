@@ -41,12 +41,12 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Hike"><i class="bi bi-mountains me-1"></i>Hike</button>
                         </div>
                     </div>
-                    <hr class="my-3">
+                    <!--<hr class="my-3">
                     <div class="text-center">
                         <a href="{{ url_for('main.explore') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-compass-fill me-2"></i>Esplora</a>
                         <a href="{{ url_for('main.list_groups') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-people-fill me-2"></i>Gruppi</a>
                         <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-map-fill me-2"></i>Proponi un Classico</a>
-                    </div>
+                    </div>-->
                 </div>
             </div>
         </div>
@@ -75,6 +75,8 @@
                     {% include 'partials/_upcoming_events_widget.html' %}
                     </div>
                 {% endif %}
+
+                {% include 'partials/_create_post_box.html' %}
 
                 {% if recent_challenges_in_city %}
                     <div class="card shadow-sm mt-4">
