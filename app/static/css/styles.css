@@ -1248,81 +1248,67 @@ a:hover {
 
 }
 
-@media (max-width: 767.98px) { /* Schermi piccoli */
-    .hero-section {
-        min-height: 40vh;
-        padding-top: 60px;
+/* Stile per il pulsante principale a forma di pillola */
+    .create-post-pill-btn {
+        border-radius: 50px; /* Arrotondamento massimo per la forma a pillola */
+        border: 1px solid #ced4da;
+        color: #6c757d;
+        background-color: #fff;
+        font-weight: 600;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        transition: background-color 0.2s;
     }
-    .hero-section h1 {
-        font-size: 2.2rem;
+    .create-post-pill-btn:hover {
+        background-color: #f1f1f1;
     }
-    .hero-section .lead {
-        font-size: 1rem;
-    }
-    .btn-lg {
-        padding: 0.6rem 1.5rem;
-        font-size: 0.9rem;
-    }
-    .map-container {
-        height: 300px;
-    }
-    .section-title {
-        font-size: 1.8rem;
-        margin-bottom: 1.5rem;
-    }
-    .footer .col-md-4 {
-        margin-bottom: 1rem;
-    }
-    .profile-image-navbar {
-        border: none; 
-    }
-    .rounded-pill-left, .rounded-pill-right {
-        font-size: 1rem;
+
+    /* Stile per i pulsanti azione (Video, Foto, Articolo) */
+    .create-post-action-btn {
+        border: none;
+        font-weight: 600;
+        color: #555;
+        background-color: transparent;
+        border-radius: 6px;
         padding: 0.5rem 1rem;
+        transition: background-color 0.2s ease-in-out;
     }
-    .btn-primary-custom {
-        padding: 0.5rem 1rem;
+    .create-post-action-btn:hover {
+        background-color: #e9ecef; /* Grigio chiaro al passaggio del mouse */
     }
-    .activity-type-filter {
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 1rem;
+    .create-post-action-btn i {
+        font-size: 1.3rem; /* Icone leggermente più grandi */
+        vertical-align: middle;
     }
-    .activity-type-filter .btn {
-        flex-grow: 1;
-        margin: 0.2rem;
+
+
+     /*
+     * STILE PER LE STATISTICHE INTEGRATE NELLA HERO SECTION
+     */
+    .hero-stats-container {
+        /* Linea di separazione sottile e semi-trasparente */
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .nav-pills {
-        font-size: 0.85rem;
+
+    .stat-card-hero {
+        /* Nessuno sfondo o bordo, si integra direttamente */
+        background: transparent;
+        padding: 10px 0;
     }
-/* All'interno di @media (max-width: 991.98px) */
 
-/* --------------------------------------------------- */
-/* FIX PER NAVBAR COLLASSATA SU MOBILE
-/* --------------------------------------------------- */
+    /* La classe .stat-number è la stessa per far funzionare il JS */
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+        /* Il colore è già 'text-white' ereditato dalla section */
+    }
 
-.navbar-collapse .navbar-nav {
-    /* 1. Impone la direzione verticale per gli elementi della lista */
-    flex-direction: column;
-    align-items: flex-start; /* Allinea gli elementi a sinistra */
-}
-
-.navbar-collapse .nav-item {
-    /* 2. Assicura che ogni elemento della lista occupi tutta la larghezza */
-    width: 100%;
-}
-
-.navbar-collapse .nav-link {
-    /* 3. Aumenta il padding per una migliore leggibilità e tocca e fuga */
-    padding: 0.8rem 1rem;
-    width: 100%; /* Fa sì che l'intera area sia cliccabile */
-}
-
-/* 4. Gestisce i pulsanti (es. Login/Register) nel menu collassato */
-.navbar-collapse .navbar-nav .btn {
-    width: 100%;
-    margin-top: 0.5rem;
-    margin-left: 0;
-    margin-right: 0;
-    text-align: center;
-}
+    .stat-label-hero {
+        font-size: 0.8rem;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    

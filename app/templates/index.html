@@ -3,11 +3,14 @@
 {% block title %}Home - PeakRankStreet App{% endblock %}
 
 {% block content %}
-    <!-- ======================= HERO SECTION ======================= -->
+    <!-- ======================= HERO SECTION (CON STATISTICHE INTEGRATE) ======================= -->
     <section class="hero-section text-white text-center d-flex align-items-center justify-content-center">
         <div class="container">
+            <!-- Contenuto Principale (Invariato) -->
             <h1 class="display-3 fw-bold mb-3 animate__animated animate__fadeInDown">Esplora, Sfida, Conquista!</h1>
-            <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di StreetSport.</p>
+            <p class="lead mb-4 animate__animated animate__fadeInUp">Traccia le tue attività, scopri nuovi percorsi e competi con la community di PeakRankStreet.</p>
+            
+            <!-- Pulsanti Call-to-Action (Invariati) -->
             {% if not current_user.is_authenticated %}
                 <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn">Inizia Ora!</a>
                 <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica il tuo GPX</a>
@@ -17,6 +20,43 @@
                 <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
                 <a href="{{ url_for('main.record_activity') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Registra Attività</a>
             {% endif %}
+
+            <!-- ======================================================= -->
+            <!-- SEZIONE STATISTICHE AGGIUNTA QUI                        -->
+            <!-- ======================================================= -->
+            <div class="hero-stats-container mt-5 pt-4">
+                <div class="row">
+                    <!-- Statistica Utenti -->
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card-hero">
+                            <div class="stat-number" data-goal="{{ site_stats.total_users }}">0</div>
+                            <div class="stat-label-hero">Utenti</div>
+                        </div>
+                    </div>
+                    <!-- Statistica Post -->
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card-hero">
+                            <div class="stat-number" data-goal="{{ site_stats.total_posts }}">0</div>
+                            <div class="stat-label-hero">Post</div>
+                        </div>
+                    </div>
+                    <!-- Statistica Attività -->
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card-hero">
+                            <div class="stat-number" data-goal="{{ site_stats.get('total_activities', 0) }}">0</div>
+                            <div class="stat-label-hero">Attività</div>
+                        </div>
+                    </div>
+                    <!-- Statistica Percorsi -->
+                    <div class="col-md-3 col-6">
+                        <div class="stat-card-hero">
+                            <div class="stat-number" data-goal="{{ site_stats.get('total_routes', 0) }}">0</div>
+                            <div class="stat-label-hero">Percorsi</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
     </section>
 
@@ -41,7 +81,7 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm" data-type="Hike"><i class="bi bi-mountains me-1"></i>Hike</button>
                         </div>
                     </div>
-                    <!--<hr class="my-3">
+                    <!-- <hr class="my-3">
                     <div class="text-center">
                         <a href="{{ url_for('main.explore') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-compass-fill me-2"></i>Esplora</a>
                         <a href="{{ url_for('main.list_groups') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn" style="background-color: rgb(167, 167, 167);"><i class="bi bi-people-fill me-2"></i>Gruppi</a>
@@ -76,8 +116,6 @@
                     </div>
                 {% endif %}
 
-                {% include 'partials/_create_post_box.html' %}
-
                 {% if recent_challenges_in_city %}
                     <div class="card shadow-sm mt-4">
                     <div class="card-header bg-warning">
@@ -103,7 +141,6 @@
             </div>
             </div>
 
-        
         <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
             <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
             <div class="card-img-overlay d-flex flex-column justify-content-center align-items-center text-center">
@@ -363,8 +400,43 @@
                 </div>
             </div>
 
-            <!-- AGGIORNAMENTI DALLA COMMUNITY -->
-            {% include 'partials/_create_post_box.html' %}
+            <!-- =================================================================== -->
+            <!-- BOX CREAZIONE POST - DESIGN LINKEDIN CON TESTO PERSONALIZZATO       -->
+            <!-- =================================================================== -->
+            {% if current_user.is_authenticated %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <!-- Parte Superiore: Avatar + Pulsante "Crea un post" -->
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
+                        
+                        <!-- Pulsante aggiornato con il tuo nuovo testo -->
+                        <button type="button" class="btn w-100 text-start create-post-pill-btn" 
+                                data-bs-toggle="modal" data-bs-target="#createPostModal" data-post-type-select="text">
+                            Crea, Inspira, Condividi...
+                        </button>
+                    </div>
+
+                    <!-- Parte Inferiore: Pulsanti Azione (Video, Foto, Articolo) -->
+                    <div class="d-flex justify-content-around">
+                        <button type="button" class="btn create-post-action-btn" 
+                                data-bs-toggle="modal" data-bs-target="#createPostModal" data-post-type-select="text">
+                            <i class="bi bi-play-btn-fill text-success me-2"></i>Video
+                        </button>
+
+                        <button type="button" class="btn create-post-action-btn" 
+                                data-bs-toggle="modal" data-bs-target="#createPostModal" data-post-type-select="image">
+                            <i class="bi bi-image text-primary me-2"></i>Foto
+                        </button>
+                        
+                        <button type="button" class="btn create-post-action-btn" 
+                                data-bs-toggle="modal" data-bs-target="#createPostModal" data-post-type-select="text">
+                            <i class="bi bi-file-earmark-text text-warning me-2"></i>Scrivi un articolo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             {% from 'macros/_cards.html' import feed_card %}
             {% set community_footer_links = [
                 {'url': url_for('main.all_activities'), 'text': 'Tutte le Attività', 'class': 'btn-outline-primary'},
@@ -406,6 +478,73 @@
             </div>
         </div>
     </div>
+
+
+    <!-- =================================================================== -->
+    <!-- PASSO 1-B: IL MODALE NASCOSTO CON IL FORM COMPLETO                  -->
+    <!-- =================================================================== -->
+    <!-- =================================================================== -->
+    <!-- CODICE COMPLETO E CORRETTO DEL MODALE (CON SELETTORE GRUPPO)        -->
+    <!-- =================================================================== -->
+    {% if current_user.is_authenticated %}
+    <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="createPostModalLabel"><i class="bi bi-plus-circle-fill me-2"></i>Crea un Nuovo Aggiornamento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" id="createPostForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" id="post_type_hidden" name="post_type" value="text">
+                        
+                        <div class="d-flex align-items-start mb-3">
+                            <img src="{{ current_user.avatar(50) }}" alt="Avatar utente" class="rounded-circle me-3">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">{{ current_user.username }}</h6>
+                                
+                                <!-- SELETTORE PUBBLICA IN: -->
+                                <select class="form-select form-select-sm mt-1" id="group_id" name="group_id" style="max-width: 250px;">
+                                    <option value="">Feed Pubblico (principale)</option>
+                                    {% for group in user_groups %}
+                                        <option value="{{ group.id }}">Gruppo: {{ group.name }}</option>
+                                    {% endfor %}
+                                </select>
+
+                            </div>
+                        </div>
+
+                        <textarea class="form-control border-0 shadow-none fs-5" id="postContentModal" name="content" rows="6" placeholder="Cosa vuoi condividere, {{ current_user.username }}?"></textarea>
+                        
+                        <div class="mt-3 p-3 border rounded bg-light" id="image-field-modal" style="display: none;">
+                            <label for="image" class="form-label fw-bold">Allega un'immagine*</label>
+                            <input class="form-control" type="file" id="image" name="image" accept="image/*">
+                        </div>
+                        
+                        <div class="mt-3 p-3 border rounded bg-light" id="link-field-modal" style="display: none;">
+                            <label for="link" class="form-label fw-bold">Inserisci un link*</label>
+                            <input type="url" class="form-control" id="link" name="link" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between">
+                        <div class="post-type-selector">
+                            <button type="button" class="btn btn-outline-secondary" data-post-type="text" title="Testo"><i class="bi bi-card-text"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" data-post-type="image" title="Immagine"><i class="bi bi-image"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" data-post-type="link" title="Link"><i class="bi bi-link-45deg"></i></button>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send-fill me-2"></i> Pubblica
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
 {% endblock %}
 
 {% block scripts %}
@@ -551,7 +690,129 @@
                         });
                 });
             }
+
+             // ===============================================================
+            // LOGICA PER IL MODALE DI CREAZIONE POST PROFESSIONALE
+            // ===============================================================
+            const createPostModal = document.getElementById('createPostModal');
+            if (createPostModal) {
+                const form = createPostModal.querySelector('#createPostForm');
+                const postTypeButtons = createPostModal.querySelectorAll('.post-type-selector button');
+                const hiddenPostTypeInput = createPostModal.querySelector('#post_type_hidden');
+                
+                const linkField = createPostModal.querySelector('#link-field-modal');
+                const imageField = createPostModal.querySelector('#image-field-modal');
+                const linkInput = createPostModal.querySelector('#link');
+                const imageInput = createPostModal.querySelector('#image');
+                
+                // Funzione per aggiornare l'interfaccia del modale
+                function setPostType(type) {
+                    hiddenPostTypeInput.value = type;
+                    imageField.style.display = (type === 'image') ? 'block' : 'none';
+                    linkField.style.display = (type === 'link') ? 'block' : 'none';
+                    imageInput.required = (type === 'image');
+                    linkInput.required = (type === 'link');
+                    postTypeButtons.forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.postType === type);
+                    });
+                }
+
+                // Aggiungi listener ai pulsanti DENTRO il modale
+                postTypeButtons.forEach(button => {
+                    button.addEventListener('click', () => setPostType(button.dataset.postType));
+                });
+
+                // Listener che si attiva PRIMA che il modale si apra
+                createPostModal.addEventListener('show.bs.modal', function (event) {
+                    form.reset(); 
+                    const triggerButton = event.relatedTarget;
+                    const postTypeToSelect = triggerButton.getAttribute('data-post-type-select') || 'text';
+                    setPostType(postTypeToSelect); 
+                });
+                
+                // Inizializza Tribute.js (menzioni @utente) quando il modale è visibile
+                createPostModal.addEventListener('shown.bs.modal', function () {
+                    const postTextarea = document.getElementById('postContentModal');
+                    if (typeof Tribute !== 'undefined' && !postTextarea.hasAttribute('data-tribute-attached')) {
+                        var tribute = new Tribute({
+                            trigger: '@',
+                            values: function(text, callback) {
+                                fetch(`/api/search_users?q=${text}`)
+                                    .then(response => response.json())
+                                    .then(data => callback(data))
+                                    .catch(error => callback([]));
+                            },
+                            menuItemTemplate: function(item) {
+                                return `<img src="${item.original.avatar}" class="rounded-circle me-2" style="width: 25px; height: 25px; object-fit: cover;"> ${item.string}`;
+                            },
+                            selectClass: 'highlight',
+                            noMatchTemplate: () => '<li class="no-match">Nessun utente trovato</li>'
+                        });
+                        tribute.attach(postTextarea);
+                        postTextarea.setAttribute('data-tribute-attached', 'true');
+                    }
+                });
+            }
+
+            // ===============================================================
+            // LOGICA PER ANIMAZIONE SEZIONE STATISTICHE
+            // ===============================================================
+            gsap.registerPlugin(ScrollTrigger);
+
+            // 1. Anima le card facendole apparire
+            const statCards = gsap.utils.toArray(".stat-card");
+            if (statCards.length > 0) {
+                gsap.from(statCards, {
+                    scrollTrigger: {
+                        trigger: ".stats-container",
+                        start: "top 85%", // Inizia un po' prima
+                        toggleActions: "play none none none"
+                    },
+                    opacity: 0,
+                    y: 50,
+                    stagger: 0.2,
+                    duration: 0.8,
+                    ease: "power2.out"
+                });
+            }
+
+            // 2. Attiva il conteggio dei numeri
+            ScrollTrigger.create({
+                trigger: ".stats-container",
+                start: "top 85%",
+                onEnter: () => {
+                    document.querySelectorAll('.stat-number').forEach(numberEl => {
+                        // Aggiungiamo un controllo per non ri-animare
+                        if (numberEl.dataset.animated !== 'true') { 
+                            animateNumber(numberEl); 
+                            numberEl.dataset.animated = 'true'; 
+                        }
+                    });
+                },
+                once: true // Esegue l'animazione solo una volta
+            });
+            
         });
+
+        function animateNumber(element) {
+            const goal = parseInt(element.dataset.goal);
+            const duration = 2000; // Durata in millisecondi (2 secondi)
+            const startTime = Date.now();
+
+            function updateNumber() {
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime > duration) {
+                    // Alla fine, assicurati che il numero sia quello esatto e formattato
+                    element.textContent = goal.toLocaleString('it-IT');
+                } else {
+                    // Calcola il valore corrente e aggiorna il testo
+                    const value = Math.round((elapsedTime / duration) * goal);
+                    element.textContent = value.toLocaleString('it-IT');
+                    requestAnimationFrame(updateNumber); // Continua l'animazione
+                }
+            }
+            requestAnimationFrame(updateNumber);
+        }
 
         document.getElementById('statusFilter')?.addEventListener('change', function() {
             var selectedStatus = this.value;

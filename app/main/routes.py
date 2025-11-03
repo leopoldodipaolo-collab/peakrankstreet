@@ -157,6 +157,18 @@ def index():
         .order_by(func.sum(Activity.distance).desc()).limit(5).all()
     )
     top_users = [{'user': user, 'total_distance': total_distance or 0} for user, total_distance in top_users_data]
+
+    # ===============================================================
+    # CALCOLA LE STATISTICHE DEL SITO
+    # ===============================================================
+    # Sostituisci i modelli con i nomi corretti se sono diversi
+    # (es. Activity, Route, etc.)
+    site_stats = {
+        'total_users': db.session.query(User).count(),
+        'total_posts': db.session.query(Post).count(),
+        'total_activities': db.session.query(Activity).count() if 'Activity' in globals() else 0, # Esempio
+        'total_routes': db.session.query(Route).count() if 'Route' in globals() else 0 # Esempio
+    }
         
     # --- PASSAGGIO DATI AL TEMPLATE ---
     return render_template("index.html", 
@@ -170,6 +182,7 @@ def index():
                         onboarding_status=onboarding_status,
                         upcoming_events=upcoming_events,
                         TITLES=TITLES,
+                        site_stats=site_stats,
                         now=datetime.utcnow()
                         )
 @main.route('/feed')

@@ -7,6 +7,7 @@ from sqlalchemy.orm import object_session
 from sqlalchemy.orm.attributes import get_history
 import random
 from sqlalchemy.dialects.postgresql import JSONB
+from hashlib import md5
 # =====================================================================
 # TABELLE DI ASSOCIAZIONE (Molti-a-Molti)
 # Definite qui all'inizio per essere disponibili a tutti i modelli.
@@ -89,6 +90,13 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f'<User {self.username}>'
+    
+    def avatar(self, size):
+        """
+        Restituisce l'URL dell'avatar dell'utente da Gravatar.
+        """
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
     
     # RELAZIONE PER I GRUPPI POSSEDUTI
     owned_groups = db.relationship('Group', foreign_keys='Group.owner_id', backref='owner', lazy='dynamic')
