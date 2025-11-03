@@ -183,7 +183,7 @@ class Challenge(db.Model):
     bet_type = db.Column(db.String(50), default='none')
     custom_bet = db.Column(db.String(100))
     bet_value = db.Column(db.String(100))
-    is_active = db.Column(db.Boolean, default=True, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
 
     activities = db.relationship('Activity', backref='challenge', lazy='dynamic')
     invitations = db.relationship('ChallengeInvitation', backref='challenge', lazy='dynamic')

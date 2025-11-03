@@ -118,28 +118,30 @@ def process_challenge_bet(challenge):
         ).order_by(Activity.duration.asc()).first()
         
         if not winner_activity:
-            print(f"❌ Nessuna attività per la sfida {challenge.id} - scommessa saltata")
+            print(f"-> Nessuna attività per la sfida {challenge.id}, scommessa saltata.")
             return
         
         # --- CORREZIONE QUI ---
-        winner = winner_activity.user
-        print(f"🎯 Vincitore sfida {challenge.id}: {winner.username}")
+        winner = winner_activity.user_activity
+        print(f"-> Vincitore sfida {challenge.id}: {winner.username}")
         
         if challenge.challenge_type == 'closed':
             participants = Activity.query.filter_by(challenge_id=challenge.id).all()
             for activity in participants:
                 if activity.user_id != winner.id:
                     # --- E CORREZIONE QUI ---
-                    create_bet_notification(challenge, winner, activity.user)
+                    create_bet_notification(challenge, winner, activity.user_activity)
         
         elif challenge.challenge_type == 'open' and challenge.created_by != winner.id:
             creator = User.query.get(challenge.created_by)
-            create_bet_notification(challenge, winner, creator)
+            if creator:
+                create_bet_notification(challenge, winner, creator)
             
-        print(f"✅ Scommessa processata per {challenge.name}")
+        print(f"-> Scommessa processata per '{challenge.name}'")
         
     except Exception as e:
-        print(f"❌ Errore nel processare scommessa per sfida {challenge.id}: {e}")
+        import traceback
+        print(f"❌ Errore nel processare scommessa per sfida {challenge.id}: {e}\n{traceback.format_exc()}")
 
 def create_bet_notification(challenge, winner, loser):
     """

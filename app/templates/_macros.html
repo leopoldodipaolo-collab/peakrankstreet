@@ -101,11 +101,13 @@
                 
                 {% if bet.loser_id == current_user.id and bet.status == 'pending' %}
                 <form action="{{ url_for('main.mark_bet_paid', bet_id=bet.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-success btn-sm"
                             onclick="return confirm('Confermi di aver pagato {{ bet.bet_value }} a {{ bet.winner.username }}?')">
                         ✅ Pagata
                     </button>
                 </form>
+
                 {% endif %}
                 
                 {% if bet.challenge_id %}

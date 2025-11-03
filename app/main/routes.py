@@ -27,6 +27,8 @@ import random
 from app import csrf
 from flask_wtf.csrf import validate_csrf # Aggiungi questo import
 from wtforms import ValidationError
+# All'inizio di routes.py
+from .gamification import close_expired_challenges
 
 main = Blueprint('main', __name__)
 
@@ -523,30 +525,25 @@ def create_challenge():
         start_date_str = request.form["start_date"]
         end_date_str = request.form["end_date"]
         
-        # === NUOVI CAMPI ===
         challenge_type = request.form.get("challenge_type", "open")
         bet_type = request.form.get("bet_type", "none")
         custom_bet = request.form.get("custom_bet", "")
-        invited_friends = request.form.getlist("invited_friends")  # Lista di user_id
-        # === FINE NUOVI CAMPI ===
+        invited_friends = request.form.getlist("invited_friends")
         
-        # --- VALIDAZIONE OBBLIGATORIA PER route_id ---
+        # Validazioni (invariate)
         if not route_id_str:
             flash('Devi selezionare un percorso per creare la sfida.', 'warning')
             return redirect(url_for('main.create_challenge'))
         
         try:
             route_id = int(route_id_str)
-        except ValueError:
+            route = Route.query.get(route_id)
+            if not route:
+                flash(f'Il percorso selezionato non esiste.', 'danger')
+                return redirect(url_for('main.create_challenge'))
+        except (ValueError, TypeError):
             flash('ID del percorso non valido.', 'danger')
             return redirect(url_for('main.create_challenge'))
-
-        # Verifica che la route esista nel DB
-        route = Route.query.get(route_id)
-        if not route:
-            flash(f'Il percorso selezionato (ID: {route_id}) non esiste.', 'danger')
-            return redirect(url_for('main.create_challenge'))
-        # --- FINE VALIDAZIONE route_id ---
 
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
@@ -559,69 +556,71 @@ def create_challenge():
             flash('La data di inizio deve essere precedente alla data di fine.', 'danger')
             return redirect(url_for('main.create_challenge'))
 
-        # === NUOVA VALIDAZIONE: PER SFIDE CHIUSE ===
+        # La validazione per le sfide chiuse rimane
         if challenge_type == "closed" and not invited_friends:
             flash('Per le sfide chiuse devi invitare almeno un amico.', 'danger')
             return redirect(url_for('main.create_challenge'))
 
-        # === GESTIONE VALORE SCOMMESSA ===
         bet_value = get_bet_value(bet_type, custom_bet)
         
-        # Crea la sfida con tutti i campi
         new_challenge = Challenge(
             name=challenge_name, 
             route_id=route_id,
             start_date=start_date, 
             end_date=end_date, 
             created_by=current_user.id,
-            # === NUOVI CAMPI ===
             challenge_type=challenge_type,
             bet_type=bet_type,
             custom_bet=custom_bet,
-            bet_value=bet_value
+            bet_value=bet_value,
+            is_active=True # Assicuriamoci che sia sempre True alla creazione
         )
         
         try:
             db.session.add(new_challenge)
-            db.session.flush()  # Ottieni l'ID della sfida per le invitation
-            
-            # === GESTIONE INVITI PER SFIDE CHIUSE ===
-            if challenge_type == "closed" and invited_friends:
+            db.session.flush()
+
+            # --- INIZIO BLOCCO LOGICA MODIFICATO ---
+            # Questa logica ora si attiva se ci sono amici invitati,
+            # indipendentemente dal tipo di sfida.
+            if invited_friends:
                 for friend_id in invited_friends:
                     try:
                         friend_id_int = int(friend_id)
-                        # Verifica che l'utente esista
                         friend = User.query.get(friend_id_int)
                         if friend:
-                            invitation = ChallengeInvitation(
-                                challenge_id=new_challenge.id,
-                                invited_user_id=friend_id_int
-                            )
-                            db.session.add(invitation)
+                            # 1. Se la sfida è CHIUSA, creiamo un record di invito formale
+                            if challenge_type == "closed":
+                                invitation = ChallengeInvitation(
+                                    challenge_id=new_challenge.id,
+                                    invited_user_id=friend_id_int
+                                )
+                                db.session.add(invitation)
                             
-                            # === CODICE AGGIUNTO: CREA NOTIFICA ===
+                            # 2. IN OGNI CASO (aperta o chiusa), inviamo una notifica
                             notification = Notification(
                                 recipient_id=friend_id_int,
-                                actor_id=current_user.id,  # Chi ha creato la sfida
+                                actor_id=current_user.id,
                                 action='challenge_invitation',
                                 object_id=new_challenge.id,
                                 object_type='challenge'
                             )
                             db.session.add(notification)
-                            # === FINE CODICE AGGIUNTO ===
                             
                     except (ValueError, TypeError):
-                        continue  # Salta ID non validi
+                        continue
+            # --- FINE BLOCCO LOGICA MODIFICATO ---
             
             db.session.commit()
             
             # Messaggio di successo personalizzato
             success_message = f'Sfida "{challenge_name}" creata con successo!'
-            if challenge_type == "closed":
-                success_message += f' {len(invited_friends)} amici invitati.'
-            if bet_type != "none":
-                success_message += f' Scommessa: {bet_value}'
-                
+            if invited_friends:
+                if challenge_type == "closed":
+                    success_message += f' {len(invited_friends)} amici invitati.'
+                else: # Sfida aperta
+                    success_message += f' {len(invited_friends)} amici avvisati.'
+            
             flash(success_message, 'success')
             return redirect(url_for('main.index'))
             
@@ -630,7 +629,7 @@ def create_challenge():
             flash(f'Errore durante la creazione della sfida: {str(e)}', 'danger')
             return redirect(url_for('main.create_challenge'))
         
-    # Metodo GET
+    # Metodo GET (invariato)
     routes = Route.query.order_by(Route.name).all()
     return render_template("create_challenge.html", routes=routes, is_homepage=False)
 
@@ -1094,28 +1093,16 @@ def leaderboard_most_routes():
 @login_required
 def notifications():
     """Notifiche con conteggio non lette"""
-    # DEBUG: mostra tutte le notifiche
-    all_notifications = Notification.query.filter_by(recipient_id=current_user.id).all()
-    print(f"📢 DEBUG: Notifiche per {current_user.username}: {len(all_notifications)}")
-    
-    for n in all_notifications:
-        print(f"📢 DEBUG: Notifica ID: {n.id}, Action: {n.action}, Object: {n.object_id}")
-
-    # Recupera le notifiche ordinate
     user_notifications = current_user.notifications.order_by(Notification.timestamp.desc()).all()
-    
-    # Conta le notifiche non lette
     unread_count = Notification.query.filter_by(recipient_id=current_user.id, read=False).count()
     
     notification_messages = []
     
     for n in user_notifications:
         message = ""
-        link = url_for('main.my_bets')  # Default
-        icon = "🔔"  # Default icon
-        bg_color = "bg-secondary"  # Default background
-        
-        print(f"📝 DEBUG: Processing notification: {n.action} - {n.object_id}")
+        link = "#"  # Link di default sicuro
+        icon = "🔔"
+        bg_color = "bg-secondary"
         
         if n.action == 'new_follower':
             message = f"<strong>{n.actor.username}</strong> ha iniziato a seguirti."
@@ -1125,131 +1112,105 @@ def notifications():
         
         elif n.action == 'like_activity':
             activity = Activity.query.get(n.object_id)
-            if activity:
+            if activity and activity.route_activity:
                 message = f"A <strong>{n.actor.username}</strong> piace la tua attività su <em>{activity.route_activity.name}</em>."
                 link = url_for('main.activity_detail', activity_id=activity.id)
-                icon = "❤️"
-                bg_color = "bg-danger"
             else:
                 message = f"A <strong>{n.actor.username}</strong> piace una tua attività che è stata rimossa."
-                icon = "❤️"
-                bg_color = "bg-secondary"
+            icon = "❤️"
+            bg_color = "bg-danger"
         
         elif n.action == 'challenge_invitation':
             challenge = Challenge.query.get(n.object_id)
             if challenge:
-                message = f"<strong>{n.actor.username}</strong> ti ha sfidato in: <em>{challenge.name}</em>"
+                message = f"<strong>{n.actor.username}</strong> ti ha invitato alla sfida: <em>{challenge.name}</em>."
                 link = url_for('main.challenge_detail', challenge_id=challenge.id)
-                icon = "🎯"
-                bg_color = "bg-warning"
             else:
                 message = f"<strong>{n.actor.username}</strong> ti ha invitato a una sfida che è stata rimossa."
-                icon = "🎯"
-                bg_color = "bg-secondary"
-        
+            icon = "🎯"
+            bg_color = "bg-warning"
+
         elif n.action == 'challenge_accepted':
             challenge = Challenge.query.get(n.object_id)
             if challenge:
-                message = f"<strong>{n.actor.username}</strong> ha accettato la tua sfida: <em>{challenge.name}</em>"
+                message = f"<strong>{n.actor.username}</strong> ha accettato la tua sfida: <em>{challenge.name}</em>."
                 link = url_for('main.challenge_detail', challenge_id=challenge.id)
-                icon = "✅"
-                bg_color = "bg-success"
             else:
                 message = f"<strong>{n.actor.username}</strong> ha accettato una tua sfida che è stata rimossa."
-                icon = "✅"
-                bg_color = "bg-secondary"
-        
+            icon = "✅"
+            bg_color = "bg-success"
+
         elif n.action == 'bet_won':
-            challenge = Challenge.query.get(n.object_id)
+            # La tua logica per bet_won è corretta
+            challenge = Challenge.query.get(n.object_id) # object_id è l'ID della sfida
             if challenge:
                 message = f"🎉 Hai vinto una scommessa! <strong>{n.actor.username}</strong> ti deve: <em>{challenge.bet_value}</em>"
-                # CERCA LA SCOMMESSA CORRELATA
                 bet = Bet.query.filter_by(challenge_id=challenge.id, winner_id=current_user.id).first()
                 if bet:
                     link = url_for('main.bet_details', bet_id=bet.id)
-                    print(f"✅ DEBUG: Trovata scommessa ID {bet.id} per notifica bet_won")
-                else:
-                    print(f"❌ DEBUG: Nessuna scommessa trovata per challenge {challenge.id}")
-                icon = "🎉"
-                bg_color = "bg-success"
             else:
                 message = f"🎉 Hai vinto una scommessa contro <strong>{n.actor.username}</strong>!"
-                icon = "🎉"
-                bg_color = "bg-success"
+            icon = "🎉"
+            bg_color = "bg-success"
         
         elif n.action == 'bet_lost':
+            # La tua logica per bet_lost è corretta
             challenge = Challenge.query.get(n.object_id)
             if challenge:
                 message = f"💸 Hai perso una scommessa! Devi a <strong>{n.actor.username}</strong>: <em>{challenge.bet_value}</em>"
-                # CERCA LA SCOMMESSA CORRELATA
                 bet = Bet.query.filter_by(challenge_id=challenge.id, loser_id=current_user.id).first()
                 if bet:
                     link = url_for('main.bet_details', bet_id=bet.id)
-                    print(f"✅ DEBUG: Trovata scommessa ID {bet.id} per notifica bet_lost")
-                else:
-                    print(f"❌ DEBUG: Nessuna scommessa trovata per challenge {challenge.id}")
-                icon = "💸"
-                bg_color = "bg-danger"
             else:
-                message = f"💸 Hai perso una scommessa contro <strong>{n.actor.username}</strong>"
-                icon = "💸"
-                bg_color = "bg-danger"
-        
-        # --- AGGIUNGI QUESTO BLOCCO ELIF ---
-        elif n.action == 'mention_in_comment':
-            post = Post.query.get(n.object_id)
-            if post:
-                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento."
-                link = url_for('main.post_detail', post_id=post.id) + '#comments' # Linka direttamente ai commenti
-                icon = "💬"
-                bg_color = "bg-info"
-            else:
-                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
-                icon = "💬"
-                bg_color = "bg-secondary"
-        # --- FINE BLOCCO AGGIUNTO ---
+                message = f"💸 Hai perso una scommessa contro <strong>{n.actor.username}</strong>."
+            icon = "💸"
+            bg_color = "bg-danger"
 
-        # --- BLOCCHI NUOVI E COMPLETI PER LE MENZIONI ---
-        
         elif n.action == 'mention_in_post':
             post = Post.query.get(n.object_id)
             if post:
                 message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un post."
                 link = url_for('main.post_detail', post_id=post.id)
-                icon = "📣"
-                bg_color = "bg-info"
             else:
-                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un post che è stato rimosso."
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un post rimosso."
+            icon = "📣"
+            bg_color = "bg-info"
         
         elif n.action == 'mention_in_comment':
             post = Post.query.get(n.object_id)
             if post:
                 message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento."
                 link = url_for('main.post_detail', post_id=post.id) + '#comments-section'
-                icon = "💬"
-                bg_color = "bg-info"
             else:
-                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post che è stato rimosso."
-
+                message = f"<strong>{n.actor.username}</strong> ti ha menzionato in un commento su un post rimosso."
+            icon = "💬"
+            bg_color = "bg-info"
+        
         elif n.action == 'title_up':
             user = User.query.get(n.object_id)
             if user:
-                message = f"👑 **Promozione!** La tua fama è cresciuta, sei stato nominato <strong>{user.title}</strong>!"
+                message = f"👑 **Promozione!** Hai raggiunto il rango di <strong>{user.title}</strong>!"
                 link = url_for('main.user_profile', user_id=user.id)
-                icon = "👑"
-                bg_color = "bg-warning"
+            icon = "👑"
+            bg_color = "bg-warning"
                 
         elif n.action == 'route_approved':
             route = Route.query.get(n.object_id)
             if route:
-                message = f"🎉 Congratulazioni! La tua proposta per il percorso <strong>'{route.name}'</strong> è stata approvata."
+                message = f"🗺️ La tua proposta per il percorso <strong>'{route.name}'</strong> è stata approvata!"
                 link = url_for('main.route_detail', route_id=route.id)
-                icon = "🗺️"
-                bg_color = "bg-success"
+            icon = "🗺️"
+            bg_color = "bg-success"
+        
+        elif n.action == 'bet_paid':
+            bet = Bet.query.get(n.object_id)
+            if bet:
+                message = f"✅ <strong>{n.actor.username}</strong> ha saldato il suo debito per la scommessa: <em>{bet.bet_value}</em>."
+                link = url_for('main.bet_details', bet_id=bet.id)
             else:
-                message = "🎉 Congratulazioni! Una tua proposta per un percorso è stata approvata."     
-        # --- FINE BLOCCHI NUOVI ---
-
+                message = f"✅ <strong>{n.actor.username}</strong> ha saldato una scommessa."
+            icon = "✅"
+            bg_color = "bg-success"
 
         notification_messages.append({
             'message': message,
@@ -1261,7 +1222,7 @@ def notifications():
             'id': n.id
         })
 
-    # Segna come lette
+    # Segna le notifiche come lette
     unread_notifications = current_user.notifications.filter_by(read=False).all()
     for n in unread_notifications:
         n.read = True
@@ -1282,10 +1243,10 @@ def challenge_detail(challenge_id):
     print(f"🎯 DEBUG: Sfida trovata - ID: {challenge.id}, Nome: {challenge.name}, Tipo: {challenge.challenge_type}, Creatore: {challenge.created_by}")
 
     # Verifica se la sfida è scaduta
-    if challenge.end_date < datetime.utcnow() and challenge.is_active:
-        challenge.is_active = False
-        db.session.commit()
-        flash('Questa sfida è appena scaduta!', 'info')
+    #if challenge.end_date < datetime.utcnow() and challenge.is_active:
+    #    challenge.is_active = False
+    #    db.session.commit()
+    #    flash('Questa sfida è appena scaduta!', 'info')
         
     # DEBUG ESTESO: Query degli inviti
     print(f"🔍 DEBUG: Eseguo query inviti per challenge_id = {challenge_id}")
@@ -3403,3 +3364,34 @@ def search_users_api():
     ]
     
     return jsonify(users_list)
+
+
+# In app/main/routes.py
+
+@main.route('/test/run_close_challenges')
+@login_required # Mettiamola dietro login per sicurezza
+def run_close_challenges_test():
+    """
+    Esegue manualmente la funzione per chiudere le sfide scadute.
+    """
+    print("\n--- [DEBUG] ESECUZIONE MANUALE DI close_expired_challenges ---")
+    try:
+        # Chiamiamo la funzione importata
+        closed_count = close_expired_challenges()
+        
+        if closed_count > 0:
+            message = f"✅ Esecuzione completata. Chiuse {closed_count} sfide."
+            flash(message, 'success')
+        else:
+            message = "ℹ️ Esecuzione completata. Nessuna sfida scaduta da chiudere."
+            flash(message, 'info')
+            
+        print(f"--- [DEBUG] FINE ESECUZIONE MANUALE --- \n")
+        return redirect(url_for('main.challenges_list'))
+
+    except Exception as e:
+        import traceback
+        error_message = f"❌ Errore durante l'esecuzione manuale: {e}\n{traceback.format_exc()}"
+        print(error_message)
+        flash('Si è verificato un errore. Controlla il log del server.', 'danger')
+        return redirect(url_for('main.challenges_list'))
