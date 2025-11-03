@@ -6,6 +6,7 @@ from sqlalchemy import event
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm.attributes import get_history
 import random
+from sqlalchemy.dialects.postgresql import JSONB
 # =====================================================================
 # TABELLE DI ASSOCIAZIONE (Molti-a-Molti)
 # Definite qui all'inizio per essere disponibili a tutti i modelli.
@@ -236,7 +237,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     post_type = db.Column(db.String(50), default='text', index=True)
     post_category = db.Column(db.String(50), default='user_post', nullable=False, index=True)
-    meta_data = db.Column(db.JSON, nullable=True)
+    meta_data = db.Column(JSONB) # Usa JSONB invece di db.JSON
     
     user = db.relationship('User', backref='posts')
     comments = db.relationship('PostComment', backref='post', lazy='dynamic', cascade="all, delete-orphan")

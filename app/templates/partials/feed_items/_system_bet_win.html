@@ -1,10 +1,39 @@
-<div class.="list-group-item px-0 py-3">
-    <div class="card border-warning bg-warning-soft shadow-sm">
-        <div class="card-body">
-            <div class="d-flex w-100 align-items-center">
-                <div class="me-3 fs-1 text-warning"><i class="bi bi-trophy"></i></div>
-                <div class="flex-grow-1">
-                    <p class="h5 mb-0">{{ post.content | safe }}</p>
+<div class="list-group-item px-0 py-3">
+    <div class="card border-warning shadow-sm">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <div class="col-12 text-center mb-3">
+                    <h5 class="text-warning mb-0"><i class="bi bi-trophy-fill me-2"></i>PROCLAMA DI VITTORIA</h5>
+                </div>
+                <!-- Vincitore -->
+                <div class="col-5 text-center">
+                    <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}">
+                        <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle border border-3 border-success" style="width: 60px; height: 60px; object-fit: cover;">
+                    </a>
+                    <div class="fw-bold mt-1">{{ post.user.username }}</div>
+                    <div class="small text-success">VINCITORE</div>
+                </div>
+                <div class="col-2 text-center h2 text-muted">VS</div>
+                
+                <!-- Perdente -->
+                <div class="col-5 text-center">
+                    {# --- BLOCCO CORRETTO E SICURO --- #}
+                    {% if post.meta_data and post.meta_data.opponent_id %}
+                        <a href="{{ url_for('main.user_profile', user_id=post.meta_data.opponent_id) }}">
+                             <img src="{{ url_for('static', filename='profile_pics/' + post.meta_data.opponent_avatar) }}" class="rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
+                        </a>
+                        <div class="fw-bold mt-1">{{ post.meta_data.opponent_username }}</div>
+                        <div class="small text-danger">SCONFITTO</div>
+                    {% else %}
+                        {# Fallback per i vecchi post senza meta_data #}
+                        <div class="fw-bold mt-1">Avversario</div>
+                    {% endif %}
+                    {# --- FINE BLOCCO --- #}
+                </div>
+
+                <!-- Messaggio -->
+                <div class="col-12 text-center mt-3 pt-3 border-top">
+                    <p class="mb-0">{{ post.content | safe }}</p>
                     <small class="text-muted timeago" datetime="{{ post.created_at.isoformat() }}Z"></small>
                 </div>
             </div>

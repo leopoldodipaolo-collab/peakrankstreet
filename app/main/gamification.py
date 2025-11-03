@@ -160,6 +160,15 @@ def create_bet_notification(challenge, winner, loser):
         db.session.add(new_bet)
         
         # --- CORREZIONE: COMPILA LA CREAZIONE DELLE NOTIFICHE ---
+          # --- DEBUG SUI META_DATA ---
+        winner_meta = {'opponent_id': loser.id, 'opponent_username': loser.username, 'opponent_avatar': loser.profile_image}
+        loser_meta = {'opponent_id': winner.id, 'opponent_username': winner.username, 'opponent_avatar': winner.profile_image}
+        
+        print(f"\n--- DEBUG META_DATA ---")
+        print(f"Meta per il post del VINCITORE: {winner_meta}")
+        print(f"Meta per il post del PERDENTE: {loser_meta}")
+        print(f"-----------------------\n")
+        # --- FINE DEBUG ---
         
         # 2. Crea la notifica per il VINCITORE
         winner_notification = Notification(
@@ -184,20 +193,32 @@ def create_bet_notification(challenge, winner, loser):
         # --- FINE CORREZIONE ---
 
         # 4. Crea i post automatici (il tuo codice per questo è corretto)
-        win_phrases = [f"🍻 Vittoria! {winner.username} ha vinto {challenge.bet_value} da {loser.username}."]
+        win_phrases = [
+            f"👑 Gloria al Conquistatore! {winner.username} ha trionfato su {loser.username} e ora reclama il suo tributo: {challenge.bet_value}!",
+            f"Vittoria schiacciante! {winner.username} si gode il sapore del successo e attende che {loser.username} paghi pegno con {challenge.bet_value}.",
+            f"Il campo di battaglia ha un nuovo eroe! {winner.username} ha sconfitto {loser.username} e ora esige {challenge.bet_value}."
+        ]
         winner_post = Post(
             user_id=winner.id,
             content=random.choice(win_phrases) + f" nella sfida '{challenge.name}'.",
-            post_category='system_bet_win'
+            post_category='system_bet_win',
+            meta_data={'opponent_id': loser.id, 'opponent_username': loser.username, 'opponent_avatar': loser.profile_image}
         )
         db.session.add(winner_post)
 
-        loss_phrases = [f"💸 Debito d'onore! {loser.username} ha perso {challenge.bet_value} contro {winner.username}."]
-        loser_post_content = random.choice(loss_phrases) + " E il debito è ancora in sospeso! ⏳"
+        # --- FRASI PER IL PERDENTE (PIÙ PUNGENTI) ---
+        loss_phrases = [
+            f"💸 Un debito va sempre pagato. {loser.username} ha perso {challenge.bet_value} contro {winner.username}.",
+            f"Lezione di umiltà per {loser.username}. Ora un debito di {challenge.bet_value} lo lega a {winner.username}.",
+            f"A volte si vince, a volte si... offre da bere. {loser.username} deve {challenge.bet_value} a {winner.username}!"
+        ]
+        loser_post_content = random.choice(loss_phrases) + " Il debito è ancora in sospeso! ⏳"
+        
         loser_post = Post(
             user_id=loser.id,
             content=loser_post_content,
-            post_category='system_bet_loss'
+            post_category='system_bet_loss',
+            meta_data={'opponent_id': winner.id, 'opponent_username': winner.username, 'opponent_avatar': winner.profile_image}
         )
         db.session.add(loser_post)
         

@@ -29,7 +29,7 @@ from flask_wtf.csrf import validate_csrf # Aggiungi questo import
 from wtforms import ValidationError
 # All'inizio di routes.py
 from .gamification import close_expired_challenges
-
+from datetime import datetime, timedelta
 main = Blueprint('main', __name__)
 
 # --- Funzioni Helper ---
@@ -1540,60 +1540,69 @@ def finished_challenges():
 @main.route("/bet/<int:bet_id>/mark_paid", methods=["POST"])
 @login_required
 def mark_bet_paid(bet_id):
-    """Segna una scommessa come pagata."""
+    """Segna una scommessa come pagata - L'ora della verità ha suonato."""
     
-    # Non serve @csrf.exempt se facciamo la validazione manuale
+    # Il guardiano silenzioso: la validazione CSRF
     try:
         validate_csrf(request.form.get('csrf_token'))
     except ValidationError:
-        flash('Token CSRF invalido o scaduto. Riprova.', 'danger')
+        flash('Il codice di sicurezza è invalido o è scaduto. La transazione non può essere completata.', 'danger')
         return redirect(url_for('main.bet_details', bet_id=bet_id))
 
+    # La ricerca della scommessa leggendaria
     bet = Bet.query.get_or_404(bet_id)
     
+    # Il verdetto del destino: solo lo sconfitto può riscattarsi
     if bet.loser_id != current_user.id:
-        flash('Non puoi segnare come pagata una scommessa che non hai perso.', 'danger')
+        flash('Solo colui che ha subìto la sconfitta può riscattare il proprio onore.', 'danger')
         return redirect(url_for('main.user_profile', user_id=current_user.id))
 
-    # --- INIZIO BLOCCO MODIFICHE ---
+    # ⚔️ INIZIO DELLA CERIMONIA DEL PAGAMENTO ⚔️
 
-    # 1. Aggiorna l'oggetto Bet e AGGIUNGILO alla sessione
+    # 1. Il Sigillo dell'Onore - La scommessa viene marchiata come saldata
     bet.status = 'paid'
     bet.paid_at = datetime.utcnow()
-    db.session.add(bet) # <-- RIGA FONDAMENTALE AGGIUNTA
+    db.session.add(bet)
 
-    # 2. Aggiorna il post associato, se esiste
+    # 2. L'Annuncio al Regno - Il post viene aggiornato per la posterità
     if bet.related_post_id:
         related_post = Post.query.get(bet.related_post_id)
         if related_post:
-            paid_phrases = [
-                f"Debito saldato! {bet.loser.username} ha onorato la scommessa con {bet.winner.username}.",
-                f"Onore ripristinato! {bet.loser.username} ha finalmente pagato {bet.bet_value} a {bet.winner.username}."
+            paid_announcements = [
+                f"🏆 L'onore è stato ripagato! {bet.loser.username} ha saldato il debito con {bet.winner.username}. La bilancia della giustizia è in equilibrio.",
+                f"💰 Il conto è stato regolato! {bet.loser.username} ha finalmente onorato la scommessa versando {bet.bet_value} a {bet.winner.username}. L'arena delle scommesse applaude.",
+                f"⚖️ Giustizia è fatta! Dopo la sconfitta, {bet.loser.username} paga il tributo a {bet.winner.username}. Il cerchio si chiude."
             ]
-            related_post.content = random.choice(paid_phrases)
+            related_post.content = random.choice(paid_announcements)
             related_post.post_category = 'system_bet_paid'
             db.session.add(related_post)
 
-    # 3. Crea la notifica per il vincitore
+    # 3. Il Messaggio del Corvo - La notifica vola verso il vincitore
     winner_notification = Notification(
         recipient_id=bet.winner_id,
         actor_id=current_user.id,
         action='bet_paid',
         object_id=bet.id,
         object_type='bet'
+        # Rimossa la proprietà 'message' che non esiste nel modello
     )
     db.session.add(winner_notification)
-    
-    # --- FINE BLOCCO MODIFICHE ---
+
+    # 🏁 FINE DELLA CERIMONIA 🏁
 
     try:
-        # 4. Esegui UN SOLO COMMIT per salvare TUTTE le modifiche
+        # Il Giuramento Eterno - Tutte le modifiche vengono sigillate
         db.session.commit()
-        flash(f'✅ Scommessa segnata come pagata!', 'success')
+        flash(f'🎊 La scommessa è stata ufficialmente sigillata come pagata! L\'onore è stato preservato.', 'success')
+        
+        # Registro degli eventi epici
+        print(f"📜 [BET PAID] User {current_user.id} ha saldato la scommessa {bet_id}")
+        
     except Exception as e:
+        # L'Oscuro Presagio - Qualcosa è andato storto
         db.session.rollback()
-        flash(f'Si è verificato un errore: {e}', 'danger')
-        print(f"ERRORE in mark_bet_paid: {e}")
+        flash(f'Un oscuro presagio ha interrotto la cerimonia: {e}', 'danger')
+        print(f"💥 ERRORE CATASTROFICO in mark_bet_paid: {e}")
 
     return redirect(url_for('main.bet_details', bet_id=bet.id))
 
@@ -3366,7 +3375,7 @@ def search_users_api():
     return jsonify(users_list)
 
 
-# In app/main/routes.py
+# /test/run_close_challenges
 
 @main.route('/test/run_close_challenges')
 @login_required # Mettiamola dietro login per sicurezza
@@ -3395,3 +3404,81 @@ def run_close_challenges_test():
         print(error_message)
         flash('Si è verificato un errore. Controlla il log del server.', 'danger')
         return redirect(url_for('main.challenges_list'))
+    
+
+from datetime import datetime, timedelta
+from sqlalchemy import func, case, or_
+
+@main.route('/test/create_finished_bet')
+@login_required
+def create_finished_bet_test():
+    """
+    Crea uno scenario di test completo per una scommessa terminata.
+    """
+    try:
+        print("\n--- INIZIO SCENARIO DI TEST ---")
+        
+        # --- 1. SETUP UTENTI ---
+        vincitore = User.query.filter_by(username='tester_vincitore').first()
+        if not vincitore:
+            vincitore = User(username='tester_vincitore', email='vincitore@test.com')
+            vincitore.set_password('password')
+            db.session.add(vincitore)
+        perdente = User.query.filter_by(username='tester_perdente').first()
+        if not perdente:
+            perdente = User(username='tester_perdente', email='perdente@test.com')
+            perdente.set_password('password')
+            db.session.add(perdente)
+        db.session.commit()
+        print(f"Utenti pronti: Vincitore ID={vincitore.id}, Perdente ID={perdente.id}")
+
+        # --- 2. SETUP SFIDA ---
+        route = Route.query.first()
+        if not route: return "ERRORE: Nessun percorso trovato."
+        challenge = Challenge(name="Test Sfida Conclusa", route_id=route.id, created_by=perdente.id,
+                              start_date=datetime.utcnow() - timedelta(days=2),
+                              end_date=datetime.utcnow() - timedelta(days=1), is_active=False,
+                              challenge_type='closed', bet_type='beer', bet_value='🍺 1 Birra')
+        db.session.add(challenge)
+        db.session.commit()
+        print(f"Sfida creata: ID={challenge.id}")
+
+        # --- 3. CREA ATTIVITÀ ---
+        v_activity = Activity(user_id=vincitore.id, challenge_id=challenge.id, route_id=route.id, duration=600, distance=5, avg_speed=30, gps_track='{}')
+        p_activity = Activity(user_id=perdente.id, challenge_id=challenge.id, route_id=route.id, duration=700, distance=5, avg_speed=25, gps_track='{}')
+        db.session.add_all([v_activity, p_activity])
+        db.session.commit()
+        print("Attività create.")
+
+        # --- 4. ESEGUI LOGICA SCOMMESSA ---
+        print("Chiamata a create_bet_notification...")
+        
+        # Chiamiamo la funzione e facciamo il commit SUBITO DOPO
+        create_bet_notification(challenge, vincitore, perdente)
+        db.session.commit() # <-- COMMIT FONDAMENTALE E ISOLATO
+        
+        print("✅ LOGICA SCOMMESSA E COMMIT ESEGUITI CON SUCCESSO!")
+        
+        # --- 5. VERIFICA DATI ---
+        print("\n--- VERIFICA DATI NEL DATABASE ---")
+        bet_count = Bet.query.filter_by(challenge_id=challenge.id).count()
+        post_count = Post.query.filter(Post.post_category.like('system_bet%')).count()
+        notif_count = Notification.query.filter(
+            or_(
+                Notification.recipient_id == vincitore.id,
+                Notification.recipient_id == perdente.id
+            ),
+            Notification.action.in_(['bet_won', 'bet_lost'])
+        ).count()
+        
+        print(f"Scommesse create: {bet_count}")
+        print(f"Post di scommessa creati: {post_count}")
+        print(f"Notifiche di scommessa create: {notif_count}")
+        print("--------------------------------\n")
+        
+        return "<h1>✅ Test completato. Controlla il terminale per i risultati della verifica.</h1>"
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        return f"<h1>❌ Errore durante la creazione dello scenario</h1><pre>{e}\n{traceback.format_exc()}</pre>"
