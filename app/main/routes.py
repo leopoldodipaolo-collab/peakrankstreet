@@ -1897,6 +1897,11 @@ def create_post():
             post_category=request.form.get('post_category', 'user_post')
         )
 
+        print("\n--- DEBUG CREATE_POST ---")
+        print(f"Contenuto: {new_post.content}")
+        print(f"Group ID salvato: {new_post.group_id} (Tipo: {type(new_post.group_id)})")
+        print("------------------------\n")
+
         # Analisi per hashtag, che modifica sia il contenuto che l'oggetto new_post
         final_content = parse_and_link_hashtags(processed_content_mentions, new_post)
         new_post.content = final_content # Aggiornamento con il contenuto finale

@@ -25,10 +25,11 @@ def get_unified_feed_items(user=None, page=1, per_page=10):
             or_(
                 Post.user_id.in_(followed_user_ids),
                 Post.user_id == user.id,
-                Post.group_id.in_(joined_group_ids),
                 Post.post_category.in_(special_categories)
-            )
+            ),
+            Post.group_id.is_(None)  # 👈 Escludi i post dei gruppi
         )
+
         
         activities_query = db.session.query(
             Activity.id.label('item_id'),

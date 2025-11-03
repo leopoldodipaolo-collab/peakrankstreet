@@ -76,7 +76,7 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownExplore">
                                         <!-- AGGIUNTO -->
-                                        <li><a class="dropdown-item" href="{{ url_for('main.explore') }}">Esplora Mappa</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.explore') }}">Esplora Community</a></li>
                                         <li><a class="dropdown-item" href="{{ url_for('main.list_groups') }}">Gruppi</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{{ url_for('main.challenges_list') }}">Sfide</a></li>
@@ -95,19 +95,19 @@
                                 
                                 <!-- Dropdown Classifiche e Profilo (invariati) -->
                                 <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle {% if request.endpoint in ['main.leaderboard_total_distance', 'main.leaderboard_most_routes', 'main.finished_challenges'] %}active{% endif %}" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-trophy-fill me-1" aria-hidden="true"></i>Classifiche
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownLeaderboards">
-                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_total_distance') }}">Distanza Totale</a></li>
-                                        <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_most_routes') }}">Percorsi Creati</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="{{ url_for('main.finished_challenges') }}">🏁 Sfide Terminate</a></li>
-                                    </ul>
-                                </li>
-                                
-                                <!-- Link Notifiche e Dropdown Profilo (spostati alla fine per coerenza) -->
-                                <li class="nav-item">
+                                            <a class="nav-link dropdown-toggle {% if request.endpoint in ['main.leaderboard_total_distance', 'main.leaderboard_most_routes', 'main.finished_challenges'] %}active{% endif %}" href="#" id="navbarDropdownLeaderboards" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-trophy-fill me-1" aria-hidden="true"></i>Classifiche
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownLeaderboards">
+                                                <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_total_distance') }}">Distanza Totale</a></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('main.leaderboard_most_routes') }}">Percorsi Creati</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('main.finished_challenges') }}">🏁 Sfide Terminate</a></li>
+                                            </ul>
+                                        </li>
+                                        
+                                        <!-- Link Notifiche e Dropdown Profilo (spostati alla fine per coerenza) -->
+                                        <li class="nav-item">
                                     <a class="nav-link position-relative {% if request.endpoint == 'main.notifications' %}active{% endif %}" href="{{ url_for('main.notifications') }}" aria-label="{{ unread_notifications_count }} notifiche non lette">
                                         <i class="bi bi-bell-fill" aria-hidden="true"></i>
                                         {% if unread_notifications_count > 0 %}
@@ -120,7 +120,8 @@
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
-                                        <span class="d-lg-none d-xl-inline">Profilo</span>
+                                        <!-- MODIFICATO -->
+                                        <span class="d-lg-none d-xl-inline">Profilo ({{ current_user.username }})</span>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
                                         <li><a class="dropdown-item" href="{{ url_for('main.user_profile', user_id=current_user.id) }}">Il mio profilo</a></li>
@@ -131,7 +132,7 @@
                                 </li>
 
                             {% else %}
-                                <!-- Blocco utenti non autenticati (invariato) -->
+                                <!-- Login e Registrazione -->
                                 <li class="nav-item">
                                     <a class="nav-link btn btn-outline-success mx-2 px-3" href="{{ url_for('auth.login') }}">Login</a>
                                 </li>
