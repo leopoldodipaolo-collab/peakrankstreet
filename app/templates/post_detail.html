@@ -42,10 +42,17 @@
                     
                     <div class="post-actions d-flex justify-content-between align-items-center">
                         <div>
-                            <button class="btn btn-link text-decoration-none {% if user_liked_post %}text-danger{% else %}text-muted{% endif %} like-button" data-post-id="{{ post.id }}">
-                                <i class="bi {% if user_liked_post %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
-                                <span class="like-count">{{ post.likes.count() }}</span> Mi Piace
-                            </button>
+                            <div class="d-inline-flex align-items-center">
+                                <!-- Pulsante per mettere/togliere il like -->
+                                <button class="btn btn-link text-decoration-none ps-0 {% if user_liked_post %}text-danger{% else %}text-muted{% endif %} like-button" data-post-id="{{ post.id }}">
+                                    <i class="bi {% if user_liked_post %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                                </button>
+                                
+                                <!-- Link per visualizzare chi ha messo Mi Piace -->
+                                <a href="#" class="text-decoration-none text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#likesModal" data-post-id="{{ post.id }}" id="view-likes-link">
+                                    <span class="like-count">{{ post.likes.count() }}</span> Mi Piace
+                                </a>
+                            </div>
                             
                             <a href="#comments-section" class="btn btn-link text-decoration-none text-muted">
                                 <i class="bi bi-chat-dots"></i> <span id="comment-count-link">{{ post.comments.count() }}</span> Commenti
@@ -103,6 +110,26 @@
                 <div class="input-group">
                     <input type="text" id="shareLinkInput" class="form-control" value="{{ url_for('main.post_detail', post_id=post.id, _external=True) }}" readonly>
                     <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('shareLinkInput').select(); document.execCommand('copy'); this.innerHTML = 'Copiato!';">Copia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Likes Modal -->
+<div class="modal fade" id="likesModal" tabindex="-1" aria-labelledby="likesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="likesModalLabel">Persone a cui piace</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+            </div>
+            <div class="modal-body" id="likesModalBody">
+                <!-- Il contenuto verrà caricato qui dinamicamente via JS -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -214,6 +241,8 @@ document.addEventListener('DOMContentLoaded', function() {
             formContainer.style.display = 'block';
             formContainer.querySelector('textarea').focus();
         }
+
+        
     });
 
     // Gestione unificata degli eventi submit sul body
@@ -305,6 +334,52 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // --- FINE INIZIALIZZAZIONE ---
+
+     // --- GESTIONE VISUALIZZAZIONE LIKES NELLA MODALE ---
+    const likesModal = document.getElementById('likesModal');
+    if (likesModal) {
+        likesModal.addEventListener('show.bs.modal', function(event) {
+            const link = event.relatedTarget; // L'elemento <a> che ha attivato la modale
+            const postId = link.dataset.postId;
+            const modalBody = document.getElementById('likesModalBody');
+
+            // 1. Mostra uno spinner di caricamento
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                </div>`;
+
+            // 2. Esegui la chiamata fetch per ottenere i dati
+            fetch(`/api/post/${postId}/likers`)
+                .then(response => response.json())
+                .then(data => {
+                    // 3. Svuota il corpo della modale e popola con i nuovi dati
+                    modalBody.innerHTML = ''; 
+                    if (data.length > 0) {
+                        data.forEach(user => {
+                            const userHtml = `
+                                <div class="d-flex align-items-center mb-3">
+                                    <a href="${user.profile_url}">
+                                        <img src="${user.profile_image_url}" class="rounded-circle me-3" alt="Avatar di ${user.username}" style="width:45px; height:45px; object-fit:cover;">
+                                    </a>
+                                    <div>
+                                        <a href="${user.profile_url}" class="text-dark text-decoration-none fw-bold">${user.username}</a>
+                                    </div>
+                                </div>`;
+                            modalBody.insertAdjacentHTML('beforeend', userHtml);
+                        });
+                    } else {
+                        modalBody.innerHTML = '<p class="text-muted text-center">Nessun "Mi Piace" da mostrare.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error("Errore nel caricamento dei like:", error);
+                    modalBody.innerHTML = '<p class="text-danger text-center">Impossibile caricare le informazioni.</p>';
+                });
+        });
+    }
 });
 </script>
 {% endblock %}

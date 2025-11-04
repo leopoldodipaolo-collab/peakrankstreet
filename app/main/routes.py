@@ -3423,80 +3423,25 @@ def run_close_challenges_test():
         flash('Si è verificato un errore. Controlla il log del server.', 'danger')
         return redirect(url_for('main.challenges_list'))
     
+@main.route('/api/post/<int:post_id>/likers')
+@login_required 
+def get_post_likers(post_id):
+    post = Post.query.get_or_404(post_id)
+    
+    # post.likes.all() restituisce una lista di oggetti PostLike
+    likes = post.likes.all() 
 
-from datetime import datetime, timedelta
-from sqlalchemy import func, case, or_
-
-@main.route('/test/create_finished_bet')
-@login_required
-def create_finished_bet_test():
-    """
-    Crea uno scenario di test completo per una scommessa terminata.
-    """
-    try:
-        print("\n--- INIZIO SCENARIO DI TEST ---")
+    likers_data = []
+    # Cicliamo su ogni oggetto 'like' (di tipo PostLike)
+    for like in likes:
+        # Da ogni 'like', accediamo all'utente correlato tramite la relazione (es. like.user)
+        user_object = like.user  # Assumendo che la relazione si chiami 'user'
         
-        # --- 1. SETUP UTENTI ---
-        vincitore = User.query.filter_by(username='tester_vincitore').first()
-        if not vincitore:
-            vincitore = User(username='tester_vincitore', email='vincitore@test.com')
-            vincitore.set_password('password')
-            db.session.add(vincitore)
-        perdente = User.query.filter_by(username='tester_perdente').first()
-        if not perdente:
-            perdente = User(username='tester_perdente', email='perdente@test.com')
-            perdente.set_password('password')
-            db.session.add(perdente)
-        db.session.commit()
-        print(f"Utenti pronti: Vincitore ID={vincitore.id}, Perdente ID={perdente.id}")
-
-        # --- 2. SETUP SFIDA ---
-        route = Route.query.first()
-        if not route: return "ERRORE: Nessun percorso trovato."
-        challenge = Challenge(name="Test Sfida Conclusa", route_id=route.id, created_by=perdente.id,
-                              start_date=datetime.utcnow() - timedelta(days=2),
-                              end_date=datetime.utcnow() - timedelta(days=1), is_active=False,
-                              challenge_type='closed', bet_type='beer', bet_value='🍺 1 Birra')
-        db.session.add(challenge)
-        db.session.commit()
-        print(f"Sfida creata: ID={challenge.id}")
-
-        # --- 3. CREA ATTIVITÀ ---
-        v_activity = Activity(user_id=vincitore.id, challenge_id=challenge.id, route_id=route.id, duration=600, distance=5, avg_speed=30, gps_track='{}')
-        p_activity = Activity(user_id=perdente.id, challenge_id=challenge.id, route_id=route.id, duration=700, distance=5, avg_speed=25, gps_track='{}')
-        db.session.add_all([v_activity, p_activity])
-        db.session.commit()
-        print("Attività create.")
-
-        # --- 4. ESEGUI LOGICA SCOMMESSA ---
-        print("Chiamata a create_bet_notification...")
+        likers_data.append({
+            'id': user_object.id,  # Prendiamo l'ID dell'utente
+            'username': user_object.username, # Prendiamo lo username dell'utente
+            'profile_image_url': url_for('static', filename=f'profile_pics/{user_object.profile_image}'),
+            'profile_url': url_for('main.user_profile', user_id=user_object.id)
+        })
         
-        # Chiamiamo la funzione e facciamo il commit SUBITO DOPO
-        create_bet_notification(challenge, vincitore, perdente)
-        db.session.commit() # <-- COMMIT FONDAMENTALE E ISOLATO
-        
-        print("✅ LOGICA SCOMMESSA E COMMIT ESEGUITI CON SUCCESSO!")
-        
-        # --- 5. VERIFICA DATI ---
-        print("\n--- VERIFICA DATI NEL DATABASE ---")
-        bet_count = Bet.query.filter_by(challenge_id=challenge.id).count()
-        post_count = Post.query.filter(Post.post_category.like('system_bet%')).count()
-        notif_count = Notification.query.filter(
-            or_(
-                Notification.recipient_id == vincitore.id,
-                Notification.recipient_id == perdente.id
-            ),
-            Notification.action.in_(['bet_won', 'bet_lost'])
-        ).count()
-        
-        print(f"Scommesse create: {bet_count}")
-        print(f"Post di scommessa creati: {post_count}")
-        print(f"Notifiche di scommessa create: {notif_count}")
-        print("--------------------------------\n")
-        
-        return "<h1>✅ Test completato. Controlla il terminale per i risultati della verifica.</h1>"
-
-    except Exception as e:
-        db.session.rollback()
-        import traceback
-        return f"<h1>❌ Errore durante la creazione dello scenario</h1><pre>{e}\n{traceback.format_exc()}</pre>"
+    return jsonify(likers_data)
