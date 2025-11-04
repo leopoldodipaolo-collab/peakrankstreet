@@ -182,7 +182,7 @@ def index():
                         onboarding_status=onboarding_status,
                         upcoming_events=upcoming_events,
                         TITLES=TITLES,
-                        site_stats=site_stats,
+                        site_stats=site_stats, Comment=Comment,PostComment=PostComment,
                         now=datetime.utcnow()
                         )
 @main.route('/feed')
@@ -2053,64 +2053,70 @@ def toggle_post_like(post_id):
     return jsonify({'status': 'success', 'action': action, 'new_like_count': post.likes.count()})
 
 
-@main.route('/api/post/<int:post_id>/add_comment', methods=['POST'])
+@main.route('/api/post/<int:post_id>/comment/<int:parent_comment_id>/reply', methods=['POST'])
 @login_required
-def add_comment_to_post_ajax(post_id):
+def reply_to_comment_ajax(post_id, parent_comment_id):
     """
-    API endpoint per aggiungere un commento a un post in modo asincrono.
+    API endpoint per aggiungere una risposta a un commento in modo asincrono.
     """
     post = Post.query.get_or_404(post_id)
+    parent_comment = PostComment.query.get_or_404(parent_comment_id)
     content = request.form.get('content')
-    
-    # 1. Validazione
-    if not content or not content.strip():
-        return jsonify({'status': 'error', 'message': 'Il commento non può essere vuoto.'}), 400
-        
-    # --- NUOVA LOGICA QUI ---
-    # 1. Processiamo il contenuto per trovare menzioni e creare i link
-    processed_content, mentioned_users = parse_mentions(content)
-    # --- FINE NUOVA LOGICA ---
 
-    new_comment = PostComment(
+    if not content or not content.strip():
+        return jsonify({'status': 'error', 'message': 'La risposta non può essere vuota.'}), 400
+
+    # Riconosci menzioni
+    processed_content, mentioned_users = parse_mentions(content)
+
+    reply = PostComment(
         user_id=current_user.id,
         post_id=post_id,
-        content=processed_content # <-- Usiamo il contenuto processato!
+        parent_id=parent_comment_id,  # 👈 collega la risposta al commento originale
+        content=processed_content
     )
-    db.session.add(new_comment)
+    db.session.add(reply)
     add_prestige(current_user, 'new_comment')
-    # --- NUOVA LOGICA PER LE NOTIFICHE ---
-    # 2. Creiamo una notifica per ogni utente menzionato (e che non sia se stesso)
+
+    # Notifica all'autore del commento
+    if parent_comment.user_id != current_user.id:
+        notification = Notification(
+            recipient_id=parent_comment.user_id,
+            actor_id=current_user.id,
+            action='reply_to_comment',
+            object_id=post.id,
+            object_type='post'
+        )
+        db.session.add(notification)
+
+    # Notifica eventuali utenti menzionati
     for user in mentioned_users:
-        if user.id != current_user.id: # Non notificare te stesso
-            notification = Notification(
+        if user.id != current_user.id:
+            notif = Notification(
                 recipient_id=user.id,
                 actor_id=current_user.id,
-                action='mention_in_comment', # Nuova azione!
-                object_id=post.id, # L'oggetto è il post a cui appartiene il commento
+                action='mention_in_comment',
+                object_id=post.id,
                 object_type='post'
             )
-            db.session.add(notification)
-    # --- FINE NUOVA LOGICA ---
+            db.session.add(notif)
 
     db.session.commit()
-    
-    # 3. Renderizzazione del solo HTML per il nuovo commento
-    # Passiamo l'oggetto 'comment' appena creato al nostro nuovo template parziale
-    # --- MODIFICA QUESTA RIGA ---
-    comment_html = render_template(
-        'partials/feed_items/_comment.html', 
-        comment=new_comment,
-        PostComment=PostComment # <-- AGGIUNGI QUESTA RIGA
+
+    reply_html = render_template(
+        'partials/feed_items/_comment.html',
+        comment=reply,
+        PostComment=PostComment
     )
-    # --- FINE MODIFICA ---
-    
-    # 4. Restituzione di una risposta JSON di successo
+
     return jsonify({
         'status': 'success',
-        'message': 'Commento aggiunto!',
-        'comment_html': comment_html,
+        'message': 'Risposta aggiunta!',
+        'comment_html': reply_html,
         'new_comment_count': post.comments.count()
     })
+
+
 
 @main.route('/api/feed')
 def api_feed():
@@ -3445,3 +3451,49 @@ def get_post_likers(post_id):
         })
         
     return jsonify(likers_data)
+
+
+@main.route('/api/post/<int:post_id>/add_comment', methods=['POST'])
+@login_required
+def add_comment_to_post_ajax(post_id):
+    post = Post.query.get_or_404(post_id)
+    content = request.form.get('content')
+
+    if not content or not content.strip():
+        return jsonify({'status': 'error', 'message': 'Il commento non può essere vuoto.'}), 400
+
+    processed_content, mentioned_users = parse_mentions(content)
+
+    new_comment = PostComment(
+        user_id=current_user.id,
+        post_id=post_id,
+        content=processed_content
+    )
+    db.session.add(new_comment)
+    add_prestige(current_user, 'new_comment')
+
+    for user in mentioned_users:
+        if user.id != current_user.id:
+            notification = Notification(
+                recipient_id=user.id,
+                actor_id=current_user.id,
+                action='mention_in_comment',
+                object_id=post.id,
+                object_type='post'
+            )
+            db.session.add(notification)
+
+    db.session.commit()
+
+    comment_html = render_template(
+        'partials/feed_items/_comment.html',
+        comment=new_comment,
+        PostComment=PostComment
+    )
+
+    return jsonify({
+        'status': 'success',
+        'message': 'Commento aggiunto!',
+        'comment_html': comment_html,
+        'new_comment_count': post.comments.count()
+    })

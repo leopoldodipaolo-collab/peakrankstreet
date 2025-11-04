@@ -733,4 +733,61 @@ document.body.addEventListener('click', function(event) {
         .catch(err => console.error('Errore like attività:', err));
 });
 
+document.addEventListener("click", async (e) => {
+    const replyBtn = e.target.closest(".reply-btn");
+    if (!replyBtn) return;
+
+    e.preventDefault();
+
+    const commentId = replyBtn.dataset.commentId;
+    const postId = replyBtn.dataset.postId;
+    const container = document.getElementById(`reply-form-for-${commentId}`);
+
+    // Se il form è già visibile, chiudilo
+    if (container.style.display === "block") {
+        container.innerHTML = "";
+        container.style.display = "none";
+        return;
+    }
+
+    // Altrimenti, mostra il form
+    container.innerHTML = `
+        <form method="POST" action="/api/post/${postId}/comment/${commentId}/reply" class="reply-form mt-2">
+            <input type="hidden" name="csrf_token" value="${document.querySelector('input[name="csrf_token"]').value}">
+            <div class="d-flex">
+                <img src="/static/profile_pics/${window.currentUserProfileImage}" class="rounded-circle me-2" style="width:30px; height:30px; object-fit:cover;">
+                <textarea name="content" rows="1" class="form-control me-2" placeholder="Rispondi..." required></textarea>
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-send"></i>
+                </button>
+            </div>
+        </form>
+    `;
+    container.style.display = "block";
+});
+
+// Gestione invio del form di risposta via AJAX
+document.addEventListener("submit", async (e) => {
+    const form = e.target.closest(".reply-form");
+    if (!form) return;
+
+    e.preventDefault();
+    const formData = new FormData(form);
+    const url = form.action;
+
+    const response = await fetch(url, {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+    if (data.status === "success") {
+        const repliesContainer = form.closest(".reply-form-container").previousElementSibling;
+        repliesContainer.insertAdjacentHTML("beforeend", data.comment_html);
+        form.remove();
+    }
+});
+
+
+
 console.log('🚀 Main.js completamente caricato!');

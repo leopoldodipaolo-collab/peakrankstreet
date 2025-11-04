@@ -1,48 +1,71 @@
 <div class="comment mb-3 d-flex align-items-start" id="comment-{{ comment.id }}">
     <a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}">
-        <img src="{{ url_for('static', filename='profile_pics/' + comment.user.profile_image) }}" class="rounded-circle me-3" alt="Avatar {{ comment.user.username }}" style="width:40px; height:40px; object-fit:cover;">
+        <img src="{{ url_for('static', filename='profile_pics/' + comment.user.profile_image) }}" 
+             class="rounded-circle me-3" 
+             alt="Avatar {{ comment.user.username }}" 
+             style="width:40px; height:40px; object-fit:cover;">
     </a>
+
     <div class="flex-grow-1">
         <div class="bg-light p-3 rounded">
             <div class="comment-header mb-1 d-flex justify-content-between align-items-start">
                 <div>
-                    <strong><a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}" class="text-dark text-decoration-none">{{ comment.user.username }}</a></strong>
+                    <strong>
+                        <a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}" 
+                           class="text-dark text-decoration-none">
+                            {{ comment.user.username }}
+                        </a>
+                    </strong>
                     <span class="badge bg-secondary fw-normal ms-1">{{ comment.user.title }}</span>
-                    <span class="text-muted small ms-2 timeago" datetime="{{ comment.created_at.isoformat() }}Z">{{ comment.created_at.strftime('%d/%m/%Y') }}</span>
+                    <span class="text-muted small ms-2 timeago" 
+                          datetime="{{ comment.created_at.isoformat() }}Z">
+                        {{ comment.created_at.strftime('%d/%m/%Y') }}
+                    </span>
                 </div>
+
                 {% if current_user.is_authenticated and current_user.id == comment.user.id %}
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item edit-comment-btn" href="#" data-comment-id="{{ comment.id }}">Modifica</a></li>
-                        <li><a class="dropdown-item delete-comment-btn text-danger" href="#" data-comment-id="{{ comment.id }}" data-delete-url="{{ url_for('main.delete_post_comment', comment_id=comment.id) }}">Elimina</a></li>
+                        <li><a class="dropdown-item delete-comment-btn text-danger" href="#" 
+                               data-comment-id="{{ comment.id }}" 
+                               data-delete-url="{{ url_for('main.delete_post_comment', comment_id=comment.id) }}">
+                               Elimina
+                           </a>
+                        </li>
                     </ul>
                 </div>
                 {% endif %}
             </div>
-            
+
             <div class="comment-content-container">
                  <p class="comment-content mb-0">{{ comment.content | safe }}</p>
             </div>
-            
+
+            {% if current_user.is_authenticated %}
             <div class="comment-actions mt-2">
-                <button class="btn btn-sm btn-link text-muted p-0 reply-btn" data-comment-id="{{ comment.id }}">
+                <button class="btn btn-sm btn-link text-muted p-0 reply-btn" 
+                        data-comment-id="{{ comment.id }}"
+                        data-post-id="{{ comment.post_id }}">
                     Rispondi
                 </button>
             </div>
+            {% endif %}
         </div>
 
         <div class="replies-container ps-4 mt-2" id="replies-for-{{ comment.id }}">
-            {# --- BLOCCO CORRETTO PER LA RICORSIONE --- #}
-            {% for comment in comment.replies.order_by(PostComment.created_at.asc()).all() %}
-                {% include 'partials/feed_items/_comment.html' %}
-            {% endfor %}
-            {# --- FINE BLOCCO CORRETTO --- #}
-        </div>
-        <div class="reply-form-container ps-4 mt-2" id="reply-form-for-{{ comment.id }}" style="display: none;">
-            {# Il form di risposta verrà inserito qui da JavaScript #}
-        </div>
+    {% for reply in comment.replies | sort(attribute='created_at') %}
+        {% set comment = reply %}
+        {% include 'partials/feed_items/_comment.html' %}
+    {% endfor %}
+</div>
+
+
+        <div class="reply-form-container ps-4 mt-2" 
+             id="reply-form-for-{{ comment.id }}" 
+             style="display:none;"></div>
     </div>
 </div>

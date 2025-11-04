@@ -249,7 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('submit', function(event) {
         
         // --- INVIO COMMENTO O RISPOSTA ---
-        const commentForm = event.target.closest('#comment-form, .comment-form-reply');
+        const commentForm = event.target.closest('#comment-form, .comment-form-reply, .comment-form-inline');
+
         if (commentForm) {
             event.preventDefault();
             const formData = new FormData(commentForm);
