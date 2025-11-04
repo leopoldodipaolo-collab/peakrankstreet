@@ -18,7 +18,6 @@
                 <a href="{{ url_for('main.track_activity') }}" class="btn btn-lg btn-success-custom mx-2 animate__animated animate__zoomIn"><i class="bi bi-geo-alt-fill me-2"></i>Inizia a Tracciare!</a>
                 <a href="{{ url_for('main.upload_gpx') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Carica GPX</a>
                 <a href="{{ url_for('main.challenges_list') }}" class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-award-fill me-2"></i>Le mie Sfide</a>
-                <a href="{{ url_for('main.record_activity') }}"  class="btn btn-lg btn-outline-light animate__animated animate__zoomIn"><i class="bi bi-upload me-2"></i>Registra Attività</a>
             {% endif %}
 
             <!-- ======================================================= -->
@@ -139,7 +138,7 @@
                 {% endif %}
                 </div>
             </div>
-            </div>
+        </div>
 
         <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
             <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
@@ -280,7 +279,6 @@
                 </div>
 
                 <div class="card shadow-lg my-5">
-            
                     <div class="card-body p-4">
                         {% if invited_challenges %}
                         <div class="card shadow-sm mb-4 bet-card">

@@ -1,6 +1,7 @@
 # app/main/routes.py
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app,request, Blueprint
+import requests
 from flask_login import login_required, current_user
 from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags, Group,Event
 from app import db
@@ -185,6 +186,26 @@ def index():
                         site_stats=site_stats, Comment=Comment,PostComment=PostComment,
                         now=datetime.utcnow()
                         )
+
+@main.route("/api/search_city")
+def search_city():
+    q = request.args.get("q")
+    if not q:
+        return jsonify([])
+
+    try:
+        res = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": q, "format": "json", "limit": 5},
+            headers={"User-Agent": "StreetSportApp/1.0 (leopoldo@example.com)"}
+        )
+        res.raise_for_status()
+        return jsonify(res.json())
+    except requests.RequestException as e:
+        print("❌ Errore chiamata Nominatim:", e)
+        return jsonify({"error": "Nominatim non disponibile"}), 503
+    
+
 @main.route('/feed')
 @login_required
 def feed():
@@ -3497,3 +3518,5 @@ def add_comment_to_post_ajax(post_id):
         'comment_html': comment_html,
         'new_comment_count': post.comments.count()
     })
+
+

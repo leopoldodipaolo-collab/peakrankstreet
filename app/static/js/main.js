@@ -92,9 +92,6 @@ function initializeMap() {
     }
 }
 
-// =======================================================
-// RICERCA CITTÀ
-// =======================================================
 function setupCitySearch() {
     const cityInput = document.getElementById('citySearchInput');
     const cityButton = document.getElementById('searchCityButton');
@@ -108,10 +105,13 @@ function setupCitySearch() {
         citySpinner.style.display = 'inline-block';
 
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=5`);
+            const url = `/api/search_city?q=${encodeURIComponent(cityName)}`;
+            const res = await fetch(url);
+
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
             const data = await res.json();
-            console.log('Local leaderboards:', data.local_leaderboards); // <--- qui funziona
-            if (!data || data.length === 0) {
+
+            if (!Array.isArray(data) || data.length === 0) {
                 alert('Città non trovata.');
                 return;
             }
@@ -120,20 +120,32 @@ function setupCitySearch() {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
 
+            console.log(`✅ Città trovata: ${city} (${lat}, ${lon})`);
             loadMapAndData(lat, lon, 13, city);
             loadClassicRoutes(city);
 
         } catch (err) {
-            console.error('Errore ricerca città:', err);
-            alert('Errore di rete durante la ricerca.');
+            console.warn('⚠️ Servizio Nominatim non disponibile o errore di rete:', err);
+
+            // Mostra un messaggio discreto nel campo o accanto
+            const msgBox = document.getElementById("citySearchMessage");
+            if (msgBox) {
+                msgBox.textContent = "⚠️ Servizio temporaneamente non disponibile. Riprova più tardi.";
+                msgBox.style.display = "block";
+            }
+
+            // Non bloccare l’utente con un alert
         } finally {
             cityButton.disabled = false;
             citySpinner.style.display = 'none';
         }
+
     }
 
-    cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value); });
-    cityButton.addEventListener('click', () => searchCity(cityInput.value));
+    cityInput.addEventListener('keypress', e => { 
+        if (e.key === 'Enter') searchCity(cityInput.value.trim());
+    });
+    cityButton.addEventListener('click', () => searchCity(cityInput.value.trim()));
 }
 
 function searchInitialCity() {
