@@ -204,11 +204,19 @@
         </footer>
     </div>
 
-    {# --- QUESTO È L'UNICO BLOCO 'SCRIPTS' DA MANTENERE QUI --- #}
-    {# Permette ai template figli di SOVRASCRIVERLO se necessario, ma non lo definisce una seconda volta qui nel padre. #}
-    {% block scripts %}{% endblock %}
+    <!-- Banner Cookie Consent -->
+    <div class="fixed-bottom bg-dark text-white p-3 cookie-banner" id="cookieConsentBanner" style="display: none;">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span>Questo sito utilizza i cookie per migliorare la tua esperienza. <a href="{{ url_for('main.cookie_policy') }}" class="text-info">Maggiori informazioni</a>.</span>
+            <div>
+                <button class="btn btn-outline-info btn-sm me-2" id="cookieDecline">Rifiuta</button>
+                <button class="btn btn-info btn-sm" id="cookieAccept">Accetta</button>
+            </div>
+        </div>
+    </div>
 
-    {# --- QUI VA IL TUO SCRIPT PER IL BANNER DEI COOKIE --- #}
+    {# --- QUESTO È IL CODICE JS PER IL BANNER DEI COOKIE --- #}
+    {# VA MESSO QUI, PRIMA DI ALTRI SCRIPT COMUNI E PRIMA DI {% block scripts %} SE QUESTO ULTIMO VA ANCHE SOVRASCRITTO DAI FIGLI #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const cookieBanner = document.getElementById('cookieConsentBanner');
@@ -262,6 +270,10 @@
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
     {# --- AGGIUNGI LO SCRIPT DI TRIBUTE.JS --- #}
     <script src="https://unpkg.com/tributejs/dist/tribute.min.js"></script>
+
+    {# Questo è l'unico blocco scripts che dovrebbe essere nel padre. #}
+    {# I template figli lo useranno per aggiungere i propri script specifici #}
+    {% block scripts %}{% endblock %}
 
 </body>
 </html>
