@@ -47,7 +47,10 @@
                     
                     <div class="text-center mt-4">
                         <small class="text-muted">Non hai un account? <a href="{{ url_for('auth.register') }}">Registrati ora</a>.</small>
+                        {# AGGIUNTO QUI #}
+                        <small class="text-muted">Accedendo accetti la nostra <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a> e <a href="{{ url_for('main.cookie_policy') }}">Cookie Policy</a>.</small>
                     </div>
+                    
                 </div>
             </div>
         </div>

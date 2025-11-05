@@ -37,6 +37,15 @@
                             </div>
                         </div>
 
+                        <!-- Nuovo campo: Cognome -->
+                        <div class="mb-3">
+                            <label for="surname" class="form-label">Cognome (opzionale)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span> {# Puoi usare un'altra icona se preferisci #}
+                                <input type="text" id="surname" name="surname" class="form-control" value="{{ user.surname if user.surname else '' }}">
+                            </div>
+                        </div>
+
                         <!-- Email -->
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>

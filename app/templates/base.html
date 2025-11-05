@@ -198,10 +198,26 @@
                         </div>
                     </div>
                 </div>
+             
                 <hr class="text-white-50 my-3">
                 <p class="mb-0 small">&copy; 2025 PeakRankStreet App. Tutti i diritti riservati.</p>
+                <a href="{{ url_for('main.privacy_policy') }}" class="text-muted ms-3">Privacy Policy</a>
+                <a href="{{ url_for('main.cookie_policy') }}" class="text-muted ms-3">Cookie Policy</a>
             </div>
         </footer>
+    </div>
+
+    {# ... (il tuo script blocco 'scripts' o dove carichi JS) ... #}
+
+    <!-- Banner Cookie Consent -->
+    <div class="fixed-bottom bg-dark text-white p-3 cookie-banner" id="cookieConsentBanner" style="display: none;">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span>Questo sito utilizza i cookie per migliorare la tua esperienza. <a href="{{ url_for('main.cookie_policy') }}" class="text-info">Maggiori informazioni</a>.</span>
+            <div>
+                <button class="btn btn-outline-info btn-sm me-2" id="cookieDecline">Rifiuta</button>
+                <button class="btn btn-info btn-sm" id="cookieAccept">Accetta</button>
+            </div>
+        </div>
     </div>
 
     <!-- Script JS Comuni -->

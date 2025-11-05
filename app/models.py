@@ -47,6 +47,8 @@ class User(db.Model, UserMixin):
     city = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    # --- NUOVO CAMPO AGGIUNTO ---
+    surname = db.Column(db.String(100), nullable=True) # Aggiunto il campo cognome
 
     routes = db.relationship('Route', backref='creator', lazy='dynamic')
     challenges = db.relationship('Challenge', backref='challenger', lazy='dynamic')

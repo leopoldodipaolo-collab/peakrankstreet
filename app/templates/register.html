@@ -1,7 +1,6 @@
-{# --- CORREZIONE: Estende il template di base, non la homepage --- #}
 {% extends "base.html" %}
 
-{% block title %}Registrati - PeakRankStreet App{% endblock %}
+{% block title %}Registrazione - PeakRankStreet App{% endblock %}
 
 {% block content %}
 <div class="container mt-5 pt-5">
@@ -9,10 +8,10 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow-lg border-0">
                 <div class="card-header bg-primary text-white text-center py-3">
-                    <h2 class="mb-0 h4"><i class="bi bi-person-plus-fill me-2"></i>Crea un Nuovo Account</h2>
+                    <h2 class="mb-0 h4"><i class="bi bi-person-plus-fill me-2"></i>Registrati</h2>
                 </div>
                 <div class="card-body p-4 p-md-5">
-                    <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation" novalidate id="registerForm">
+                    <form method="POST" class="needs-validation" novalidate id="registerForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <div class="mb-3">
@@ -20,7 +19,9 @@
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
                                 <input type="text" id="username" name="username" class="form-control" required>
-                                <div class="invalid-feedback">Per favore, inserisci un username.</div>
+                                <div class="invalid-feedback">
+                                    Per favore, scegli un username.
+                                </div>
                             </div>
                         </div>
 
@@ -29,39 +30,79 @@
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
                                 <input type="email" id="email" name="email" class="form-control" required>
-                                <div class="invalid-feedback">Per favore, inserisci un'email valida.</div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input type="password" id="password" name="password" class="form-control" required minlength="6">
-                                <div class="invalid-feedback">Inserisci una password di almeno 6 caratteri.</div>
+                                <div class="invalid-feedback">
+                                    Per favore, inserisci un'email valida.
+                                </div>
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="city" class="form-label">Città (opzionale)</label>
+                            <label for="password" class="form-label">Password</label>
+                             <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input type="password" id="password" name="password" class="form-control" minlength="6" required>
+                                <div class="invalid-feedback">
+                                    La password deve avere almeno 6 caratteri.
+                                </div>
+                            </div>
+                        </div>
+
+                        {# --- CAMPO CITTÀ AGGIUNTO --- #}
+                        <div class="mb-3">
+                            <label for="city" class="form-label">Città</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-geo-alt-fill"></i></span>
-                                <input type="text" id="city" name="city" class="form-control">
+                                <input type="text" id="city" name="city" class="form-control" value="{{ city_value or '' }}">
+                                {# La 'value' con city_value serve per mantenere il dato se c'è un errore di validazione #}
+                                <div class="invalid-feedback">
+                                    Inserisci la tua città.
+                                </div>
                             </div>
-                            <div class="form-text">La tua città verrà usata per centrare la mappa sulla homepage.</div>
+                        </div>
+
+                        {# AGGIUNGI QUI LA CHECKBOX OBBLIGATORIA #}
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="accept_privacy" name="accept_privacy" required>
+                            <label class="form-check-label" for="accept_privacy">
+                                Accetto la <a href="{{ url_for('main.privacy_policy') }}" target="_blank" class="text-info">Privacy Policy</a> e la <a href="{{ url_for('main.cookie_policy') }}" target="_blank" class="text-info">Cookie Policy</a>.
+                            </label>
+                            <div class="invalid-feedback">
+                                Devi accettare le Policy per registrarti.
+                            </div>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Registra</button>
+                            <button type="submit" class="btn btn-primary btn-lg">Registrati</button>
                         </div>
                     </form>
-
+                    
                     <div class="text-center mt-4">
-                        <small class="text-muted">Hai già un account? <a href="{{ url_for('auth.login') }}">Accedi qui</a>.</small>
+                        <small class="text-muted">Hai già un account? <a href="{{ url_for('auth.login') }}">Accedi</a>.</small>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Script standard di validazione Bootstrap
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
 {% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Cookie Policy{% endblock %}
+
+{% block content %}
+<div class="container my-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="mb-4">Cookie Policy</h1>
+            <p class="lead">Questa Cookie Policy spiega cosa sono i cookie e come li utilizziamo. Dovresti leggere questa policy per capire cosa sono i cookie, come li usiamo, i tipi di cookie che utilizziamo, le informazioni che raccogliamo utilizzando i cookie e come tali informazioni vengono utilizzate e come controllare le preferenze sui cookie. Per ulteriori informazioni su come utilizziamo, memorizziamo e manteniamo i tuoi dati personali al sicuro, consulta la nostra <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>.</p>
+
+            <h3 class="mt-5">1. Cosa sono i cookie?</h3>
+            <p>I cookie sono piccoli file di testo che vengono memorizzati sul tuo dispositivo (computer, tablet o telefono cellulare) quando navighi su Internet, inclusi i siti web. Sono ampiamente utilizzati per far funzionare i siti web, o per farli funzionare in modo più efficiente, e per fornire informazioni ai proprietari del sito.</p>
+
+            <h3 class="mt-5">2. Come utilizziamo i cookie</h3>
+            <p>Il nostro sito web utilizza i cookie per migliorare la tua esperienza di navigazione, per ricordare le tue preferenze e per scopi analitici. Utilizziamo sia cookie di sessione che cookie persistenti.</p>
+            <ul>
+                <li><strong>Cookie di sessione:</strong> Vengono eliminati automaticamente quando chiudi il browser. Li usiamo per gestire la tua sessione di login.</li>
+                <li><strong>Cookie persistenti:</strong> Rimangono sul tuo dispositivo per un periodo di tempo specificato o fino a quando non li elimini. Li usiamo per ricordare le tue preferenze (es. lingua) e per scopi analitici.</li>
+            </ul>
+
+            <h3 class="mt-5">3. Tipi di cookie che utilizziamo</h3>
+            <ul>
+                <li><strong>Cookie Essenziali:</strong> Questi cookie sono strettamente necessari per fornirti i servizi disponibili attraverso il nostro sito web e per utilizzare alcune delle sue funzionalità, come l'accesso ad aree sicure.</li>
+                <li><strong>Cookie di Analisi e Performance:</strong> Questi cookie vengono utilizzati per raccogliere informazioni sul traffico verso il nostro sito web e su come gli utenti utilizzano il sito. Le informazioni raccolte tramite questi cookie non identificano direttamente alcun singolo visitatore.</li>
+                <li><strong>Cookie di Funzionalità:</strong> Questi cookie consentono al nostro sito web di ricordare le scelte che fai quando usi il sito, come ricordare i dettagli di accesso o le preferenze.</li>
+            </ul>
+
+            <h3 class="mt-5">4. Le tue scelte sui cookie</h3>
+            <p>Puoi scegliere di accettare o rifiutare i cookie. La maggior parte dei browser web accetta automaticamente i cookie, ma di solito puoi modificare le impostazioni del tuo browser per rifiutare i cookie se preferisci. Tieni presente che la disabilitazione dei cookie potrebbe influire sulla funzionalità del nostro Servizio.</p>
+            <p>Per ulteriori informazioni su come gestire i cookie nel tuo browser, consulta le seguenti risorse:</p>
+            <ul>
+                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+                <li><a href="https://support.mozilla.org/it/kb/Attivare%20e%20disattivare%20i%20cookie" target="_blank">Mozilla Firefox</a></li>
+                <li><a href="https://support.microsoft.com/it-it/topic/eliminare-e-gestire-i-cookie-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
+                <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
+            </ul>
+
+            <h3 class="mt-5">5. Contatti</h3>
+            <p>Per qualsiasi domanda relativa a questa Cookie Policy, ti preghiamo di contattarci:</p>
+            <ul>
+                <li>Via email: [TUA_EMAIL_SUPPORTO]</li>
+            </ul>
+            <p class="text-muted mt-5">Ultimo aggiornamento: {{ 'now().strftime("%d %B %Y")' }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

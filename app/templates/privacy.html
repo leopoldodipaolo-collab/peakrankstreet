@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+<div class="container my-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h1 class="mb-4">Privacy Policy</h1>
+            <p class="lead">La tua privacy è importante per noi. Questa Privacy Policy spiega quali dati raccogliamo, perché li raccogliamo e come li utilizziamo.</p>
+
+            <h3 class="mt-5">1. Quali dati raccogliamo</h3>
+            <p>Raccogliamo diverse tipologie di dati per vari scopi per fornire e migliorare il nostro Servizio.</p>
+            <ul>
+                <li><strong>Dati Personali:</strong> Durante l'utilizzo del nostro Servizio, potremmo chiederti di fornirci alcune informazioni personali identificabili che possono essere utilizzate per contattarti o identificarti ("Dati Personali"). Queste possono includere, a titolo esemplificativo:
+                    <ul>
+                        <li>Indirizzo email</li>
+                        <li>Nome utente</li>
+                        <li>Password (memorizzata in formato hash)</li>
+                        <li>Città</li>
+                        <li>Immagine del profilo</li>
+                        <li>Dati relativi alle tue attività sportive (distanza, durata, percorsi, ecc.)</li>
+                        <li>Cognome (se fornito)</li>
+                    </ul>
+                </li>
+                <li><strong>Dati di Utilizzo:</strong> Potremmo anche raccogliere informazioni su come si accede e si utilizza il Servizio ("Dati di Utilizzo"). Questi Dati di Utilizzo possono includere informazioni come l'indirizzo IP del tuo computer, il tipo di browser, la versione del browser, le pagine del nostro Servizio che visiti, l'ora e la data della tua visita, il tempo trascorso su tali pagine, identificatori unici del dispositivo e altri dati diagnostici.</li>
+            </ul>
+
+            <h3 class="mt-5">2. Come utilizziamo i tuoi dati</h3>
+            <p>Utilizziamo i dati raccolti per vari scopi, tra cui:</p>
+            <ul>
+                <li>Fornire e mantenere il nostro Servizio</li>
+                <li>Notificarti modifiche al nostro Servizio</li>
+                <li>Consentirti di partecipare a funzionalità interattive del nostro Servizio quando scegli di farlo</li>
+                <li>Fornire assistenza clienti</li>
+                <li>Analizzare o raccogliere informazioni preziose in modo da poter migliorare il nostro Servizio</li>
+                <li>Monitorare l'utilizzo del nostro Servizio</li>
+                <li>Rilevare, prevenire e risolvere problemi tecnici</li>
+            </ul>
+
+            <h3 class="mt-5">3. Cookie</h3>
+            <p>Utilizziamo cookie e tecnologie di tracciamento simili per monitorare l'attività sul nostro Servizio e conservare determinate informazioni. Per maggiori dettagli, consulta la nostra <a href="{{ url_for('main.cookie_policy') }}">Cookie Policy</a>.</p>
+
+            <h3 class="mt-5">4. Divulgazione dei Dati</h3>
+            <p>Potremmo divulgare i tuoi Dati Personali in buona fede, ritenendo che tale azione sia necessaria per:</p>
+            <ul>
+                <li>Rispettare un obbligo legale</li>
+                <li>Proteggere e difendere i diritti o la proprietà di PeakRankStreet App</li>
+                <li>Prevenire o indagare su possibili illeciti in relazione al Servizio</li>
+                <li>Proteggere la sicurezza personale degli utenti del Servizio o del pubblico</li>
+                <li>Proteggere dalla responsabilità legale</li>
+            </ul>
+
+            <h3 class="mt-5">5. I tuoi diritti (GDPR)</h3>
+            <p>Se sei residente nello Spazio Economico Europeo (SEE), hai alcuni diritti di protezione dei dati. PeakRankStreet App mira a prendere misure ragionevoli per consentirti di correggere, modificare, eliminare o limitare l'uso dei tuoi Dati Personali.</p>
+            <ul>
+                <li>Il diritto di accedere, aggiornare o eliminare le informazioni che abbiamo su di te.</li>
+                <li>Il diritto di rettifica.</li>
+                <li>Il diritto di opporsi.</li>
+                <li>Il diritto di restrizione.</li>
+                <li>Il diritto alla portabilità dei dati.</li>
+                <li>Il diritto di revocare il consenso.</li>
+            </ul>
+            <p>Se desideri essere informato su quali Dati Personali deteniamo su di te e se desideri che vengano rimossi dal nostro sistema, ti preghiamo di contattarci via email all'indirizzo [TUA_EMAIL_SUPPORTO].</p>
+
+            <h3 class="mt-5">6. Contatti</h3>
+            <p>Per qualsiasi domanda relativa a questa Privacy Policy, ti preghiamo di contattarci:</p>
+            <ul>
+                <li>Via email: [TUA_EMAIL_SUPPORTO]</li>
+            </ul>
+
+            <p class="text-muted mt-5">Ultimo aggiornamento: {{ 'now().strftime("%d %B %Y")' }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

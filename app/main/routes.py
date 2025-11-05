@@ -187,6 +187,15 @@ def index():
                         now=datetime.utcnow()
                         )
 
+
+@main.route('/privacy')
+def privacy_policy():
+    return render_template('privacy.html')
+
+@main.route('/cookie_policy')
+def cookie_policy():
+    return render_template('cookie_policy.html')
+
 @main.route("/api/search_city")
 def search_city():
     q = request.args.get("q")
@@ -268,12 +277,13 @@ def edit_profile():
         new_email = request.form.get("email")
         new_password = request.form.get("password")
         new_city = request.form.get("city")
+        new_surname = request.form.get("surname") # AGGIUNTO: Recupera il cognome dal form
         
         if 'profile_image' in request.files and request.files['profile_image'].filename != '':
             file = request.files['profile_image']
             if file and allowed_file(file.filename):
                 filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
-                filepath = os.path.join(current_app.config['PROFILE_PICS_FOLDER'], filename)  # <-- cambio qui
+                filepath = os.path.join(current_app.config['PROFILE_PICS_FOLDER'], filename)
                 file.save(filepath)
                 current_user.profile_image = filename
             else:
@@ -293,18 +303,40 @@ def edit_profile():
             current_user.email = new_email
         
         if new_password:
+            # Aggiungi qui la validazione per la lunghezza minima della password, se non l'hai già fatto
+            if len(new_password) < 6:
+                flash('La nuova password deve avere almeno 6 caratteri.', 'danger')
+                return redirect(url_for('main.edit_profile'))
             current_user.set_password(new_password)
         
         if new_city is not None:
             current_user.city = new_city
 
-        # Se l'utente ha aggiunto una foto profilo e una città, consideriamo il profilo completo
-        if current_user.profile_image != 'default.png' and current_user.city:
-            complete_onboarding_step(current_user, 'profile_complete')
+        # AGGIUNTO: Aggiorna il cognome
+        if new_surname is not None: # Controlla se il campo è stato inviato (anche se vuoto)
+            current_user.surname = new_surname
 
-        db.session.commit()
-        flash('Profilo aggiornato con successo!', 'success')
-        return redirect(url_for('main.user_profile', user_id=current_user.id))
+        # Se l'utente ha aggiunto una foto profilo e una città, consideriamo il profilo completo
+        # Potresti voler aggiungere anche il cognome qui se lo ritieni parte del completamento del profilo
+        if current_user.profile_image != 'default.png' and current_user.city:
+            pass # <-- AGGIUNGI QUESTA RIGA indentata correttamente
+            # complete_onboarding_step(current_user, 'profile_complete') # rimosso il commento se la funzione esiste
+
+            # Esempio di come potresti definire complete_onboarding_step se non ce l'hai:
+            # if current_user.onboarding_steps is None:
+            #     current_user.onboarding_steps = {}
+            # current_user.onboarding_steps['profile_complete'] = True
+
+
+        try:
+            db.session.commit()
+            flash('Profilo aggiornato con successo!', 'success')
+            return redirect(url_for('main.user_profile', user_id=current_user.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Si è verificato un errore durante l\'aggiornamento: {e}', 'danger')
+            return redirect(url_for('main.edit_profile'))
+
 
     return render_template("edit_profile.html", user=current_user, is_homepage=False)
 
@@ -1854,22 +1886,14 @@ def bet_stats():
         is_homepage=False
     )
 
-@main.route('/privacy')
-def privacy_policy():
-    """
-    Renderizza la pagina della Privacy Policy.
-    Assicurati di avere un template chiamato 'privacy.html' nella tua cartella 'app/templates/'.
-    Se non hai un template separato, puoi modificare questa funzione per restituire direttamente HTML.
-    """
-    print("Debug: Richiesta alla rotta privacy_policy ricevuta.") # Debug print
-    return render_template('privacy.html')
 
 
 # In app/main/routes.py
 # --- Funzione helper per controllare il tipo di file ---
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @main.route('/posts/new', methods=['GET', 'POST'])

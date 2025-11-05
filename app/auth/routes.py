@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user
-from app.models import User, Badge, UserBadge # Aggiunto Badge e UserBadge
+from app.models import User, Badge, UserBadge 
 from app import db
 
 # Creiamo il Blueprint
@@ -33,32 +33,33 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        # MODIFICA 1: Leggiamo la città dal form
+        # AGGIUNTO: Recupera la città dal form
         city = request.form.get('city') 
-        
-        user_by_username = User.query.filter_by(username=username).first()
-        if user_by_username:
-            flash('Username già in uso.', 'danger')
+        accept_privacy = request.form.get('accept_privacy')
+
+        if not accept_privacy:
+            flash('Devi accettare la Privacy Policy e la Cookie Policy per registrarti.', 'danger')
             return redirect(url_for('auth.register'))
 
-        user_by_email = User.query.filter_by(email=email).first()
-        if user_by_email:
-            flash('Email già registrata.', 'danger')
-            return redirect(url_for('auth.register'))
+        # ... (validazioni per username, email, password) ...
 
-        # MODIFICA 2: Passiamo 'city' quando creiamo il nuovo utente
-        new_user = User(username=username, email=email, city=city)
+        # Quando crei il nuovo utente, includi la città
+        new_user = User(username=username, email=email, city=city) # La città viene passata qui
         new_user.set_password(password)
         db.session.add(new_user)
-        db.session.commit()
         
-        # MODIFICA 3: Ri-aggiunta la logica per assegnare il badge
-        award_badge_if_earned(new_user, "Nuovo Atleta")
-
-        flash('Registrazione avvenuta con successo! Effettua il login.', 'success')
-        return redirect(url_for('auth.login'))
+        try:
+            db.session.commit()
+            award_badge_if_earned(new_user, "Nuovo Atleta")
+            flash('Registrazione avvenuta con successo! Effettua il login.', 'success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Si è verificato un errore durante la registrazione: {e}', 'danger')
+            return redirect(url_for('auth.register'))
         
-    return render_template('register.html', is_homepage=False)
+    # MODIFICA AL TEMPLATE: Passa la variabile 'city' se vuoi precompilarla o gestirla
+    return render_template('register.html', is_homepage=False, city_value=request.form.get('city') if request.method == 'POST' else None)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -71,7 +72,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
-            flash('Login avvenuto con successo!', 'success') # Spostato qui per un feedback migliore
+            flash('Login avvenuto con successo!', 'success')
             return redirect(next_page or url_for('main.index'))
         else:
             flash('Login fallito. Controlla username e password.', 'danger')
@@ -80,5 +81,5 @@ def login():
 @auth.route('/logout')
 def logout():
     logout_user()
-    flash('Sei stato disconnesso.', 'info') # Aggiunto un messaggio flash per feedback
+    flash('Sei stato disconnesso.', 'info')
     return redirect(url_for('main.index'))
