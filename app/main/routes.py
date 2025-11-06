@@ -3544,3 +3544,57 @@ def add_comment_to_post_ajax(post_id):
     })
 
 
+# --- NUOVE ROUTE PER LA MODIFICA DELL'ATTIVITÀ ---
+
+@main.route("/activity/<int:activity_id>/edit", methods=["GET"])
+@login_required # Richiede che l'utente sia loggato
+def edit_activity(activity_id):
+    """
+    Visualizza il modulo per modificare i dettagli di un'attività.
+    """
+    activity = Activity.query.get_or_404(activity_id)
+
+    # Controllo autorizzazioni: solo il proprietario dell'attività può modificarla.
+    if activity.user_id != current_user.id:
+        flash("Non hai il permesso di modificare questa attività.", "danger")
+        # Reindirizza alla pagina di dettaglio dell'attività
+        return redirect(url_for("main.activity_detail", activity_id=activity_id))
+
+    # Se l'utente è autorizzato, renderizza il template di modifica
+    return render_template("edit_activity.html", activity=activity)
+
+
+@main.route("/activity/<int:activity_id>/edit", methods=["POST"])
+@login_required # Richiede che l'utente sia loggato
+def update_activity(activity_id):
+    """
+    Gestisce l'invio del modulo di modifica e aggiorna l'attività nel database.
+    """
+    activity = Activity.query.get_or_404(activity_id)
+
+    # Controllo autorizzazioni: solo il proprietario dell'attività può modificarla.
+    if activity.user_id != current_user.id:
+        flash("Non hai il permesso di modificare questa attività.", "danger")
+        return redirect(url_for("main.activity_detail", activity_id=activity_id))
+
+    # Recupera i dati dal form inviato
+    new_name = request.form.get("name")
+    new_description = request.form.get("description")
+
+    # Aggiorna i campi dell'attività nel modello
+    activity.name = new_name
+    activity.description = new_description
+
+    try:
+        db.session.commit()
+        flash("Attività aggiornata con successo!", "success")
+        # Reindirizza alla pagina di dettaglio dell'attività, dove si vedranno le modifiche
+        return redirect(url_for("main.activity_detail", activity_id=activity_id))
+    except Exception as e:
+        db.session.rollback() # Annulla le modifiche in caso di errore
+        flash(f"Errore durante l'aggiornamento dell'attività: {e}", "danger")
+        # Reindirizza di nuovo al modulo di modifica, passando i dati inseriti dall'utente
+        # per evitare perdite di dati.
+        return render_template("edit_activity.html", activity=activity, name=new_name, description=new_description)
+
+# --- FINE NUOVE ROUTE ---

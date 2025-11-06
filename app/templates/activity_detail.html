@@ -1,103 +1,109 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {# Assicurati che questo sia corretto #}
 
 {% block title %}Dettaglio Attività{% endblock %}
 
 {% block styles %}
-{{ super() }}
-<style>
-    /* ===== Marcatori Mappe ===== */
-    .map-marker-icon {
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 0 10px rgba(0,0,0,0.4);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+    {{ super() }}
+    <style>
+        /* ===== Marcatori Mappe ===== */
+        .map-marker-icon {
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-    .map-marker-icon:hover {
-        transform: scale(1.3);
-        box-shadow: 0 0 15px rgba(0,0,0,0.6);
-    }
+        .map-marker-icon:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+        }
 
-    .start-marker {
-        background: radial-gradient(circle, #28a745 0%, #218838 100%);
-        animation: pulse 2s infinite;
-    }
+        .start-marker {
+            background: radial-gradient(circle, #28a745 0%, #218838 100%);
+            animation: pulse 2s infinite;
+        }
 
-    .end-marker {
-        background: radial-gradient(circle, #dc3545 0%, #b02a37 100%);
-    }
+        .end-marker {
+            background: radial-gradient(circle, #dc3545 0%, #b02a37 100%);
+        }
 
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 rgba(40,167,69,0.5); }
-        70% { box-shadow: 0 0 0 15px rgba(40,167,69,0); }
-        100% { box-shadow: 0 0 0 0 rgba(40,167,69,0); }
-    }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40,167,69,0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(40,167,69,0); }
+            100% { box-shadow: 0 0 0 0 rgba(40,167,69,0); }
+        }
 
-    /* ===== Legenda ===== */
-    .legend-marker, .legend-color-box {
-        border-radius: 50%;
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border: 1px solid #ccc;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
+        /* ===== Legenda ===== */
+        .legend-marker, .legend-color-box {
+            border-radius: 50%;
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #ccc;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
 
-    .legend-marker.start-marker { background-color: #28a745; }
-    .legend-marker.end-marker { background-color: #dc3545; }
-    .legend-color-box.activity-track { background: linear-gradient(90deg, #0d6efd, #6610f2); }
-    .legend-color-box.route-track { background-color: #FF7800; border-style: dashed; }
+        .legend-marker.start-marker { background-color: #28a745; }
+        .legend-marker.end-marker { background-color: #dc3545; }
+        .legend-color-box.activity-track { background: linear-gradient(90deg, #0d6efd, #6610f2); }
+        .legend-color-box.route-track { background-color: #FF7800; border-style: dashed; }
 
-    /* ===== Tracciati Mappe ===== */
-    .leaflet-overlay-pane svg path.glow {
-        stroke: var(--bs-primary);
-        stroke-width: 6;
-        filter: drop-shadow(0 0 8px var(--bs-primary));
-        transition: stroke-width 0.3s ease, filter 0.3s ease;
-    }
+        /* ===== Tracciati Mappe ===== */
+        .leaflet-overlay-pane svg path.glow {
+            stroke: var(--bs-primary);
+            stroke-width: 6;
+            filter: drop-shadow(0 0 8px var(--bs-primary));
+            transition: stroke-width 0.3s ease, filter 0.3s ease;
+        }
 
-    /* ===== Card e UI ===== */
-    .card {
-        border-radius: 1rem;
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+        /* ===== Card e UI ===== */
+        .card {
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 25px rgba(0,0,0,0.15);
-    }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+        }
 
-    .card-header {
-        background: linear-gradient(90deg, #0d6efd, #6610f2);
-        color: white;
-        font-weight: 500;
-    }
+        .card-header {
+            background: linear-gradient(90deg, #0d6efd, #6610f2);
+            color: white;
+            font-weight: 500;
+        }
 
-    .card-title i {
-        color: #0d6efd;
-        transition: transform 0.3s ease;
-    }
+        .card-title i {
+            color: #0d6efd;
+            transition: transform 0.3s ease;
+        }
 
-    .card-title i:hover {
-        transform: rotate(15deg);
-    }
+        .card-title i:hover {
+            transform: rotate(15deg);
+        }
 
-    .display-4 {
-        background: linear-gradient(to right, #0d6efd, #6610f2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-</style>
+        .display-4 {
+            background: linear-gradient(to right, #0d6efd, #6610f2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
 <div class="container my-5 pt-5">
-    <div class="mb-4">
+    <div class="mb-4 d-flex justify-content-between align-items-center"> {# Usato flex per allineare pulsanti #}
         <a href="{{ url_for('main.all_activities') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Torna a Tutte le Attività
         </a>
+        {# Pulsante Modifica mostrato solo se l'utente è loggato E proprietario dell'attività #}
+        {% if current_user.is_authenticated and activity.user_id == current_user.id %}
+        <a href="{{ url_for('main.edit_activity', activity_id=activity.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil-square me-2"></i>Modifica Attività
+        </a>
+        {% endif %} {# Corretta chiusura dell'if #}
     </div>
 
     <div class="row g-4">
@@ -108,6 +114,23 @@
                     <h4 class="card-title border-bottom pb-3 mb-3">
                         <i class="bi bi-clipboard-data-fill me-2 text-primary"></i>Riepilogo Attività
                     </h4>
+
+                    {# --- SEZIONE NOME E DESCRIZIONE ATTIVITÀ --- #}
+                    <div class="mb-4">
+                        {% if activity.name %}
+                            <h5 class="fw-bold mb-1">{{ activity.name }}</h5>
+                        {% else %}
+                            <h5 class="fw-bold text-muted fst-italic mb-1">Nome Attività Non Disponibile</h5>
+                        {% endif %}
+
+                        {% if activity.description %}
+                            <p class="text-muted mb-0">{{ activity.description }}</p>
+                        {% else %}
+                            <p class="text-muted fst-italic mb-0">Nessuna descrizione fornita.</p>
+                        {% endif %}
+                    </div>
+                    {# --- FINE SEZIONE NOME E DESCRIZIONE ATTIVITÀ --- #}
+
                     <div class="row text-center mb-4">
                         <div class="col-12">
                             <h5 class="text-muted fw-light">Distanza Totale</h5>
@@ -135,6 +158,34 @@
                             <span class="text-muted"><i class="bi bi-calendar-event-fill me-2"></i>Data</span>
                             <span class="fw-bold">{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
                         </div>
+
+                        {# --- CAMPPI AGGIUNTIVI RIFERITI AL MODELLO ACTIVITY --- #}
+                        {% if activity.activity_type %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-activity me-2"></i>Tipo Attività</span>
+                            <span class="fw-bold">{{ activity.activity_type }}</span>
+                        </div>
+                        {% endif %}
+
+                        {# Esempio di come aggiungere dislivello e velocità massima se esistono nel modello #}
+                        {# Assicurati che questi campi esistano nel tuo modello Activity #}
+                        {#
+                        {% if activity.elevation_gain %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-arrow-up-circle-fill me-2"></i>Dislivello</span>
+                            <span class="fw-bold">{{ activity.elevation_gain }} m</span>
+                        </div>
+                        {% endif %}
+
+                        {% if activity.max_speed %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-speedometer2 me-2"></i>Vel. Max</span>
+                            <span class="fw-bold">{{ "%.2f"|format(activity.max_speed) }} km/h</span>
+                        </div>
+                        {% endif %}
+                        #}
+                        {# --- FINE CAMPPI AGGIUNTIVI --- #}
+
                         {% if route %}
                         <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                             <span class="text-muted"><i class="bi bi-signpost-2-fill me-2"></i>Percorso</span>
@@ -178,7 +229,7 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock %} {# <-- Corretta chiusura del blocco 'content' #}
 
 {% block scripts %}
 {{ super() }}

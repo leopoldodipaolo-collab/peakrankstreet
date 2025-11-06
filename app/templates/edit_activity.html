@@ -1,0 +1,67 @@
+{# templates/edit_activity.html - Versione gestione manuale #}
+{% extends "base.html" %}
+
+{% block title %}Modifica Attività{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style>
+        .form-control { border-radius: 0.5rem; }
+        .form-label { font-weight: 500; color: #495057; }
+        textarea.form-control { min-height: 150px; resize: vertical; }
+        .card { border-radius: 1rem; }
+        .card-header { background: linear-gradient(90deg, #0d6efd, #6610f2); color: white; font-weight: 500; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5 pt-5">
+    <div class="mb-4">
+        <a href="{{ url_for('main.activity_detail', activity_id=activity.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Torna ai Dettagli Attività
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <h4 class="mb-0 fw-normal"><i class="bi bi-pencil-square me-2 text-white"></i>Modifica Attività</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Inizia il Form -->
+                    <form method="POST" action="{{ url_for('main.update_activity', activity_id=activity.id) }}">
+                        {# <-- AGGIUNGI QUESTO CAMPO NASCOSTO PER IL TOKEN CSRF #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+
+                        <div class="mb-4">
+                            <label for="name" class="form-label">Nome Attività</label>
+                            {# Usa activity.name or '' per precompilare il valore #}
+                            <input type="text" class="form-control" id="name" name="name" value="{{ activity.name or '' }}" required>
+                            <div class="form-text">Inserisci un nome descrittivo per l'attività.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Descrizione</label>
+                            {# Usa activity.description or '' per precompilare il valore #}
+                            <textarea class="form-control" id="description" name="description">{{ activity.description or '' }}</textarea>
+                            <div class="form-text">Aggiungi dettagli sull'attività, sensazioni, condizioni, ecc.</div>
+                        </div>
+
+                        <!-- Pulsanti di salvataggio e annullamento -->
+                        <div class="d-flex justify-content-end gap-3">
+                            <button type="button" class="btn btn-outline-danger" onclick="window.location.href='{{ url_for('main.activity_detail', activity_id=activity.id) }}'">
+                                Annulla
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Salva Modifiche <i class="bi bi-save ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <!-- Fine Form -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
