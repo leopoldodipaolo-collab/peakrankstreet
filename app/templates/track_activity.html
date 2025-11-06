@@ -7,49 +7,50 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <!-- Splash Screen -->
-<div id="welcomeSplash" class="splash-screen">
+<div id="welcomeSplash" class="splash-screen vh-100 d-flex align-items-center justify-content-center">
   <div class="splash-content text-center">
-    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+    <div class="spinner-grow text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Caricamento...</span>
+    </div>
     <h3 class="text-white">Preparazione Tracciamento</h3>
-    <p class="text-white-50">Stiamo ottimizzando la precisione GPS...</p>
-    <div class="progress mt-3 mx-auto" style="width: 200px; height: 6px;">
-      <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+    <p class="text-white-50">Ottimizzazione segnale GPS...</p>
+    <div class="progress mt-3 mx-auto w-75" style="height: 8px;">
+      <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 100%"></div>
     </div>
   </div>
 </div>
 
-<div class="container my-5 pt-5">
+<div class="container-fluid my-3 pt-4">
   <div class="row justify-content-center">
-    <div class="col-md-10 col-lg-8">
-      
+    <div class="col-12">
+
       <!-- Header con Controlli -->
-      <div class="text-center mb-4 position-relative">
-        <div class="position-absolute top-0 end-0">
-          <button class="btn btn-sm btn-outline-secondary me-2" id="darkModeToggle">
+      <div class="text-center mb-4 position-relative d-flex justify-content-center align-items-center">
+        <div class="position-absolute top-0 end-0 me-2">
+          <button class="btn btn-sm btn-outline-secondary me-2 rounded-circle" id="darkModeToggle" aria-label="Toggle Dark Mode">
             <span class="light-icon">🌙</span>
-            <span class="dark-icon" style="display:none;">☀️</span>
+            <span class="dark-icon d-none">☀️</span>
           </button>
-          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">⚙️</button>
+          <button class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#settingsModal" aria-label="Impostazioni">⚙️</button>
         </div>
-        <h1 class="display-5 fw-bold text-primary">🏃 Inizia la tua Attività</h1>
-        <p class="lead text-muted">Tracciamento GPS in tempo reale</p>
+        <h1 class="display-6 fw-bold text-primary mb-0">🏃 Traccia la tua Attività</h1>
       </div>
 
       <!-- Indicatori di Stato -->
-      <div class="status-indicators mb-3 text-center">
-        <span class="badge bg-secondary me-2" id="statusBadge">🟢 Pronto</span>
-        <span class="badge bg-danger me-2" id="gpsStatus">📡 GPS: Inattivo</span>
-        <span class="badge bg-info me-2" id="accuracyStatus">🎯 Precisione: --</span>
-        <span class="badge bg-warning" id="batteryStatus">🔋 Batteria: --</span>
+      <div class="status-indicators d-flex justify-content-center flex-wrap gap-2 mb-3 text-center">
+        <span class="badge rounded-pill bg-secondary" id="statusBadge">🟢 Pronto</span>
+        <span class="badge rounded-pill bg-danger" id="gpsStatus">📡 GPS: Non Disponibile</span>
+        <span class="badge rounded-pill bg-info" id="accuracyStatus">🎯 Precisione: --</span>
+        <span class="badge rounded-pill bg-warning text-dark" id="batteryStatus">🔋 Batteria: --</span>
       </div>
 
       <!-- Selezione Percorso -->
-      <div class="card mb-4 shadow-sm rounded-4 tracking-card">
+      <div class="card mb-3 rounded-4 shadow-sm tracking-card">
         <div class="card-header bg-white">
-          <h5 class="mb-0"><i class="bi bi-signpost-split-fill me-2 text-primary"></i> Seleziona Percorso (Opzionale)</h5>
+          <h5 class="mb-0 fs-6"><i class="bi bi-signpost-split-fill me-2 text-primary"></i> Percorso (Opzionale)</h5>
         </div>
-        <div class="card-body">
-          <select class="form-select form-select-lg mb-3" id="routeSelect">
+        <div class="card-body p-2">
+          <select class="form-select form-select-sm rounded-3" id="routeSelect" aria-label="Seleziona Percorso">
             <option value="">🎯 Modalità Libera</option>
             {% for route in routes %}
             <option value="{{ route.id }}" data-distance="{{ route.distance or 0 }}">
@@ -61,53 +62,61 @@
       </div>
 
       <!-- Pannello Tracking -->
-      <div class="card shadow-lg rounded-4 tracking-card">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="bi bi-broadcast-pin me-2"></i> Tracciamento Live</h5>
+      <div class="card shadow-lg rounded-4 tracking-card vh-75 d-flex flex-column">
+        <div class="card-header bg-primary text-white rounded-top-4">
+          <h5 class="mb-0 fs-5 py-1"><i class="bi bi-broadcast-pin me-2"></i> Tracciamento Live</h5>
         </div>
-        <div class="card-body text-center p-4">
-          
-          <button id="btnStart" class="btn btn-success btn-lg mb-3 rounded-pill px-4 py-3 fs-5 shadow">
-            ▶️ INIZIA TRACCIAMENTO
+        <div class="card-body text-center p-3 flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+
+          <button id="btnStart" class="btn btn-success btn-lg mb-3 rounded-pill w-75 shadow-sm fs-5">
+            ▶️ INIZIA
           </button>
 
-          <div id="autoStartMessage" class="alert alert-info rounded-3" style="display:none;">
-            <div class="spinner-border spinner-border-sm me-2"></div>
-            <strong>Avvio del tracciamento GPS...</strong>
+          <div id="autoStartMessage" class="alert alert-info rounded-3 w-100 mb-3 p-2 d-none" role="alert">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <strong>Avvio GPS...</strong>
           </div>
 
-          <div id="liveStats" style="display:none;">
-            <div class="row mb-4 g-2">
-              <div class="col-6 col-md-3"><div class="stat-box pulse-animation"><div class="stat-value text-primary" id="timer">00:00:00</div><div class="stat-label">TEMPO</div></div></div>
-              <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-value text-success" id="distance">0.00</div><div class="stat-label">DISTANZA (KM)</div></div></div>
-              <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-value text-warning" id="pace">0:00</div><div class="stat-label">RITMO (MIN/KM)</div></div></div>
-              <div class="col-6 col-md-3"><div class="stat-box"><div class="stat-value text-info" id="speed">0.0</div><div class="stat-label">VELOCITÀ (KM/H)</div></div></div>
+          <div id="liveStats" class="w-100 d-none flex-column">
+            <div class="row mb-3 g-2">
+              <div class="col-6"><div class="stat-box-mobile pulse-animation"><div class="stat-value text-primary" id="timer">00:00:00</div><div class="stat-label">TEMPO</div></div></div>
+              <div class="col-6"><div class="stat-box-mobile"><div class="stat-value text-success" id="distance">0.00</div><div class="stat-label">DIST (KM)</div></div></div>
+            </div>
+            <div class="row mb-3 g-2">
+              <div class="col-6"><div class="stat-box-mobile"><div class="stat-value text-warning" id="pace">0:00</div><div class="stat-label">RITMO (MIN/KM)</div></div></div>
+              <div class="col-6"><div class="stat-box-mobile"><div class="stat-value text-info" id="speed">0.0</div><div class="stat-label">VEL (KM/H)</div></div></div>
             </div>
 
-            <div class="row mb-3 g-2" id="advancedStats">
-              <div class="col-4"><div class="stat-box-sm"><div class="stat-value-sm text-danger" id="calories">0</div><div class="stat-label-sm">CALORIE</div></div></div>
+            <div class="row mb-2 g-2" id="advancedStats" style="display:none;">
+              <div class="col-4"><div class="stat-box-sm"><div class="stat-value-sm text-danger" id="calories">0</div><div class="stat-label-sm">CAL</div></div></div>
               <div class="col-4"><div class="stat-box-sm"><div class="stat-value-sm text-purple" id="elevation">+0m</div><div class="stat-label-sm">SALITA</div></div></div>
-              <div class="col-4"><div class="stat-box-sm"><div class="stat-value-sm text-orange" id="efficiency">--</div><div class="stat-label-sm">EFFICIENZA</div></div></div>
+              <div class="col-4"><div class="stat-box-sm"><div class="stat-value-sm text-orange" id="efficiency">--</div><div class="stat-label-sm">EFF</div></div></div>
             </div>
 
-            <div class="splits-container mb-3" id="splitsContainer" style="display:none;">
-              <h6 class="text-muted mb-2">🎯 ULTIMO SPLIT</h6>
-              <div class="split-card"><span id="lastSplitKm">1km</span><span id="lastSplitTime">00:00:00</span><span id="lastSplitPace">0:00/km</span></div>
+            <div class="splits-container mb-3 w-100" id="splitsContainer" style="display:none;">
+              <h6 class="text-muted mb-2 fs-7">🎯 ULTIMO SPLIT</h6>
+              <div class="split-card d-flex justify-content-between align-items-center p-2">
+                <span id="lastSplitKm" class="fs-7">1km</span>
+                <span id="lastSplitTime" class="fs-7">00:00:00</span>
+                <span id="lastSplitPace" class="fs-7">0:00/km</span>
+              </div>
             </div>
 
-            <div class="progress mb-3" id="routeProgress" style="display:none;height:25px;">
-              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%"><span class="progress-text">0% Completato</span></div>
+            <div class="progress mb-3 w-100 d-none" id="routeProgress" style="height: 20px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%">
+                <span class="progress-text fs-8">0%</span>
+              </div>
             </div>
-            
-            <div id="miniMap" style="height:350px;" class="mb-4 rounded-3 border shadow-sm"></div>
+
+            <div id="miniMap" class="mb-3 rounded-3 border shadow-sm w-100 flex-grow-1" style="min-height: 250px;"></div>
           </div>
 
-          <div class="tracking-controls mt-3">
-            <button id="btnStop" class="btn btn-danger btn-lg rounded-pill px-4 py-3 me-2" style="display:none;">⏹️ FERMA E SALVA</button>
-            <button id="btnPause" class="btn btn-warning btn-lg rounded-pill px-4 py-3" style="display:none;">⏸️ PAUSA</button>
+          <div class="tracking-controls mt-auto pt-3 d-flex justify-content-center w-100">
+            <button id="btnPause" class="btn btn-warning btn-lg rounded-pill me-2 flex-grow-1" style="display:none;">⏸️ PAUSA</button>
+            <button id="btnStop" class="btn btn-danger btn-lg rounded-pill flex-grow-1" style="display:none;">⏹️ FERMA</button>
           </div>
 
-          <div id="statusMessage" class="mt-3"></div>
+          <div id="statusMessage" class="mt-3 w-100"></div>
         </div>
       </div>
     </div>
@@ -115,199 +124,151 @@
 </div>
 
 <!-- Modal Istruzioni GPS -->
-<div class="modal fade" id="gpsInstructionsModal" tabindex="-1">
+<div class="modal fade" id="gpsInstructionsModal" tabindex="-1" aria-labelledby="gpsInstructionsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 shadow">
       <div class="modal-header bg-warning rounded-top-4">
-        <h5 class="modal-title">⚠️ Abilita il GPS per Tracciare</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="gpsInstructionsModalLabel">⚠️ Abilita il GPS</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
       </div>
       <div class="modal-body">
-        <p>Per utilizzare il tracciamento, devi abilitare il GPS nel tuo browser.</p>
-        
+        <p>Per tracciare la tua attività, abilita la posizione GPS nel tuo browser.</p>
         <div class="accordion" id="gpsAccordion">
           <div class="accordion-item">
             <h6 class="accordion-header">
-              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#chromeHelp">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#chromeHelp" aria-expanded="false" aria-controls="chromeHelp">
                 🌐 Chrome
               </button>
             </h6>
-            <div id="chromeHelp" class="accordion-collapse collapse show" data-bs-parent="#gpsAccordion">
-              <div class="accordion-body">
-                <ol class="small">
-                  <li>Clicca sull'icona 🔒 a sinistra della barra URL</li>
-                  <li>Trova "Posizione" e seleziona "Consenti"</li>
-                  <li>Ricarica la pagina e riprova</li>
-                </ol>
+            <div id="chromeHelp" class="accordion-collapse collapse" data-bs-parent="#gpsAccordion">
+              <div class="accordion-body small">
+                1. Clicca sull'icona 🔒 a sinistra della barra URL.<br>
+                2. Trova "Posizione" e seleziona "Consenti".<br>
+                3. Ricarica la pagina.
               </div>
             </div>
           </div>
-          
           <div class="accordion-item">
             <h6 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#firefoxHelp">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#firefoxHelp" aria-expanded="false" aria-controls="firefoxHelp">
                 🦊 Firefox
               </button>
             </h6>
             <div id="firefoxHelp" class="accordion-collapse collapse" data-bs-parent="#gpsAccordion">
-              <div class="accordion-body">
-                <ol class="small">
-                  <li>Clicca sull'icona a sinistra della barra URL</li>
-                  <li>Seleziona "Consenti condivisione posizione"</li>
-                  <li>Ricarica la pagina e riprova</li>
-                </ol>
+              <div class="accordion-body small">
+                1. Clicca sull'icona a sinistra della barra URL.<br>
+                2. Seleziona "Consenti condivisione posizione".<br>
+                3. Ricarica la pagina.
               </div>
             </div>
           </div>
-          
           <div class="accordion-item">
             <h6 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#safariHelp">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#safariHelp" aria-expanded="false" aria-controls="safariHelp">
                 🍎 Safari
               </button>
             </h6>
             <div id="safariHelp" class="accordion-collapse collapse" data-bs-parent="#gpsAccordion">
-              <div class="accordion-body">
-                <ol class="small">
-                  <li>Vai su Preferenze → Sito Web → Posizione</li>
-                  <li>Imposta "Consenti" per questo sito</li>
-                  <li>Ricarica la pagina e riprova</li>
-                </ol>
+              <div class="accordion-body small">
+                1. Vai su Preferenze → Sito Web → Posizione.<br>
+                2. Imposta "Consenti" per questo sito.<br>
+                3. Ricarica la pagina.
               </div>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary rounded-pill" data-bs-dismiss="modal">Ho capito!</button>
+        <button type="button" class="btn btn-primary rounded-pill w-100" data-bs-dismiss="modal">Ho capito!</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal Riepilogo Attività -->
-<div class="modal fade" id="activitySummaryModal" tabindex="-1">
+<div class="modal fade" id="activitySummaryModal" tabindex="-1" aria-labelledby="activitySummaryModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 shadow">
       <div class="modal-header bg-success text-white rounded-top-4">
-        <h5 class="modal-title">📊 Riepilogo Attività</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="activitySummaryModalLabel">📊 Riepilogo Attività</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
       </div>
       <div class="modal-body">
         <div class="row text-center mb-3">
-          <div class="col-6 mb-3">
-            <div class="stat-box">
-              <div class="stat-value text-primary" id="summaryDuration">00:00:00</div>
-              <div class="stat-label">DURATA</div>
-            </div>
+          <div class="col-6 mb-2">
+            <div class="stat-box-summary"><div class="stat-value text-primary" id="summaryDuration">00:00:00</div><div class="stat-label">DURATA</div></div>
           </div>
-          <div class="col-6 mb-3">
-            <div class="stat-box">
-              <div class="stat-value text-success" id="summaryDistance">0.00</div>
-              <div class="stat-label">DISTANZA (KM)</div>
-            </div>
+          <div class="col-6 mb-2">
+            <div class="stat-box-summary"><div class="stat-value text-success" id="summaryDistance">0.00</div><div class="stat-label">DIST (KM)</div></div>
           </div>
           <div class="col-6">
-            <div class="stat-box">
-              <div class="stat-value text-info" id="summarySpeed">0.0</div>
-              <div class="stat-label">VELOCITÀ MEDIA</div>
-            </div>
+            <div class="stat-box-summary"><div class="stat-value text-info" id="summarySpeed">0.0</div><div class="stat-label">VEL MEDIA</div></div>
           </div>
           <div class="col-6">
-            <div class="stat-box">
-              <div class="stat-value text-warning" id="summaryPace">0:00</div>
-              <div class="stat-label">RITMO MEDIO</div>
-            </div>
+            <div class="stat-box-summary"><div class="stat-value text-warning" id="summaryPace">0:00</div><div class="stat-label">RITMO MEDIO</div></div>
           </div>
         </div>
-        
-        <!-- Metriche Avanzate nel Riepilogo -->
         <div class="advanced-summary mt-3 p-3 bg-light rounded">
-          <h6>📈 Metriche Avanzate</h6>
+          <h6 class="text-center mb-3">📈 Metriche Avanzate</h6>
           <div class="row text-center">
-            <div class="col-4">
-              <div class="text-danger fw-bold" id="summaryCalories">0</div>
-              <small class="text-muted">Calorie</small>
-            </div>
-            <div class="col-4">
-              <div class="text-purple fw-bold" id="summaryElevation">+0m</div>
-              <small class="text-muted">Dislivello</small>
-            </div>
-            <div class="col-4">
-              <div class="text-orange fw-bold" id="summaryEfficiency">--</div>
-              <small class="text-muted">Efficienza</small>
-            </div>
+            <div class="col-4"><div class="stat-value-sm text-danger" id="summaryCalories">0</div><small class="text-muted">Calorie</small></div>
+            <div class="col-4"><div class="stat-value-sm text-purple" id="summaryElevation">+0m</div><small class="text-muted">Dislivello</small></div>
+            <div class="col-4"><div class="stat-value-sm text-orange" id="summaryEfficiency">--</div><small class="text-muted">Efficienza</small></div>
           </div>
         </div>
-        
         <div class="mt-3 p-3 bg-light rounded">
-          <small class="text-muted">
-            💡 <strong>Suggerimento:</strong> L'attività verrà salvata nel tuo profilo e potrai visualizzarne i dettagli completa.
-          </small>
+          <small class="text-muted">💡 L'attività verrà salvata nel tuo profilo per analisi dettagliate.</small>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Annulla</button>
-        <button type="button" class="btn btn-success rounded-pill" id="confirmSaveBtn">
-          💾 Salva Attività
-        </button>
+      <div class="modal-footer flex-column gap-2">
+        <button type="button" class="btn btn-secondary rounded-pill w-100" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" class="btn btn-success rounded-pill w-100" id="confirmSaveBtn">💾 Salva Attività</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal Settings -->
-<div class="modal fade" id="settingsModal" tabindex="-1">
-  <div class="modal-dialog">
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">⚙️ Impostazioni</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="settingsModalLabel">⚙️ Impostazioni</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
       </div>
       <div class="modal-body">
-        <!-- Tema Colori -->
         <div class="mb-3">
-          <label class="form-label">🎨 Tema Colori</label>
-          <select class="form-select" id="themeColor">
+          <label for="themeColor" class="form-label">🎨 Tema Colori</label>
+          <select class="form-select" id="themeColor" aria-label="Tema Colori">
             <option value="default">Blu Classico</option>
             <option value="green">Verde Sport</option>
             <option value="purple">Viola Energia</option>
             <option value="orange">Arancio</option>
           </select>
         </div>
-        
-        <!-- Unità di Misura -->
         <div class="mb-3">
-          <label class="form-label">📏 Unità di Misura</label>
-          <select class="form-select" id="unitSystem">
+          <label for="unitSystem" class="form-label">📏 Unità di Misura</label>
+          <select class="form-select" id="unitSystem" aria-label="Unità di Misura">
             <option value="metric">Metrico (km, min/km)</option>
             <option value="imperial">Imperiale (mi, min/mi)</option>
           </select>
         </div>
-        
-        <!-- Peso Utente per Calorie -->
         <div class="mb-3">
-          <label class="form-label">⚖️ Il tuo Peso (kg)</label>
-          <input type="number" class="form-control" id="userWeight" min="30" max="150" value="70">
-          <small class="text-muted">Usato per calcolare le calorie bruciate</small>
+          <label for="userWeight" class="form-label">⚖️ Il tuo Peso (kg)</label>
+          <input type="number" class="form-control" id="userWeight" min="30" max="150" value="70" aria-label="Peso Utente">
+          <small class="text-muted">Usato per calcolare le calorie bruciate.</small>
         </div>
-        
-        <!-- Audio Feedback -->
         <div class="form-check form-switch mb-3">
-          <input class="form-check-input" type="checkbox" id="audioToggle">
+          <input class="form-check-input" type="checkbox" id="audioToggle" role="switch">
           <label class="form-check-label" for="audioToggle">🔊 Feedback Audio</label>
         </div>
-        
-        <!-- Notifiche -->
         <div class="form-check form-switch mb-3">
-          <input class="form-check-input" type="checkbox" id="notificationsToggle">
+          <input class="form-check-input" type="checkbox" id="notificationsToggle" role="switch">
           <label class="form-check-label" for="notificationsToggle">🔔 Notifiche Browser</label>
         </div>
-        
-        <!-- Privacy -->
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="privacyMode">
-          <label class="form-check-label" for="privacyMode">🕵️ Modalità Privacy</label>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="privacyMode" role="switch">
+          <label class="form-check-label" for="privacyMode">🕵️ Modalità Privacy (Approssima posizione)</label>
         </div>
       </div>
       <div class="modal-footer">
@@ -319,323 +280,108 @@
 </div>
 
 <style>
-/* Stili Base */
-.stat-box {
-  padding: 15px 10px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px solid #e9ecef;
-  transition: all 0.3s ease;
-}
+/* Stili Base Ottimizzati Mobile */
+body { padding-bottom: 60px; /* Spazio per eventuale navbar fisso */ }
+.splash-screen { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.splash-content { animation: fadeInUp 0.8s ease; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-.stat-box:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.stat-box-mobile {
+  padding: 10px 8px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0;
+  display: flex; flex-direction: column; justify-content: center; height: 100px;
 }
+.stat-box-mobile:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.stat-value { font-size: 1.5em; font-weight: bold; margin-bottom: 3px; transition: color 0.3s ease; }
+.stat-label { font-size: 0.7em; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.stat-value {
-  font-size: 1.4em;
-  font-weight: bold;
-  margin-bottom: 5px;
-  transition: color 0.5s ease;
-}
+.stat-box-sm { padding: 8px 5px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+.stat-value-sm { font-size: 1.1em; font-weight: bold; margin-bottom: 2px; }
+.stat-label-sm { font-size: 0.65em; color: #6c757d; text-transform: uppercase; }
 
-.stat-label {
-  font-size: 0.75em;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+.stat-box-summary { padding: 15px 10px; background: #f8f9fa; border-radius: 12px; border: 2px solid #e9ecef; margin: 5px;}
+.stat-value.text-primary, .stat-value.text-success, .stat-value.text-warning, .stat-value.text-info,
+.stat-value-sm.text-danger, .stat-value-sm.text-purple, .stat-value-sm.text-orange { font-size: 1.8em; }
+.stat-label { font-size: 0.75em; }
 
-/* Statistiche Piccole */
-.stat-box-sm {
-  padding: 10px 5px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
+.tracking-card { border-left: 4px solid #28a745; transition: all 0.3s ease; }
+.tracking-active { border-left-color: #28a745 !important; background: linear-gradient(90deg, rgba(40, 167, 69, 0.05) 0%, transparent 100%); }
+.tracking-paused { border-left-color: #ffc107 !important; background: linear-gradient(90deg, rgba(255, 193, 7, 0.05) 0%, transparent 100%); }
 
-.stat-value-sm {
-  font-size: 1.1em;
-  font-weight: bold;
-  margin-bottom: 2px;
-}
+.tracking-controls .btn { min-width: 120px; margin: 5px; transition: all 0.2s ease;}
+#btnStart { min-width: 180px; font-size: 1.1rem; }
 
-.stat-label-sm {
-  font-size: 0.65em;
-  color: #6c757d;
-  text-transform: uppercase;
-}
+#gpsIndicator { width: 12px; height: 12px; border-radius: 50%; background: #dc3545; margin-left: 5px; transition: background 0.3s ease; display: inline-block; }
+.gps-active { background: #28a745 !important; box-shadow: 0 0 8px rgba(40, 167, 69, 0.5); }
 
-/* Split Cards */
-.splits-container {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 10px;
-}
+.pulse-animation { animation: pulse 2s infinite; }
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-.split-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 8px;
-  border-left: 4px solid #28a745;
-}
+.progress-bar { transition: width 0.5s ease-in-out; background-size: 200% 100% !important; animation: gradientShift 2s ease infinite; }
+@keyframes gradientShift { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.progress-text { font-weight: bold; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
 
-.split-notification {
-  animation: slideInRight 0.5s ease;
-  margin-bottom: 10px;
-}
+.value-change { animation: highlight 1s ease; }
+@keyframes highlight { 0% { background-color: rgba(255, 255, 0, 0.3); } 100% { background-color: transparent; } }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
+.splits-container { background: #f8f9fa; border-radius: 10px; padding: 10px; }
+.split-card { background: white; border-radius: 8px; border-left: 3px solid #28a745; }
 
-/* Tracking States */
-.tracking-card {
-  transition: all 0.3s ease;
-}
+/* Notifiche */
+.split-notification { animation: slideInRight 0.5s ease; }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-.tracking-active {
-  border-left: 5px solid #28a745 !important;
-  background: linear-gradient(90deg, rgba(40, 167, 69, 0.05) 0%, transparent 100%);
-}
-
-.tracking-paused {
-  border-left: 5px solid #ffc107 !important;
-  background: linear-gradient(90deg, rgba(255, 193, 7, 0.05) 0%, transparent 100%);
-}
-
-.tracking-controls .btn {
-  margin: 5px;
-  min-width: 180px;
-  transition: all 0.3s ease;
-}
-
-.tracking-controls .btn:hover {
-  transform: scale(1.05);
-}
-
-#gpsIndicator {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #dc3545;
-  margin-left: 5px;
-  transition: background 0.3s ease;
-}
-
-.gps-active {
-  background: #28a745 !important;
-  box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
-}
-
-.pulse-animation {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-/* Progress Bar */
-.progress-bar {
-  transition: width 0.5s ease-in-out;
-  background: linear-gradient(90deg, #28a745, #20c997, #28a745) !important;
-  background-size: 200% 100% !important;
-  animation: gradientShift 2s ease infinite;
-}
-
-.progress-bar-animated {
-  animation: gradientShift 2s ease infinite;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.progress-text {
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-
-.value-change {
-  animation: highlight 1s ease;
-}
-
-@keyframes highlight {
-  0% { background-color: rgba(255, 255, 0, 0.3); }
-  100% { background-color: transparent; }
-}
-
-/* Splash Screen */
-.splash-screen {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.5s ease;
-}
-
-.splash-content {
-  animation: fadeInUp 0.8s ease;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Modalità Notte */
-.dark-mode {
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-}
-
-.dark-mode .card {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #e0e0e0 !important;
-}
-
-.dark-mode .stat-box {
-  background-color: #3a3a3a !important;
-  border-color: #4a4a4a !important;
-  color: #e0e0e0 !important;
-}
-
-.dark-mode .btn {
-  background-color: #3a3a3a !important;
-  border-color: #555 !important;
-  color: #e0e0e0 !important;
-}
-
-.dark-mode .text-muted {
-  color: #aaa !important;
-}
-
-.dark-mode .alert {
-  background-color: #2d2d2d !important;
-  border-color: #404040 !important;
-  color: #e0e0e0 !important;
-}
-
-.dark-mode .bg-light {
-  background-color: #3a3a3a !important;
-}
+/* Dark Mode */
+.dark-mode { background-color: #1a1a1a !important; color: #e0e0e0 !important; }
+.dark-mode .card, .dark-mode .stat-box-mobile, .dark-mode .stat-box-sm, .dark-mode .stat-box-summary,
+.dark-mode .modal-content, .dark-mode .dropdown-menu, .dark-mode .bg-light { background-color: #2d2d2d !important; border-color: #404040 !important; }
+.dark-mode .text-muted { color: #bbb !important; }
+.dark-mode .alert { background-color: #3a3a3a !important; border-color: #4a4a4a !important; }
+.dark-mode .btn-outline-secondary, .dark-mode .btn-outline-primary { border-color: #555 !important; color: #e0e0e0 !important; }
+.dark-mode .btn-outline-secondary:hover, .dark-mode .btn-outline-primary:hover { background-color: #444 !important; }
+.dark-mode .modal-header { border-bottom-color: #404040 !important; }
+.dark-mode .modal-footer { border-top-color: #404040 !important; }
 
 /* Temi Colori */
-.theme-green .btn-primary { background-color: #198754; border-color: #198754; }
-.theme-green .bg-primary { background-color: #198754 !important; }
-.theme-green .bg-success { background-color: #198754 !important; }
+.theme-green .btn-primary, .theme-green .bg-primary { background-color: #198754 !important; border-color: #198754 !important; }
+.theme-purple .btn-primary, .theme-purple .bg-primary { background-color: #6f42c1 !important; border-color: #6f42c1 !important; }
+.theme-orange .btn-primary, .theme-orange .bg-primary { background-color: #fd7e14 !important; border-color: #fd7e14 !important; }
 
-.theme-purple .btn-primary { background-color: #6f42c1; border-color: #6f42c1; }
-.theme-purple .bg-primary { background-color: #6f42c1 !important; }
-.theme-purple .bg-success { background-color: #6f42c1 !important; }
-
-.theme-orange .btn-primary { background-color: #fd7e14; border-color: #fd7e14; }
-.theme-orange .bg-primary { background-color: #fd7e14 !important; }
-.theme-orange .bg-success { background-color: #fd7e14 !important; }
-
-/* Colori per metriche avanzate */
+/* Colori Specifici */
 .text-purple { color: #6f42c1 !important; }
 .text-orange { color: #fd7e14 !important; }
 
-/* Ottimizzazioni Mobile */
-@media (max-width: 768px) {
-  .stat-box {
-    padding: 12px 8px;
-    margin: 2px;
-  }
-  
-  .stat-value {
-    font-size: 1.2em;
-  }
-  
-  .stat-label {
-    font-size: 0.7em;
-  }
-  
-  .tracking-controls .btn {
-    min-width: 160px;
-    font-size: 0.9em;
-    padding: 12px 20px;
-  }
-  
-  #miniMap {
-    height: 250px;
-  }
-  
-  .container {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-  
-  .split-card {
-    flex-direction: column;
-    gap: 5px;
-  }
-}
+/* Sovrapposizione Tour */
+.tour-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+.tour-step { position: relative; z-index: 10001; width: 90%; }
+.tour-content { background: #fff; border-radius: 15px; padding: 20px; }
+.dark-mode .tour-content { background: #333; }
+.tour-title { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: var(--bs-primary); }
+.tour-text { font-size: 0.9em; color: #555; }
+.dark-mode .tour-text { color: #ccc; }
+.tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+.tour-counter { font-size: 0.8em; color: #888; }
+.tour-buttons .btn { margin-left: 10px; }
 
-/* Scrollbar personalizzata */
-::-webkit-scrollbar {
-  width: 8px;
-}
+/* Scrollbar Personalizzata */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(193,193,193,0.5); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(168,168,168,0.7); }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* Tour Overlay */
-.tour-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tour-step {
-  position: relative;
-  z-index: 10001;
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .splash-content h3 { font-size: 1.5rem; }
+  .splash-content p { font-size: 0.9rem; }
+  .display-6 { font-size: 1.8rem !important; }
+  .stat-value { font-size: 1.3em; }
+  .stat-label { font-size: 0.65em; }
+  #btnStart { font-size: 1rem; padding: 12px 20px; }
+  .tracking-controls .btn { padding: 12px 15px; font-size: 0.9rem; min-width: 100px; }
+  .modal-dialog { margin: 0.5rem; }
+  .tour-step { width: 95%; }
 }
 </style>
+
 {% endblock %}
 
 {% block scripts %}
@@ -653,16 +399,9 @@ class AudioFeedback {
   }
   
   init() {
-    // Verifica supporto audio
     this.enabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!this.enabled) return;
     
-    if (!this.enabled) {
-      console.log('Audio disabilitato per preferenze utente');
-      return;
-    }
-    
-    // Crea suoni base con Web Audio API
-    this.audioContext = null;
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (e) {
@@ -673,25 +412,15 @@ class AudioFeedback {
   
   playBeep(frequency = 440, duration = 200, volume = 0.3) {
     if (!this.enabled || !this.audioContext) return;
-    
     try {
       const oscillator = this.audioContext.createOscillator();
       const gainNode = this.audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-      
-      oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
-      
+      oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination);
+      oscillator.frequency.value = frequency; oscillator.type = 'sine';
       gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration / 1000);
-      
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(this.audioContext.currentTime + duration / 1000);
-    } catch (e) {
-      console.log('Errore riproduzione audio:', e);
-    }
+      oscillator.start(this.audioContext.currentTime); oscillator.stop(this.audioContext.currentTime + duration / 1000);
+    } catch (e) { console.log('Errore riproduzione audio:', e); }
   }
   
   playStart() { this.playBeep(523, 200); }    // Do
@@ -702,33 +431,24 @@ class AudioFeedback {
 }
 
 // =============================================
-// ACTIVITY TRACKER MIGLIORATO
+// ACTIVITY TRACKER MIGLIORATO PER MOBILE
 // =============================================
 class ActivityTracker {
   constructor() {
-    this.isTracking = false;
-    this.isPaused = false;
-    this.startTime = null;
-    this.positions = [];
-    this.watchId = null;
-    this.distance = 0;
-    this.miniMap = null;
-    this.polyline = null;
-    this.timerInterval = null;
-    this.autoSaveInterval = null;
-    this.errorCount = 0;
-    this.maxErrors = 5;
-    this.currentPositionMarker = null;
-    this.splits = [];
-    this.splitDistance = 1;
-    this.lastSplitAt = 0;
+    this.isTracking = false; this.isPaused = false;
+    this.startTime = null; this.positions = []; this.watchId = null;
+    this.distance = 0; this.miniMap = null; this.polyline = null;
+    this.timerInterval = null; this.autoSaveInterval = null;
+    this.errorCount = 0; this.maxErrors = 5; this.currentPositionMarker = null;
+    this.splits = []; this.splitDistance = 1; this.lastSplitAt = 0;
     this.audioFeedback = new AudioFeedback();
-    this.privacyMode = false;
-    this.userWeight = 70;
-    
+    this.privacyMode = false; this.userWeight = 70;
+    this.route_id = null; this.duration = 0; this.avgSpeed = 0; this.avgPace = '0:00';
+
     this.loadUserSettings();
     this.setupSplits();
     this.setupBrowserNotifications();
+    this.checkInitialGPSStatus();
   }
 
   loadUserSettings() {
@@ -736,272 +456,236 @@ class ActivityTracker {
     this.userWeight = settings.userWeight || 70;
     this.privacyMode = settings.privacyMode || false;
     this.audioFeedback.enabled = settings.audioEnabled !== false;
+    document.body.classList.toggle('dark-mode', settings.darkModeEnabled);
+    // Applica tema colore se presente
+    document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
+    document.body.classList.add(`theme-${settings.themeColor || 'default'}`);
+  }
+
+  checkInitialGPSStatus() {
+    if (!navigator.geolocation) {
+      this.showStatus("Il tuo browser non supporta la geolocalizzazione.", "danger");
+      this.updateGPSIndicator(false);
+      document.getElementById('gpsStatus').textContent = "📡 GPS: Non Supportato";
+      document.getElementById('gpsStatus').className = "badge rounded-pill bg-dark";
+      return false;
+    }
+    return true;
+  }
+
+  async requestLocationPermission() {
+     try {
+       const position = await new Promise((resolve, reject) => {
+         navigator.geolocation.getCurrentPosition(resolve, reject, {
+           enableHighAccuracy: true,
+           timeout: 5000, // Timeout breve per la richiesta iniziale
+           maximumAge: 0
+         });
+       });
+       this.updateGPSIndicator(true);
+       document.getElementById('gpsStatus').textContent = "📡 GPS: Connesso";
+       document.getElementById('gpsStatus').className = "badge rounded-pill bg-success";
+       return true;
+     } catch (error) {
+       console.error('Errore richiesta GPS:', error);
+       const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
+       modal.show();
+       this.updateGPSIndicator(false);
+       document.getElementById('gpsStatus').textContent = "📡 GPS: Richiesto";
+       document.getElementById('gpsStatus').className = "badge rounded-pill bg-warning text-dark";
+       return false;
+     }
   }
 
   async startTracking() {
-    document.getElementById('autoStartMessage').style.display = 'block';
+    if (!this.checkInitialGPSStatus()) return;
+    if (!await this.requestLocationPermission()) return;
+
+    document.getElementById('autoStartMessage').classList.remove('d-none');
     this.updateStatusBadge('tracking');
-    
+
     try {
       this.initMiniMap();
-      this.isTracking = true;
-      this.isPaused = false;
-      this.startTime = new Date();
-      this.positions = [];
-      this.distance = 0;
-      this.errorCount = 0;
-      this.splits = [];
-      this.lastSplitAt = 0;
+      this.isTracking = true; this.isPaused = false;
+      this.startTime = new Date(); this.positions = []; this.distance = 0;
+      this.errorCount = 0; this.splits = []; this.lastSplitAt = 0;
 
       this.updateTimer();
       this.timerInterval = setInterval(() => {
-        this.updateTimer();
-        this.checkForSplits();
-        this.updateAdvancedMetrics();
+        this.updateTimer(); this.checkForSplits(); this.updateAdvancedMetrics();
       }, 1000);
-      
       this.startAutoSave();
       
       this.watchId = navigator.geolocation.watchPosition(
         pos => this.handlePosition(pos),
         err => this.handleError(err),
-        {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 2000,
-          distanceFilter: 5
-        }
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 }
       );
 
-      // UI Updates
-      document.getElementById('btnStart').style.display = 'none';
-      document.getElementById('btnStop').style.display = 'inline-block';
-      document.getElementById('btnPause').style.display = 'inline-block';
-      document.getElementById('liveStats').style.display = 'flex';
-      document.getElementById('advancedStats').style.display = 'flex';
+      document.getElementById('btnStart').classList.add('d-none');
+      document.getElementById('btnPause').classList.remove('d-none');
+      document.getElementById('btnStop').classList.remove('d-none');
+      document.getElementById('liveStats').classList.remove('d-none');
+      document.getElementById('liveStats').style.display = 'flex'; // Forza display flex
       document.getElementById('splitsContainer').style.display = 'block';
       document.getElementById('miniMap').style.display = 'block';
       document.querySelector('.tracking-card').classList.add('tracking-active');
+      document.querySelector('.tracking-card').classList.remove('tracking-paused');
 
-      this.updateGPSIndicator(true);
-      document.getElementById('autoStartMessage').style.display = 'none';
-      this.showStatus("✅ Tracciamento attivo! Il GPS sta registrando il tuo percorso.", "success");
-      
+      document.getElementById('autoStartMessage').classList.add('d-none');
+      this.showStatus("✅ Tracciamento attivo!", "success");
       this.audioFeedback.playStart();
-      this.showBrowserNotification("Tracciamento Avviato", "Il GPS sta registrando la tua attività");
+      this.showBrowserNotification("Tracciamento Avviato", "L'attività è in corso...");
 
     } catch (error) {
-      console.error('Error starting tracking:', error);
-      this.showStatus("❌ Errore durante l'avvio del tracciamento", "danger");
+      console.error('Errore avvio tracking:', error);
+      this.showStatus("❌ Errore nell'avvio del tracciamento.", "danger");
+      this.resetUI();
     }
   }
 
   initMiniMap() {
-    if (this.miniMap) return;
+    if (this.miniMap) { // Se già inizializzata, pulisci layer precedenti
+        this.polyline.setLatLngs([]);
+        if (this.currentPositionMarker) this.miniMap.removeLayer(this.currentPositionMarker);
+        return;
+    }
     
-    this.miniMap = L.map('miniMap', {
-      zoomControl: true,
-      trackResize: true
-    }).setView([42.35, 13.395], 15);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(this.miniMap);
-
-    this.polyline = L.polyline([], {
-      color: 'red',
-      weight: 4,
-      opacity: 0.7,
-      lineJoin: 'round'
-    }).addTo(this.miniMap);
-
-    // Marker posizione corrente
-    this.currentPositionMarker = L.circleMarker([0, 0], {
-      radius: 8,
-      fillColor: "#ff0000",
-      color: "#000",
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.8
-    }).addTo(this.miniMap);
-
+    // Imposta coordinate iniziali (es. centro Italia) o usa ultima posizione nota
+    const initialLat = 42.35; const initialLng = 13.395;
+    this.miniMap = L.map('miniMap', { zoomControl: true, touchZoom: true, dragging: true }).setView([initialLat, initialLng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(this.miniMap);
+    this.polyline = L.polyline([], { color: 'red', weight: 4, opacity: 0.7, lineJoin: 'round' }).addTo(this.miniMap);
+    this.currentPositionMarker = L.circleMarker([initialLat, initialLng], { radius: 8, fillColor: "#ff0000", color: "#000", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(this.miniMap);
     this.miniMap.addControl(L.control.scale());
   }
 
   handlePosition(pos) {
-    // Filtra posizioni a bassa precisione
-    if (pos.coords.accuracy > 50) {
-      this.showStatus("⚠️ Bassa precisione GPS (" + Math.round(pos.coords.accuracy) + "m)", "warning", 3000);
+    if (pos.coords.accuracy > 50 && this.positions.length > 5) { // Permetti qualche punto iniziale con bassa precisione
+      this.showStatus(`⚠️ Bassa precisione GPS (${Math.round(pos.coords.accuracy)}m)`, "warning", 3000);
       return;
     }
 
     const newPos = {
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      timestamp: new Date(),
-      speed: pos.coords.speed || 0,
-      accuracy: pos.coords.accuracy,
-      altitude: pos.coords.altitude || null
+      lat: pos.coords.latitude, lng: pos.coords.longitude,
+      timestamp: new Date(), speed: pos.coords.speed || 0,
+      accuracy: pos.coords.accuracy, altitude: pos.coords.altitude || null
     };
 
-    // Applica privacy mode se attiva
     const processedPos = this.privacyMode ? this.getApproximatePosition(newPos) : newPos;
 
-    // Aggiorna indicatore precisione
     this.updateAccuracyIndicator(processedPos.accuracy);
 
     if (this.positions.length > 0) {
       const last = this.positions[this.positions.length - 1];
       const d = this.calculateDistance(last.lat, last.lng, processedPos.lat, processedPos.lng);
-      
-      // Filtra movimenti irrealistici
-      if (d < 0.05 || d > 0.5) return;
-      
+      if (d < 0.001 || d > 0.5) return; // Filtra punti troppo vicini o salti enormi
       this.distance += d;
     }
 
     this.positions.push(processedPos);
-    this.updateDisplay();
-    this.updateMap(processedPos);
-    this.updateRouteProgress();
-    
-    this.errorCount = 0; // Reset error count on successful position
+    this.updateDisplay(); this.updateMap(processedPos); this.updateRouteProgress();
+    this.errorCount = 0; // Reset errore
   }
 
   calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) ** 2 + 
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-              Math.sin(dLon/2) ** 2;
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
   updateDisplay() {
-    this.updateTimer();
-    
+    const timerEl = document.getElementById('timer');
     const distanceEl = document.getElementById('distance');
+    const paceEl = document.getElementById('pace');
+    const speedEl = document.getElementById('speed');
+
+    timerEl.textContent = this.formatTime(new Date() - this.startTime, true); // Formato HH:MM:SS
     distanceEl.textContent = this.distance.toFixed(2);
-    distanceEl.classList.add('value-change');
-    setTimeout(() => distanceEl.classList.remove('value-change'), 1000);
+    [distanceEl, timerEl].forEach(el => el.classList.add('value-change')); // Anima cambio valore
 
-    const elapsedH = (new Date() - this.startTime) / 3600000;
-    
-    if (elapsedH > 0 && this.distance > 0) {
-      const pace = (elapsedH * 60) / this.distance;
-      const m = Math.floor(pace);
-      const s = Math.floor((pace - m) * 60);
-      
-      const paceEl = document.getElementById('pace');
-      paceEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
-      paceEl.classList.add('value-change');
-      setTimeout(() => paceEl.classList.remove('value-change'), 1000);
-
-      const speedEl = document.getElementById('speed');
-      speedEl.textContent = (this.distance / elapsedH).toFixed(1);
-      speedEl.classList.add('value-change');
-      setTimeout(() => speedEl.classList.remove('value-change'), 1000);
+    const elapsedHours = (new Date() - this.startTime) / 3600000;
+    if (elapsedHours > 0 && this.distance > 0) {
+      const avgPaceMinutes = (elapsedHours * 60) / this.distance;
+      paceEl.textContent = this.formatPace(avgPaceMinutes);
+      speedEl.textContent = (this.distance / elapsedHours).toFixed(1);
+      [paceEl, speedEl].forEach(el => el.classList.add('value-change'));
+    } else {
+      paceEl.textContent = '0:00'; speedEl.textContent = '0.0';
     }
+    setTimeout(() => {
+      [distanceEl, timerEl, paceEl, speedEl].forEach(el => el.classList.remove('value-change'));
+    }, 1000);
   }
 
   updateAdvancedMetrics() {
     const metrics = this.calculateMetrics();
-    
     document.getElementById('calories').textContent = metrics.calories;
     document.getElementById('elevation').textContent = `+${metrics.elevation.ascent}m`;
     document.getElementById('efficiency').textContent = metrics.efficiency;
+    ['calories', 'elevation', 'efficiency'].forEach(id => document.getElementById(id).classList.add('value-change'));
+    setTimeout(() => {
+      ['calories', 'elevation', 'efficiency'].forEach(id => document.getElementById(id).classList.remove('value-change'));
+    }, 1000);
   }
-
+  
   calculateMetrics() {
-    // CALCOLO CALORIE
-    const hours = (new Date() - this.startTime) / 3600000;
+    const hours = Math.max(1, (new Date() - this.startTime) / 3600000); // Evita divisione per zero
     const met = this.getMETValue();
     const calories = Math.round(met * this.userWeight * hours);
-    
-    // CALCOLO ELEVAZIONE
     const elevation = this.calculateElevationFromPositions();
-    
-    // CALCOLO EFFICIENZA
     const efficiency = this.calculateEfficiencyScore();
-    
-    return {
-      calories: calories,
-      elevation: elevation,
-      efficiency: efficiency
-    };
+    return { calories, elevation, efficiency };
   }
 
   getMETValue() {
     const avgSpeed = this.distance / ((new Date() - this.startTime) / 3600000);
-    
-    if (avgSpeed < 5) return 4;    // Camminata
-    if (avgSpeed < 8) return 6;    // Corsa leggera
-    if (avgSpeed < 12) return 8;   // Corsa media
-    return 10;                     // Corsa intensa
+    if (avgSpeed < 5) return 4.0;    // Camminata
+    if (avgSpeed < 8) return 7.0;    // Corsa leggera
+    if (avgSpeed < 12) return 10.0;  // Corsa media
+    return 12.0;                    // Corsa intensa
   }
 
   calculateElevationFromPositions() {
     if (this.positions.length < 2) return { ascent: 0, descent: 0 };
-    
-    let ascent = 0;
-    let descent = 0;
-    
+    let ascent = 0; let descent = 0;
     for (let i = 1; i < this.positions.length; i++) {
-      const alt1 = this.positions[i-1].altitude || 100 + Math.random() * 50;
-      const alt2 = this.positions[i].altitude || 100 + Math.random() * 50;
+      const alt1 = this.positions[i-1].altitude || 0; // Default a 0 se non disponibile
+      const alt2 = this.positions[i].altitude || 0;
       const diff = alt2 - alt1;
-      
-      if (diff > 2) ascent += diff;       // Soglia minima salita
-      else if (diff < -2) descent += Math.abs(diff); // Soglia minima discesa
+      if (alt1 > 0 && alt2 > 0) { // Considera solo se altitudine disponibile
+        if (diff > 2) ascent += diff;
+        else if (diff < -2) descent += Math.abs(diff);
+      }
     }
-    
-    return {
-      ascent: Math.round(ascent),
-      descent: Math.round(descent),
-      net: Math.round(ascent - descent)
-    };
+    return { ascent: Math.round(ascent), descent: Math.round(descent) };
   }
 
   calculateEfficiencyScore() {
     if (this.distance < 0.1) return '--';
-    
-    const pace = ((new Date() - this.startTime) / 60000) / this.distance;
-    const elevationRate = this.calculateElevationFromPositions().ascent / this.distance;
-    
-    let efficiency = 100 - (pace * 10) + (elevationRate * 5);
+    const pace = ((new Date() - this.startTime) / 60000) / this.distance; // min/km
+    const elevationRate = this.calculateElevationFromPositions().ascent / this.distance; // m/km
+    let efficiency = 100 - (pace * 8) + (elevationRate * 3); // Pesi arbitrari
     efficiency = Math.max(0, Math.min(100, efficiency));
-    
-    if (efficiency >= 80) return 'A+';
-    if (efficiency >= 60) return 'A';
-    if (efficiency >= 40) return 'B';
-    if (efficiency >= 20) return 'C';
+    if (efficiency >= 80) return 'A+'; if (efficiency >= 60) return 'A';
+    if (efficiency >= 40) return 'B'; if (efficiency >= 20) return 'C';
     return 'D';
   }
 
   updateTimer() {
     if (!this.startTime) return;
-    
-    const e = new Date() - this.startTime;
-    const h = Math.floor(e / 3600000);
-    const m = Math.floor((e % 3600000) / 60000);
-    const s = Math.floor((e % 60000) / 1000);
-    
-    document.getElementById('timer').textContent = 
-      `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    const timerEl = document.getElementById('timer');
+    timerEl.textContent = this.formatTime(new Date() - this.startTime, true);
   }
 
   updateMap(pos) {
     if (!this.miniMap) return;
-    
     const ll = [pos.lat, pos.lng];
     this.polyline.addLatLng(ll);
-    
-    // Aggiorna marker posizione corrente
     this.currentPositionMarker.setLatLng(ll);
-    
-    // Centra mappa sulla posizione corrente (solo per le prime posizioni)
-    if (this.positions.length < 10) {
+    // Centra mappa solo se è la prima posizione o se l'utente non sta interagendo
+    if (this.positions.length < 5 || this.miniMap.isMoving()) {
       this.miniMap.setView(ll);
     }
   }
@@ -1009,87 +693,60 @@ class ActivityTracker {
   updateGPSIndicator(active) {
     const el = document.getElementById('gpsIndicator');
     const statusEl = document.getElementById('gpsStatus');
-    
     if (active) {
-      el.classList.add('gps-active');
+      el?.classList.add('gps-active'); // Usa optional chaining
       statusEl.textContent = "📡 GPS: Attivo";
-      statusEl.className = "badge bg-success me-2";
+      statusEl.className = "badge rounded-pill bg-success";
     } else {
-      el.classList.remove('gps-active');
+      el?.classList.remove('gps-active');
       statusEl.textContent = "📡 GPS: Inattivo";
-      statusEl.className = "badge bg-danger me-2";
+      statusEl.className = "badge rounded-pill bg-danger";
     }
   }
 
   updateAccuracyIndicator(accuracy) {
     const accuracyEl = document.getElementById('accuracyStatus');
-    accuracyEl.textContent = `🎯 Precisione: ${Math.round(accuracy)}m`;
-    accuracyEl.className = `badge ${
-      accuracy < 20 ? 'bg-success' : 
-      accuracy < 50 ? 'bg-warning' : 'bg-danger'
+    accuracyEl.textContent = `🎯 ${Math.round(accuracy)}m`;
+    accuracyEl.className = `badge rounded-pill ${
+      accuracy < 15 ? 'bg-success' : accuracy < 40 ? 'bg-warning text-dark' : 'bg-danger'
     }`;
   }
 
-  updateStatusBadge(status) {
-    const badge = document.getElementById('statusBadge');
-    switch(status) {
-      case 'ready':
-        badge.textContent = "🟢 Pronto";
-        badge.className = "badge bg-secondary me-2";
-        break;
-      case 'tracking':
-        badge.textContent = "🔴 Tracciamento Attivo";
-        badge.className = "badge bg-danger me-2";
-        break;
-      case 'paused':
-        badge.textContent = "🟡 In Pausa";
-        badge.className = "badge bg-warning me-2";
-        break;
-    }
-  }
-
   updateBatteryStatus() {
-    if ('getBattery' in navigator || 'battery' in navigator) {
+    if ('getBattery' in navigator) {
       navigator.getBattery().then(battery => {
         const batteryEl = document.getElementById('batteryStatus');
         const level = Math.round(battery.level * 100);
-        batteryEl.textContent = `🔋 Battery: ${level}%`;
-        batteryEl.className = `badge ${
-          level > 50 ? 'bg-success' : 
-          level > 20 ? 'bg-warning' : 'bg-danger'
+        batteryEl.textContent = `🔋 ${level}%`;
+        batteryEl.className = `badge rounded-pill ${
+          level > 50 ? 'bg-success' : level > 20 ? 'bg-warning text-dark' : 'bg-danger'
         }`;
-      });
+      }).catch(() => { /* Ignora se non disponibile */ });
     }
   }
 
   updateRouteProgress() {
     const sel = document.getElementById('routeSelect');
-    const opt = sel.options[sel.selectedIndex];
-    const routeDistance = parseFloat(opt.getAttribute('data-distance')) || 0;
+    const selectedOption = sel.options[sel.selectedIndex];
+    const routeDistance = parseFloat(selectedOption?.getAttribute('data-distance')) || 0;
     
     if (routeDistance > 0) {
       const progress = Math.min(100, (this.distance / routeDistance) * 100);
-      const bar = document.getElementById('routeProgress').querySelector('.progress-bar');
-      bar.style.width = progress + '%';
-      bar.querySelector('.progress-text').textContent = progress.toFixed(0) + '% Completato';
+      const progressBar = document.getElementById('routeProgress').querySelector('.progress-bar');
+      progressBar.style.width = `${progress}%`;
+      progressBar.querySelector('.progress-text').textContent = `${progress.toFixed(0)}%`;
       document.getElementById('routeProgress').style.display = 'block';
+    } else {
+      document.getElementById('routeProgress').style.display = 'none';
     }
   }
 
-  // =============================================
-  // SPLITS SYSTEM
-  // =============================================
-  setupSplits() {
-    this.splits = [];
-    this.splitDistance = 1;
-    this.lastSplitAt = 0;
-  }
+  // --- SPLITS ---
+  setupSplits() { this.splits = []; this.splitDistance = 1; this.lastSplitAt = 0; }
 
   checkForSplits() {
     if (!this.isTracking || this.isPaused) return;
-    
     const kmCompleted = Math.floor(this.distance);
-    
     if (kmCompleted > this.lastSplitAt) {
       for (let km = this.lastSplitAt + 1; km <= kmCompleted; km++) {
         this.recordSplit(km);
@@ -1101,199 +758,112 @@ class ActivityTracker {
   recordSplit(km) {
     const splitTime = new Date() - this.startTime;
     const splitPace = this.calculatePaceForKm(km);
-    
-    const split = {
-      kilometer: km,
-      time: splitTime,
-      pace: splitPace,
-      timestamp: new Date()
-    };
-    
+    const split = { kilometer: km, time: splitTime, pace: splitPace, timestamp: new Date() };
     this.splits.push(split);
     this.showSplitNotification(split);
-    
-    // Audio feedback per split
     this.audioFeedback.playKm();
   }
 
   calculatePaceForKm(km) {
-    if (km === 1) {
-      return this.formatPace((new Date() - this.startTime) / 60000);
-    }
-    
+    if (km === 1) return this.formatPace((new Date() - this.startTime) / 60000);
     const split = this.splits.find(s => s.kilometer === km - 1);
     if (!split) return '0:00';
-    
     const timeForKm = (new Date() - this.startTime - split.time) / 60000;
     return this.formatPace(timeForKm);
   }
 
-  formatPace(minutes) {
-    const m = Math.floor(minutes);
-    const s = Math.floor((minutes - m) * 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-
-  showSplitNotification(split) {
-    // Aggiorna split card
-    document.getElementById('lastSplitKm').textContent = `${split.kilometer}km`;
-    document.getElementById('lastSplitTime').textContent = this.formatTime(split.time);
-    document.getElementById('lastSplitPace').textContent = `${split.pace}/km`;
-    
-    // Mostra notifica
-    const notificationEl = document.createElement('div');
-    notificationEl.className = 'alert alert-info split-notification';
-    notificationEl.innerHTML = `
-      <strong>🎉 ${split.kilometer}km Completato!</strong><br>
-      Tempo: ${this.formatTime(split.time)} | Ritmo: ${split.pace}/km
-      <button type="button" class="btn-close btn-close-white float-end" onclick="this.parentElement.remove()"></button>
-    `;
-    
-    const statusMessage = document.getElementById('statusMessage');
-    statusMessage.appendChild(notificationEl);
-    
-    // Auto-rimuovi dopo 5 secondi
-    setTimeout(() => {
-      if (notificationEl.parentElement) {
-        notificationEl.remove();
-      }
-    }, 5000);
-    
-    // Notifica browser
-    this.showBrowserNotification(
-      `🎯 ${split.kilometer}km Completato!`,
-      `Tempo: ${this.formatTime(split.time)} | Ritmo: ${split.pace}/km`
-    );
-  }
-
-  // =============================================
-  // NOTIFICHE BROWSER
-  // =============================================
-  setupBrowserNotifications() {
-    if (!("Notification" in window)) {
-      console.log("Browser non supporta notifiche");
-      return;
-    }
-  }
-
+  // --- NOTIFICHE BROWSER ---
+  setupBrowserNotifications() { if (!("Notification" in window)) console.log("Browser non supporta notifiche"); }
   showBrowserNotification(title, body) {
     const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-    
     if (Notification.permission === "granted" && settings.notificationsEnabled) {
-      new Notification(title, {
-        body: body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico'
-      });
+      new Notification(title, { body: body, icon: '/static/favicon.ico', badge: '/static/favicon.ico' });
     }
   }
 
-  // =============================================
-  // AUTO SAVE E PRIVACY
-  // =============================================
+  // --- AUTO SAVE E PRIVACY ---
   startAutoSave() {
     this.autoSaveInterval = setInterval(async () => {
-      if (this.isTracking && !this.isPaused && this.positions.length > 0) {
-        await this.backupActivity();
-      }
-    }, 60000);
+      if (this.isTracking && !this.isPaused && this.positions.length > 0) await this.backupActivity();
+    }, 60000); // Salva ogni minuto
   }
 
   async backupActivity() {
     const backupData = {
-      positions: this.positions,
-      distance: this.distance,
-      startTime: this.startTime,
-      duration: new Date() - this.startTime,
-      splits: this.splits
+      positions: this.positions, distance: this.distance, startTime: this.startTime,
+      duration: new Date() - this.startTime, splits: this.splits
     };
     localStorage.setItem('activityBackup', JSON.stringify(backupData));
   }
 
   getApproximatePosition(position, radiusKm = 0.3) {
-    if (!this.privacyMode) return position;
-    
-    // Approssima posizione per privacy
     const offsetLat = (Math.random() - 0.5) * (radiusKm / 110.574);
     const offsetLng = (Math.random() - 0.5) * (radiusKm / (111.320 * Math.cos(position.lat * Math.PI / 180)));
-    
-    return {
-      ...position,
-      lat: position.lat + offsetLat,
-      lng: position.lng + offsetLng
-    };
+    return { ...position, lat: position.lat + offsetLat, lng: position.lng + offsetLng };
   }
 
+  // --- CONTROLLI PRINCIPALI ---
   pauseTracking() {
     this.isPaused = !this.isPaused;
-    
     if (this.isPaused) {
-      navigator.geolocation.clearWatch(this.watchId);
+      if (this.watchId) navigator.geolocation.clearWatch(this.watchId); this.watchId = null;
       document.getElementById('btnPause').innerHTML = '▶️ RIPRENDI';
       document.querySelector('.tracking-card').classList.remove('tracking-active');
       document.querySelector('.tracking-card').classList.add('tracking-paused');
-      this.showStatus("⏸️ Tracciamento in pausa", "warning");
+      this.showStatus("⏸️ Tracciamento in pausa.", "warning");
       this.updateGPSIndicator(false);
       this.updateStatusBadge('paused');
       this.audioFeedback.playPause();
     } else {
-      this.startTracking();
+      // Riavvia il watch position per riprendere
+      this.watchId = navigator.geolocation.watchPosition(
+        pos => this.handlePosition(pos),
+        err => this.handleError(err),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 }
+      );
       document.getElementById('btnPause').innerHTML = '⏸️ PAUSA';
       document.querySelector('.tracking-card').classList.remove('tracking-paused');
       document.querySelector('.tracking-card').classList.add('tracking-active');
+      this.showStatus("✅ Tracciamento ripreso!", "success");
+      this.audioFeedback.playStart();
     }
   }
 
   handleError(err) {
     this.errorCount++;
-    
     if (this.errorCount >= this.maxErrors) {
-      this.showStatus("❌ Troppi errori GPS - Tracciamento sospeso", "danger");
-      this.stopTracking();
+      this.showStatus("❌ Segnale GPS perso. Tracciamento sospeso.", "danger");
+      this.stopTracking(); // Interrompe se troppi errori
       return;
     }
-
+    let msg = "Errore GPS";
     if (err.code === err.PERMISSION_DENIED) {
-      const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-      modal.show();
-    } else {
-      let msg = "Errore GPS sconosciuto";
-      if (err.code === err.POSITION_UNAVAILABLE) msg = "Posizione non disponibile";
-      if (err.code === err.TIMEOUT) msg = "Timeout GPS - riprovo...";
-      
-      this.showStatus(`⚠️ ${msg} (${this.errorCount}/${this.maxErrors})`, "danger", 3000);
-    }
-    
+      msg = "Permesso GPS negato."; const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal')); modal.show();
+    } else if (err.code === err.POSITION_UNAVAILABLE) msg = "Posizione non disponibile.";
+    else if (err.code === err.TIMEOUT) msg = "Timeout GPS, riprovo...";
+    this.showStatus(`⚠️ ${msg} (${this.errorCount}/${this.maxErrors})`, "danger", 4000);
     this.updateGPSIndicator(false);
   }
 
   async stopTracking() {
-    if (this.watchId) navigator.geolocation.clearWatch(this.watchId);
+    if (this.watchId) navigator.geolocation.clearWatch(this.watchId); this.watchId = null;
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
     
-    this.isTracking = false;
-    this.updateGPSIndicator(false);
-    this.updateStatusBadge('ready');
+    this.isTracking = false; this.updateGPSIndicator(false); this.updateStatusBadge('ready');
 
     const sel = document.getElementById('routeSelect');
     this.route_id = sel.value || null;
     this.duration = Math.max(1, Math.round((new Date() - this.startTime) / 1000));
     this.distance = Math.max(0.01, this.distance);
 
-    // Calcola metriche finali
     const hours = this.duration / 3600;
     this.avgSpeed = (this.distance / hours).toFixed(1);
-    const paceM = Math.floor((hours * 60) / this.distance);
-    const paceS = Math.floor((((hours * 60) / this.distance - paceM) * 60));
-    this.avgPace = `${paceM}:${paceS.toString().padStart(2, '0')}`;
+    const paceMinutes = (hours * 60) / this.distance;
+    this.avgPace = this.formatPace(paceMinutes);
 
-    // Calcola metriche avanzate finali
     const finalMetrics = this.calculateMetrics();
-
-    // Aggiorna modal riepilogo
-    document.getElementById('summaryDuration').textContent = 
-      new Date(this.duration * 1000).toISOString().substr(11, 8);
+    document.getElementById('summaryDuration').textContent = this.formatTime(this.duration * 1000, true);
     document.getElementById('summaryDistance').textContent = this.distance.toFixed(2);
     document.getElementById('summarySpeed').textContent = this.avgSpeed;
     document.getElementById('summaryPace').textContent = this.avgPace;
@@ -1307,268 +877,209 @@ class ActivityTracker {
     document.getElementById('confirmSaveBtn').onclick = async () => {
       modal.hide();
       const data = {
-        route_id: this.route_id,
-        duration: this.duration,
-        distance: this.distance,
-        positions: this.positions,
-        start_time: this.startTime.toISOString(),
-        avg_speed: this.avgSpeed,
-        avg_pace: this.avgPace,
-        calories: finalMetrics.calories,
-        elevation: finalMetrics.elevation.ascent,
+        route_id: this.route_id, duration: this.duration, distance: this.distance,
+        positions: this.positions, start_time: this.startTime.toISOString(),
+        avg_speed: this.avgSpeed, avg_pace: this.avgPace,
+        calories: finalMetrics.calories, elevation: finalMetrics.elevation.ascent,
         splits: this.splits
       };
       await this.saveActivity(data);
     };
-
-    this.audioFeedback.playStop();
     
-    // Pulisci backup
+    this.audioFeedback.playStop();
     localStorage.removeItem('activityBackup');
+    this.resetUI(); // Resetta UI dopo lo stop
   }
 
   async saveActivity(data) {
     const statusEl = document.getElementById('statusMessage');
+    statusEl.innerHTML = '<div class="alert alert-info w-100">💾 Salvataggio in corso...</div>';
     try {
-      statusEl.innerHTML = '<div class="alert alert-info">💾 Salvataggio attività in corso...</div>';
-      
       const csrfMeta = document.querySelector('meta[name="csrf-token"]');
       const csrfToken = csrfMeta ? csrfMeta.content : null;
-      
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      const headers = { 'Content-Type': 'application/json' };
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
       const res = await fetch('/api/save-live-activity', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(data),
-        credentials: 'same-origin'
+        method: 'POST', headers: headers, body: JSON.stringify(data), credentials: 'same-origin'
       });
 
-      const contentType = res.headers.get("content-type") || "";
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Errore server: ${res.status} - ${text}`);
-      }
-
-      if (!contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Risposta non valida dal server");
-      }
-
+      if (!res.ok) { const text = await res.text(); throw new Error(`Errore server ${res.status}: ${text}`); }
       const result = await res.json();
       
       if (result.success) {
-        statusEl.innerHTML = `<div class="alert alert-success">✅ ${result.message}</div>`;
-        setTimeout(() => {
-          window.location.href = "{{ url_for('main.all_activities') }}";
-        }, 2000);
-      } else {
-        throw new Error(result.error || "Errore sconosciuto");
-      }
-      
+        statusEl.innerHTML = `<div class="alert alert-success w-100">${result.message}</div>`;
+        setTimeout(() => window.location.href = "{{ url_for('main.all_activities') }}", 2000);
+      } else { throw new Error(result.error || "Errore sconosciuto dal server"); }
     } catch (error) {
       console.error("Save activity failed:", error);
-      statusEl.innerHTML = `<div class="alert alert-danger">❌ Errore durante il salvataggio: ${error.message}</div>`;
+      statusEl.innerHTML = `<div class="alert alert-danger w-100">❌ Errore salvataggio: ${error.message}</div>`;
     }
   }
 
   showStatus(msg, type, timeout = 5000) {
     const el = document.getElementById('statusMessage');
-    el.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">
-      ${msg}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>`;
-    
-    if (timeout) {
-      setTimeout(() => {
-        if (el.innerHTML.includes(msg)) {
-          el.innerHTML = '';
-        }
-      }, timeout);
+    el.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show w-100" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    if (timeout && timeout > 0) {
+      setTimeout(() => { if (el.innerHTML.includes(msg)) el.innerHTML = ''; }, timeout);
     }
   }
 
-  formatTime(ms) {
+  // Funzioni Helper di Formattazione
+  formatTime(ms, includeHours = false) {
     const seconds = Math.floor(ms / 1000);
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    if (includeHours) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  formatPace(minutes) {
+    const m = Math.floor(minutes); const s = Math.floor((minutes - m) * 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  showSplitNotification(split) {
+    document.getElementById('lastSplitKm').textContent = `${split.kilometer}km`;
+    document.getElementById('lastSplitTime').textContent = this.formatTime(split.time, true);
+    document.getElementById('lastSplitPace').textContent = `${split.pace}/km`;
+    
+    const notificationEl = document.createElement('div');
+    notificationEl.className = 'alert alert-info alert-dismissible split-notification w-100';
+    notificationEl.innerHTML = `
+      <strong>🎉 ${split.kilometer}km!</strong> Ritmo: ${split.pace}/km
+      <button type="button" class="btn-close btn-close-white float-end" onclick="this.parentElement.remove()"></button>
+    `;
+    const statusMessage = document.getElementById('statusMessage');
+    statusMessage.prepend(notificationEl); // Aggiungi all'inizio
+    setTimeout(() => { if (notificationEl.parentElement) notificationEl.remove(); }, 7000);
+    this.showBrowserNotification(`🎯 ${split.kilometer}km Completato!`, `Ritmo: ${split.pace}/km`);
+  }
+
+  resetUI() { // Resetta elementi UI a stato iniziale
+    document.getElementById('btnStart').classList.remove('d-none');
+    document.getElementById('btnPause').classList.add('d-none');
+    document.getElementById('btnStop').classList.add('d-none');
+    document.getElementById('liveStats').classList.add('d-none');
+    document.getElementById('autoStartMessage').classList.add('d-none');
+    document.getElementById('splitsContainer').style.display = 'none';
+    document.getElementById('routeProgress').style.display = 'none';
+    document.querySelector('.tracking-card').classList.remove('tracking-active', 'tracking-paused');
+    document.getElementById('timer').textContent = '00:00:00';
+    document.getElementById('distance').textContent = '0.00';
+    document.getElementById('pace').textContent = '0:00';
+    document.getElementById('speed').textContent = '0.0';
+    document.getElementById('calories').textContent = '0';
+    document.getElementById('elevation').textContent = '+0m';
+    document.getElementById('efficiency').textContent = '--';
+    document.getElementById('lastSplitKm').textContent = '1km';
+    document.getElementById('lastSplitTime').textContent = '00:00:00';
+    document.getElementById('lastSplitPace').textContent = '0:00/km';
+    this.updateStatusBadge('ready');
+    this.updateGPSIndicator(false);
+    this.updateAccuracyIndicator(0);
+    this.updateBatteryStatus();
+    if (this.miniMap) { // Opzionale: Reset mappa
+      this.polyline.setLatLngs([]);
+      // Potresti anche reimpostare la vista o rimuovere il marker se preferisci
+    }
   }
 }
 
 // =============================================
-// APP TOUR SYSTEM - SEMPLIFICATO E FUNZIONANTE
+// APP TOUR SYSTEM
 // =============================================
 class AppTour {
   constructor() {
     this.steps = [
-      {
-        element: '#routeSelect',
-        title: '🎯 Seleziona Percorso',
-        content: 'Scegli un percorso predefinito o esplora in modalità libera'
-      },
-      {
-        element: '#btnStart',
-        title: '🚀 Inizia Tracciamento',
-        content: 'Clicca qui per avviare il GPS e iniziare a tracciare la tua attività'
-      },
-      {
-        element: '#liveStats',
-        title: '📊 Statistiche Live',
-        content: 'Qui vedrai tempo, distanza, ritmo e velocità in tempo reale'
-      },
-      {
-        element: '#miniMap',
-        title: '🗺️ Mappa in Tempo Reale',
-        content: 'Visualizza il tuo percorso e la posizione corrente sulla mappa'
-      }
+      { element: '#routeSelect', title: '🎯 Percorsi', content: 'Seleziona un percorso predefinito o usa la modalità libera.' },
+      { element: '#btnStart', title: '▶️ Inizia', content: 'Tocca qui per attivare il GPS e avviare il tracciamento.' },
+      { element: '#liveStats', title: '📊 Statistiche', content: 'Visualizza tempo, distanza, ritmo e velocità in tempo reale.' },
+      { element: '#miniMap', title: '🗺️ Mappa', content: 'Segui il tuo percorso in diretta sulla mappa.' }
     ];
     this.currentStep = 0;
   }
 
   start() {
-    if (localStorage.getItem('appTourCompleted')) {
-      return;
-    }
-
+    if (localStorage.getItem('appTourCompleted')) return;
     this.currentStep = 0;
-    setTimeout(() => this.showStep(this.currentStep), 500);
+    setTimeout(() => this.showStep(this.currentStep), 500); // Ritardo per far caricare la UI
   }
 
   showStep(index) {
-    if (index >= this.steps.length) {
-      this.removeOverlay();
-      localStorage.setItem('appTourCompleted', 'true');
-      return;
-    }
-
+    if (index >= this.steps.length) { this.removeOverlay(); localStorage.setItem('appTourCompleted', 'true'); return; }
     this.currentStep = index;
     const step = this.steps[index];
-    
     const targetElement = document.querySelector(step.element);
-    if (!targetElement) {
-      this.showStep(index + 1);
-      return;
-    }
-
+    if (!targetElement) { this.showStep(index + 1); return; } // Salta se elemento non trovato
     this.createStepOverlay(step, index);
   }
 
   createStepOverlay(step, index) {
     this.removeOverlay();
-    
     const overlay = document.createElement('div');
-    overlay.id = 'tourOverlay';
-    overlay.className = 'tour-overlay';
-    
+    overlay.id = 'tourOverlay'; overlay.className = 'tour-overlay';
     overlay.innerHTML = `
       <div class="tour-step">
         <div class="tour-content card shadow-lg">
-          <div class="card-body">
+          <div class="card-body text-center">
             <h5 class="tour-title">${step.title}</h5>
             <p class="tour-text">${step.content}</p>
             <div class="tour-footer">
-              <small class="tour-counter">${index + 1} di ${this.steps.length}</small>
-              <div class="tour-buttons">
-                <button class="btn btn-sm btn-outline-secondary tour-skip">
-                  Salta
-                </button>
-                <button class="btn btn-sm btn-primary tour-next">
-                  ${index === this.steps.length - 1 ? 'Completa' : 'Avanti'}
-                </button>
+              <small class="tour-counter">${index + 1}/${this.steps.length}</small>
+              <div class="d-flex">
+                <button class="btn btn-sm btn-outline-secondary tour-skip me-2">Salta</button>
+                <button class="btn btn-sm btn-primary tour-next">${index === this.steps.length - 1 ? 'Fine' : 'Avanti'}</button>
               </div>
             </div>
           </div>
         </div>
       </div>
     `;
-
     document.body.appendChild(overlay);
-    
-    // Aggiungi event listeners
+    this.highlightElement(document.querySelector(step.element));
     overlay.querySelector('.tour-next').addEventListener('click', () => this.next());
     overlay.querySelector('.tour-skip').addEventListener('click', () => this.skip());
-    
-    // Highlight elemento target
-    this.highlightElement(document.querySelector(step.element));
-
-    // Click outside per skippare
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        this.skip();
-      }
-    });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) this.skip(); });
   }
 
   highlightElement(element) {
     if (!element) return;
-    element.style.transition = 'all 0.3s ease';
-    element.style.boxShadow = '0 0 0 3px rgba(0, 123, 255, 0.5)';
+    element.style.transition = 'box-shadow 0.3s ease';
+    element.style.boxShadow = '0 0 0 4px rgba(50, 150, 255, 0.7)';
     element.style.zIndex = '10002';
-    element.style.position = 'relative';
+    element.style.transform = 'scale(1.02)'; // Leggero zoom
   }
 
   removeHighlight() {
     this.steps.forEach(step => {
-      const element = document.querySelector(step.element);
-      if (element) {
-        element.style.boxShadow = '';
-        element.style.zIndex = '';
-        element.style.position = '';
-      }
+      const el = document.querySelector(step.element);
+      if (el) { el.style.boxShadow = ''; el.style.zIndex = ''; el.style.transform = ''; }
     });
   }
 
-  removeOverlay() {
-    this.removeHighlight();
-    const overlay = document.getElementById('tourOverlay');
-    if (overlay) {
-      overlay.remove();
-    }
-  }
-
-  next() {
-    this.showStep(this.currentStep + 1);
-  }
-
-  skip() {
-    this.removeOverlay();
-    localStorage.setItem('appTourCompleted', 'true');
-  }
+  removeOverlay() { this.removeHighlight(); const overlay = document.getElementById('tourOverlay'); if (overlay) overlay.remove(); }
+  next() { this.showStep(this.currentStep + 1); }
+  skip() { this.removeOverlay(); localStorage.setItem('appTourCompleted', 'true'); }
 }
 
 // =============================================
-// GESTIONE IMPOSTAZIONI - CORRETTA
+// GESTIONE IMPOSTAZIONI
 // =============================================
-
-// Funzione per caricare le impostazioni
 function loadSettings() {
   const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-  
-  // Applica le impostazioni ai controlli UI
-  const themeColor = document.getElementById('themeColor');
-  const unitSystem = document.getElementById('unitSystem');
-  const userWeight = document.getElementById('userWeight');
-  const audioToggle = document.getElementById('audioToggle');
-  const notificationsToggle = document.getElementById('notificationsToggle');
-  const privacyMode = document.getElementById('privacyMode');
-  
-  if (themeColor) themeColor.value = settings.themeColor || 'default';
-  if (unitSystem) unitSystem.value = settings.unitSystem || 'metric';
-  if (userWeight) userWeight.value = settings.userWeight || 70;
-  if (audioToggle) audioToggle.checked = settings.audioEnabled !== false;
-  if (notificationsToggle) notificationsToggle.checked = settings.notificationsEnabled || false;
-  if (privacyMode) privacyMode.checked = settings.privacyMode || false;
-  
+  document.getElementById('themeColor').value = settings.themeColor || 'default';
+  document.getElementById('unitSystem').value = settings.unitSystem || 'metric';
+  document.getElementById('userWeight').value = settings.userWeight || 70;
+  document.getElementById('audioToggle').checked = settings.audioEnabled !== false;
+  document.getElementById('notificationsToggle').checked = settings.notificationsEnabled || false;
+  document.getElementById('privacyMode').checked = settings.privacyMode || false;
+  document.getElementById('darkModeToggle').querySelector('.dark-icon').classList.toggle('d-none', !settings.darkModeEnabled);
+  document.getElementById('darkModeToggle').querySelector('.light-icon').classList.toggle('d-none', !!settings.darkModeEnabled);
+  document.body.classList.toggle('dark-mode', !!settings.darkModeEnabled);
   applySettings(settings);
 }
 
-// Funzione per salvare le impostazioni
 function saveSettings() {
   const settings = {
     themeColor: document.getElementById('themeColor').value,
@@ -1576,205 +1087,124 @@ function saveSettings() {
     userWeight: parseInt(document.getElementById('userWeight').value) || 70,
     audioEnabled: document.getElementById('audioToggle').checked,
     notificationsEnabled: document.getElementById('notificationsToggle').checked,
-    privacyMode: document.getElementById('privacyMode').checked
+    privacyMode: document.getElementById('privacyMode').checked,
+    darkModeEnabled: document.body.classList.contains('dark-mode')
   };
-  
   localStorage.setItem('appSettings', JSON.stringify(settings));
   applySettings(settings);
-  
-  // Aggiorna tracker con nuove impostazioni
-  if (window.tracker) {
-    tracker.loadUserSettings();
-  }
-  
-  // Chiudi modal e mostra conferma
+  if (window.tracker) window.tracker.loadUserSettings();
   const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
   if (modal) modal.hide();
-  
-  showTempAlert('Impostazioni salvate con successo!', 'success');
+  showTempAlert('Impostazioni salvate!', 'success');
 }
 
-// Funzione per applicare le impostazioni
 function applySettings(settings) {
-  // Applica tema colore
   document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
-  document.body.classList.add(`theme-${settings.themeColor}`);
+  document.body.classList.add(`theme-${settings.themeColor || 'default'}`);
 }
 
-// Funzione per mostrare alert temporanei
 function showTempAlert(message, type) {
   const alert = document.createElement('div');
-  alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-  alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-  alert.innerHTML = `
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
+  alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-2 start-50 translate-middle-x w-75 w-md-auto shadow-lg`;
+  alert.style.zIndex = '1051'; // Sopra i modali
+  alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
   document.body.appendChild(alert);
-  
-  setTimeout(() => {
-    if (alert.parentElement) {
-      alert.remove();
-    }
-  }, 3000);
+  setTimeout(() => { if (alert.parentElement) alert.remove(); }, 3000);
 }
 
 // =============================================
-// INIZIALIZZAZIONE APP - VERSIONE FINALE
+// INIZIALIZZAZIONE APP
 // =============================================
 let tracker;
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Nascondi splash screen
+document.addEventListener('DOMContentLoaded', () => {
+  // Nascondi Splash Screen
   setTimeout(() => {
     const splash = document.getElementById('welcomeSplash');
     if (splash) {
       splash.style.opacity = '0';
-      setTimeout(() => {
-        if (splash.parentElement) {
-          splash.remove();
-        }
-      }, 500);
+      setTimeout(() => splash.remove(), 500);
     }
-  }, 1500);
-  
-  // Inizializza tracker
+  }, 1200);
+
   tracker = new ActivityTracker();
-  
-  // Carica impostazioni
   loadSettings();
-  
-  // Setup dark mode
+
+  // Setup Dark Mode Toggle
   const darkModeToggle = document.getElementById('darkModeToggle');
-  if (darkModeToggle) {
-    darkModeToggle.addEventListener('click', function() {
-      document.body.classList.toggle('dark-mode');
-      const lightIcon = this.querySelector('.light-icon');
-      const darkIcon = this.querySelector('.dark-icon');
-      
-      if (document.body.classList.contains('dark-mode')) {
-        lightIcon.style.display = 'none';
-        darkIcon.style.display = 'inline';
-        localStorage.setItem('darkMode', 'enabled');
-      } else {
-        lightIcon.style.display = 'inline';
-        darkIcon.style.display = 'none';
-        localStorage.setItem('darkMode', 'disabled');
-      }
-    });
-    
-    // Carica dark mode preference
-    if (localStorage.getItem('darkMode') === 'enabled') {
-      document.body.classList.add('dark-mode');
-      const lightIcon = document.querySelector('.light-icon');
-      const darkIcon = document.querySelector('.dark-icon');
-      if (lightIcon) lightIcon.style.display = 'none';
-      if (darkIcon) darkIcon.style.display = 'inline';
-    }
-  }
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const lightIcon = darkModeToggle.querySelector('.light-icon');
+    const darkIcon = darkModeToggle.querySelector('.dark-icon');
+    darkIcon.classList.toggle('d-none'); lightIcon.classList.toggle('d-none');
+    // Salva preferenza dark mode (da aggiungere a saveSettings se vuoi che sia persistente)
+    localStorage.setItem('darkModeEnabled', document.body.classList.contains('dark-mode'));
+  });
+
+  // Event Listeners Pulsanti Tracking
+  document.getElementById('btnStart').addEventListener('click', () => tracker.startTracking());
+  document.getElementById('btnPause').addEventListener('click', () => tracker.pauseTracking());
+  document.getElementById('btnStop').addEventListener('click', () => tracker.stopTracking());
   
-  // Event Listeners per tracking
-  document.getElementById('btnStart').addEventListener('click', async () => {
-    if (!navigator.geolocation) {
-      alert("Il tuo browser non supporta la geolocalizzazione. Aggiorna il browser o usa un dispositivo diverso.");
-      return;
-    }
-
-    try {
-      await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        });
-      });
-      
-      tracker.startTracking();
-    } catch (error) {
-      console.error('GPS permission denied:', error);
-      const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
-      modal.show();
-    }
-  });
-
-  document.getElementById('btnStop').addEventListener('click', () => {
-    tracker.stopTracking();
-  });
-
-  document.getElementById('btnPause').addEventListener('click', () => {
-    tracker.pauseTracking();
-  });
-  
-  // Event listener per salvataggio impostazioni
+  // Event Listener Salvataggio Impostazioni
   document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
   
-  // Aggiorna stato batteria
-  if (tracker.updateBatteryStatus) {
-    tracker.updateBatteryStatus();
-    setInterval(() => tracker.updateBatteryStatus(), 60000);
+  // Aggiorna stato batteria periodicamente
+  tracker.updateBatteryStatus();
+  setInterval(tracker.updateBatteryStatus.bind(tracker), 60000);
+  
+  // Avvia tour solo se non completato
+  if (!localStorage.getItem('appTourCompleted')) {
+     const tour = new AppTour();
+     tour.start();
   }
-  
-  // Avvia tour
-  setTimeout(() => {
-    const tour = new AppTour();
-    tour.start();
-  }, 1000);
-  
-  // Prevenzione uscita accidentale
+
+  // Gestione uscita accidentale
   window.addEventListener('beforeunload', (e) => {
     if (tracker.isTracking && !tracker.isPaused) {
       e.preventDefault();
-      e.returnValue = 'Il tracciamento è ancora in corso. Sei sicuro di voler uscire?';
-      return e.returnValue;
+      e.returnValue = 'Tracciamento in corso. Uscire?';
     }
   });
-  
-  // Recupero sessione al caricamento
+
+  // Recupero sessione
   const backup = localStorage.getItem('activityBackup');
   if (backup) {
     try {
       const backupData = JSON.parse(backup);
       const modalHtml = `
-        <div class="modal fade" id="recoveryModal" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header bg-warning">
-                <h5 class="modal-title">📋 Sessione Recuperata</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal fade" id="recoveryModal" tabindex="-1" aria-labelledby="recoveryModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow">
+              <div class="modal-header bg-warning rounded-top-4">
+                <h5 class="modal-title" id="recoveryModalLabel">📋 Sessione Interrotta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
               </div>
               <div class="modal-body">
-                <p>Trovata una sessione di tracciamento interrotta:</p>
-                <ul>
-                  <li>Durata: ${new Date(backupData.duration).toISOString().substr(11, 8)}</li>
+                <p>Abbiamo trovato una sessione di tracciamento non salvata:</p>
+                <ul class="small">
+                  <li>Durata: ${tracker.formatTime(backupData.duration, true)}</li>
                   <li>Distanza: ${backupData.distance?.toFixed(2) || '0.00'} km</li>
-                  <li>Data: ${new Date(backupData.startTime).toLocaleString()}</li>
+                  <li>Iniziata: ${new Date(backupData.startTime).toLocaleString()}</li>
                 </ul>
-                <p>Vuoi recuperare questa sessione?</p>
+                <p>Vuoi continuare da qui?</p>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="localStorage.removeItem('activityBackup')">
-                  ❌ Scarta
-                </button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.recoverSession && window.recoverSession()">
-                  ✅ Recupera
-                </button>
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal" onclick="localStorage.removeItem('activityBackup')">Scarta</button>
+                <button type="button" class="btn btn-primary rounded-pill" data-bs-dismiss="modal" onclick="window.recoverSession && window.recoverSession()">Riprendi Attività</button>
               </div>
             </div>
           </div>
         </div>
       `;
-      
       document.body.insertAdjacentHTML('beforeend', modalHtml);
       new bootstrap.Modal(document.getElementById('recoveryModal')).show();
-      
-      window.recoverSession = function() {
+      window.recoverSession = () => {
         localStorage.removeItem('activityBackup');
-        showTempAlert('Sessione recuperata! Premi "RIPRENDI" per continuare.', 'info');
+        showTempAlert('Sessione recuperata. Premi "RIPRENDI" o "INIZIA" per continuare.', 'info');
+        // Qui potresti pre-caricare i dati nel tracker se necessario, ma per ora ci affidiamo al messaggio utente
       };
-    } catch (error) {
-      console.error('Errore nel recupero sessione:', error);
-      localStorage.removeItem('activityBackup');
-    }
+    } catch (error) { console.error('Errore recupero sessione:', error); localStorage.removeItem('activityBackup'); }
   }
 });
 </script>
