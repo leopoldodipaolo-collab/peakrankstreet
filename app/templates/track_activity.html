@@ -554,6 +554,34 @@ class ActivityTracker {
     }
   }
 
+  // AGGIUNGI QUESTA FUNZIONE ALLA CLASSE ActivityTracker
+updateStatusBadge(status) {
+  const badge = document.getElementById('statusBadge');
+  if (!badge) return;
+  
+  switch(status) {
+    case 'ready':
+      badge.textContent = '🟢 Pronto';
+      badge.className = 'badge rounded-pill bg-secondary';
+      break;
+    case 'tracking':
+      badge.textContent = '🔴 Tracciamento Attivo';
+      badge.className = 'badge rounded-pill bg-success';
+      break;
+    case 'paused':
+      badge.textContent = '🟡 In Pausa';
+      badge.className = 'badge rounded-pill bg-warning text-dark';
+      break;
+    case 'error':
+      badge.textContent = '⚪ Errore';
+      badge.className = 'badge rounded-pill bg-danger';
+      break;
+    default:
+      badge.textContent = '🟢 Pronto';
+      badge.className = 'badge rounded-pill bg-secondary';
+  }
+}
+
   initMiniMap() {
     // Se la mappa è già inizializzata, pulisci i layer precedenti
     if (this.miniMap) { 
