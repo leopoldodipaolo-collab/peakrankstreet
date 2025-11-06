@@ -112,9 +112,9 @@
           </div>
 
           <div class="tracking-controls mt-auto pt-3 d-flex justify-content-center w-100">
-            <button id="btnPause" class="btn btn-warning btn-lg rounded-pill me-2 flex-grow-1" style="display:none;">⏸️ PAUSA</button>
-            <button id="btnStop" class="btn btn-danger btn-lg rounded-pill flex-grow-1" style="display:none;">⏹️ FERMA</button>
-          </div>
+  <button id="btnPause" class="btn btn-warning btn-lg rounded-pill me-2 flex-grow-1 d-none">⏸️ PAUSA</button>
+  <button id="btnStop" class="btn btn-danger btn-lg rounded-pill flex-grow-1 d-none">⏹️ FERMA</button>
+</div>
 
           <div id="statusMessage" class="mt-3 w-100"></div>
         </div>
@@ -435,20 +435,98 @@ class AudioFeedback {
 // =============================================
 class ActivityTracker {
   constructor() {
-    this.isTracking = false; this.isPaused = false;
-    this.startTime = null; this.positions = []; this.watchId = null;
-    this.distance = 0; this.miniMap = null; this.polyline = null;
-    this.timerInterval = null; this.autoSaveInterval = null;
-    this.errorCount = 0; this.maxErrors = 5; this.currentPositionMarker = null;
-    this.splits = []; this.splitDistance = 1; this.lastSplitAt = 0;
+    this.isTracking = false; 
+    this.isPaused = false;
+    this.startTime = null; 
+    this.positions = []; 
+    this.watchId = null;
+    this.distance = 0; 
+    this.miniMap = null; 
+    this.polyline = null;
+    this.timerInterval = null; 
+    this.autoSaveInterval = null;
+    this.errorCount = 0; 
+    this.maxErrors = 5; 
+    this.currentPositionMarker = null;
+    this.splits = []; 
+    this.splitDistance = 1; 
+    this.lastSplitAt = 0;
     this.audioFeedback = new AudioFeedback();
-    this.privacyMode = false; this.userWeight = 70;
-    this.route_id = null; this.duration = 0; this.avgSpeed = 0; this.avgPace = '0:00';
+    this.privacyMode = false; 
+    this.userWeight = 70;
+    this.route_id = null; 
+    this.duration = 0; 
+    this.avgSpeed = 0; 
+    this.avgPace = '0:00';
+    this.pauseStartTime = null;
 
     this.loadUserSettings();
     this.setupSplits();
     this.setupBrowserNotifications();
     this.checkInitialGPSStatus();
+    
+    // Bind delle funzioni
+    this.updateStatusBadge = this.updateStatusBadge.bind(this);
+    this.updateUIState = this.updateUIState.bind(this);
+  }
+
+  // FUNZIONE MANCANTE AGGIUNTA
+  updateStatusBadge(status) {
+    const badge = document.getElementById('statusBadge');
+    if (!badge) return;
+    
+    switch(status) {
+      case 'ready':
+        badge.textContent = '🟢 Pronto';
+        badge.className = 'badge rounded-pill bg-secondary';
+        break;
+      case 'tracking':
+        badge.textContent = '🔴 Tracciamento Attivo';
+        badge.className = 'badge rounded-pill bg-success';
+        break;
+      case 'paused':
+        badge.textContent = '🟡 In Pausa';
+        badge.className = 'badge rounded-pill bg-warning text-dark';
+        break;
+      case 'error':
+        badge.textContent = '⚪ Errore';
+        badge.className = 'badge rounded-pill bg-danger';
+        break;
+      default:
+        badge.textContent = '🟢 Pronto';
+        badge.className = 'badge rounded-pill bg-secondary';
+    }
+  }
+
+  // FUNZIONE MANCANTE AGGIUNTA
+  updateUIState(state) {
+    const startBtn = document.getElementById('btnStart');
+    const pauseBtn = document.getElementById('btnPause');
+    const stopBtn = document.getElementById('btnStop');
+    const liveStats = document.getElementById('liveStats');
+    
+    switch(state) {
+      case 'ready':
+        startBtn.classList.remove('d-none');
+        pauseBtn.classList.add('d-none');
+        stopBtn.classList.add('d-none');
+        liveStats.classList.add('d-none');
+        break;
+        
+      case 'tracking':
+        startBtn.classList.add('d-none');
+        pauseBtn.classList.remove('d-none');
+        stopBtn.classList.remove('d-none');
+        liveStats.classList.remove('d-none');
+        break;
+        
+      case 'paused':
+        startBtn.classList.add('d-none');
+        pauseBtn.classList.remove('d-none');
+        stopBtn.classList.remove('d-none');
+        liveStats.classList.remove('d-none');
+        break;
+    }
   }
 
   loadUserSettings() {
@@ -456,8 +534,7 @@ class ActivityTracker {
     this.userWeight = settings.userWeight || 70;
     this.privacyMode = settings.privacyMode || false;
     this.audioFeedback.enabled = settings.audioEnabled !== false;
-    document.body.classList.toggle('dark-mode', settings.darkModeEnabled === true); // Usa === true per coerenza
-    // Applica tema colore se presente
+    document.body.classList.toggle('dark-mode', settings.darkModeEnabled === true);
     document.body.className = document.body.className.replace(/\btheme-\w+/g, '');
     document.body.classList.add(`theme-${settings.themeColor || 'default'}`);
   }
@@ -465,7 +542,7 @@ class ActivityTracker {
   checkInitialGPSStatus() {
     if (!navigator.geolocation) {
       this.showStatus("Il tuo browser non supporta la geolocalizzazione.", "danger");
-      this.updateGPSIndicator(false); // Assicurati che l'indicatore sia corretto
+      this.updateGPSIndicator(false);
       document.getElementById('gpsStatus').textContent = "📡 GPS: Non Supportato";
       document.getElementById('gpsStatus').className = "badge rounded-pill bg-dark";
       return false;
@@ -478,7 +555,7 @@ class ActivityTracker {
        const position = await new Promise((resolve, reject) => {
          navigator.geolocation.getCurrentPosition(resolve, reject, {
            enableHighAccuracy: true,
-           timeout: 5000, // Timeout breve per la richiesta iniziale
+           timeout: 5000,
            maximumAge: 0
          });
        });
@@ -488,12 +565,11 @@ class ActivityTracker {
        return true;
      } catch (error) {
        console.error('Errore richiesta GPS:', error);
-       // Mostra il modal solo se il permesso è stato negato o la posizione non è disponibile
        if (error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
          const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal'));
          modal.show();
        }
-       this.updateGPSIndicator(false); // Indica che non è connesso
+       this.updateGPSIndicator(false);
        document.getElementById('gpsStatus').textContent = "📡 GPS: Richiesto";
        document.getElementById('gpsStatus').className = "badge rounded-pill bg-warning text-dark";
        return false;
@@ -502,47 +578,46 @@ class ActivityTracker {
 
   async startTracking() {
     if (!this.checkInitialGPSStatus()) return;
-    // Richiede il permesso e verifica se è stato concesso
+    
     if (!await this.requestLocationPermission()) {
         this.showStatus("Il GPS è necessario per avviare il tracciamento.", "warning");
-        return; // Ferma se il permesso non è stato ottenuto
+        return;
     }
 
     document.getElementById('autoStartMessage').classList.remove('d-none');
-    this.updateStatusBadge('tracking'); // <<< CORRETTO: Questa funzione ora è definita
+    this.updateStatusBadge('tracking');
 
     try {
       this.initMiniMap();
-      this.isTracking = true; this.isPaused = false;
-      this.startTime = new Date(); this.positions = []; this.distance = 0;
-      this.errorCount = 0; this.splits = []; this.lastSplitAt = 0;
+      this.isTracking = true; 
+      this.isPaused = false;
+      this.startTime = new Date(); 
+      this.positions = []; 
+      this.distance = 0;
+      this.errorCount = 0; 
+      this.splits = []; 
+      this.lastSplitAt = 0;
 
       this.updateTimer();
-      // Intervallo per aggiornamenti periodici
       this.timerInterval = setInterval(() => {
-        this.updateTimer(); this.checkForSplits(); this.updateAdvancedMetrics();
+        this.updateTimer(); 
+        this.checkForSplits(); 
+        this.updateAdvancedMetrics();
       }, 1000);
-      this.startAutoSave(); // Avvia auto-save
       
-      // Inizia a ricevere aggiornamenti di posizione
+      this.startAutoSave();
+      
       this.watchId = navigator.geolocation.watchPosition(
         pos => this.handlePosition(pos),
         err => this.handleError(err),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 } // Opzioni per watchPosition
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 }
       );
 
-      // Aggiorna UI per stato attivo
-      document.getElementById('btnStart').classList.add('d-none');
-      document.getElementById('btnPause').classList.remove('d-none');
-      document.getElementById('btnStop').classList.remove('d-none');
-      document.getElementById('liveStats').classList.remove('d-none');
-      document.getElementById('liveStats').style.display = 'flex'; // Forza display flex
-      document.getElementById('splitsContainer').style.display = 'block';
-      document.getElementById('miniMap').style.display = 'block';
+      this.updateUIState('tracking');
       document.querySelector('.tracking-card').classList.add('tracking-active');
       document.querySelector('.tracking-card').classList.remove('tracking-paused');
 
-      document.getElementById('autoStartMessage').classList.add('d-none'); // Nasconde messaggio di avvio
+      document.getElementById('autoStartMessage').classList.add('d-none');
       this.showStatus("✅ Tracciamento attivo!", "success");
       this.audioFeedback.playStart();
       this.showBrowserNotification("Tracciamento Avviato", "L'attività è in corso...");
@@ -550,466 +625,416 @@ class ActivityTracker {
     } catch (error) {
       console.error('Errore avvio tracking:', error);
       this.showStatus("❌ Errore nell'avvio del tracciamento.", "danger");
-      this.resetUI(); // Resetta UI in caso di errore grave
+      this.resetUI();
     }
   }
 
-  // AGGIUNGI QUESTA FUNZIONE ALLA CLASSE ActivityTracker
-updateStatusBadge(status) {
-  const badge = document.getElementById('statusBadge');
-  if (!badge) return;
-  
-  switch(status) {
-    case 'ready':
-      badge.textContent = '🟢 Pronto';
-      badge.className = 'badge rounded-pill bg-secondary';
-      break;
-    case 'tracking':
-      badge.textContent = '🔴 Tracciamento Attivo';
-      badge.className = 'badge rounded-pill bg-success';
-      break;
-    case 'paused':
-      badge.textContent = '🟡 In Pausa';
-      badge.className = 'badge rounded-pill bg-warning text-dark';
-      break;
-    case 'error':
-      badge.textContent = '⚪ Errore';
-      badge.className = 'badge rounded-pill bg-danger';
-      break;
-    default:
-      badge.textContent = '🟢 Pronto';
-      badge.className = 'badge rounded-pill bg-secondary';
+  pauseTracking() {
+    if (!this.isTracking) return;
+    
+    this.isPaused = !this.isPaused;
+    
+    if (this.isPaused) {
+      // METTI IN PAUSA
+      if (this.watchId) {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+      }
+      
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+      
+      this.pauseStartTime = new Date();
+      
+      document.getElementById('btnPause').innerHTML = '▶️ RIPRENDI';
+      document.querySelector('.tracking-card').classList.remove('tracking-active');
+      document.querySelector('.tracking-card').classList.add('tracking-paused');
+      
+      this.showStatus("⏸️ Tracciamento in pausa", "warning");
+      this.updateGPSIndicator(false);
+      this.updateStatusBadge('paused');
+      this.audioFeedback.playPause();
+      
+    } else {
+      // RIPRENDI
+      if (this.pauseStartTime) {
+        const pauseDuration = new Date() - this.pauseStartTime;
+        this.startTime = new Date(this.startTime.getTime() + pauseDuration);
+      }
+      
+      this.timerInterval = setInterval(() => {
+        this.updateTimer();
+        this.checkForSplits();
+        this.updateAdvancedMetrics();
+      }, 1000);
+      
+      this.watchId = navigator.geolocation.watchPosition(
+        pos => this.handlePosition(pos),
+        err => this.handleError(err),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 }
+      );
+      
+      document.getElementById('btnPause').innerHTML = '⏸️ PAUSA';
+      document.querySelector('.tracking-card').classList.remove('tracking-paused');
+      document.querySelector('.tracking-card').classList.add('tracking-active');
+      
+      this.showStatus("✅ Tracciamento ripreso!", "success");
+      this.updateGPSIndicator(true);
+      this.updateStatusBadge('tracking');
+      this.audioFeedback.playStart();
+    }
   }
-}
 
   initMiniMap() {
-    // Se la mappa è già inizializzata, pulisci i layer precedenti
     if (this.miniMap) { 
-        this.polyline.setLatLngs([]); // Resetta la linea del percorso
-        if (this.currentPositionMarker) this.miniMap.removeLayer(this.currentPositionMarker); // Rimuovi marker precedente
+        this.polyline.setLatLngs([]);
+        if (this.currentPositionMarker) this.miniMap.removeLayer(this.currentPositionMarker);
         return;
     }
     
-    // Coordinate iniziali (es. centro Italia) o usa ultima posizione nota se disponibile
-    const initialLat = 42.35; const initialLng = 13.395;
+    const initialLat = 42.35; 
+    const initialLng = 13.395;
     this.miniMap = L.map('miniMap', { 
-      zoomControl: true, // Mostra controlli zoom
-      touchZoom: true,   // Abilita zoom touch
-      dragging: true     // Abilita trascinamento
-    }).setView([initialLat, initialLng], 15); // Vista iniziale
+      zoomControl: true,
+      touchZoom: true,
+      dragging: true
+    }).setView([initialLat, initialLng], 15);
 
-    // Aggiungi tile layer (mappa base)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
     }).addTo(this.miniMap);
 
-    // Aggiungi la polilinea per il percorso
     this.polyline = L.polyline([], { color: 'red', weight: 4, opacity: 0.7, lineJoin: 'round' }).addTo(this.miniMap);
-    // Aggiungi il marker per la posizione corrente
+    
     this.currentPositionMarker = L.circleMarker([initialLat, initialLng], { 
       radius: 8, fillColor: "#ff0000", color: "#000", weight: 2, opacity: 1, fillOpacity: 0.8 
     }).addTo(this.miniMap);
-    // Aggiungi scala alla mappa
+    
     this.miniMap.addControl(L.control.scale());
   }
 
   handlePosition(pos) {
-    // Filtra posizioni con accuratezza molto bassa, a meno che non siano le prime
     if (pos.coords.accuracy > 50 && this.positions.length > 5) { 
       this.showStatus(`⚠️ Bassa precisione GPS (${Math.round(pos.coords.accuracy)}m)`, "warning", 3000);
-      return; // Ignora questa posizione se non è abbastanza accurata
+      return;
     }
 
-    // Crea un oggetto posizione standardizzato
     const newPos = {
-      lat: pos.coords.latitude, lng: pos.coords.longitude,
-      timestamp: new Date(), speed: pos.coords.speed || 0, // Velocità (m/s), 0 se non disponibile
-      accuracy: pos.coords.accuracy, // Accuratezza in metri
-      altitude: pos.coords.altitude || null // Altitudine in metri, null se non disponibile
+      lat: pos.coords.latitude, 
+      lng: pos.coords.longitude,
+      timestamp: new Date(), 
+      speed: pos.coords.speed || 0,
+      accuracy: pos.coords.accuracy,
+      altitude: pos.coords.altitude || null
     };
 
-    // Applica modalità privacy se attiva (approssima le coordinate)
     const processedPos = this.privacyMode ? this.getApproximatePosition(newPos) : newPos;
 
-    this.updateAccuracyIndicator(processedPos.accuracy); // Aggiorna l'indicatore di accuratezza
+    this.updateAccuracyIndicator(processedPos.accuracy);
 
-    // Calcola distanza solo se abbiamo posizioni precedenti e la distanza è ragionevole
     if (this.positions.length > 0) {
       const last = this.positions[this.positions.length - 1];
-      const d = this.calculateDistance(last.lat, last.lng, processedPos.lat, processedPos.lng); // Distanza in km
-      // Filtra punti troppo vicini (es. < 1 metro) o salti enormi (es. > 500 metri)
+      const d = this.calculateDistance(last.lat, last.lng, processedPos.lat, processedPos.lng);
       if (d < 0.001 || d > 0.5) return; 
-      this.distance += d; // Aggiunge la distanza percorsa
+      this.distance += d;
     }
 
-    this.positions.push(processedPos); // Aggiunge la nuova posizione all'array
-    this.updateDisplay(); // Aggiorna statistiche live
-    this.updateMap(processedPos); // Aggiorna mappa
-    this.updateRouteProgress(); // Aggiorna progresso percorso (se selezionato)
-    this.errorCount = 0; // Resetta contatore errori GPS se la posizione è valida
+    this.positions.push(processedPos);
+    this.updateDisplay();
+    this.updateMap(processedPos);
+    this.updateRouteProgress();
+    this.errorCount = 0;
   }
 
-  // Calcola la distanza in km tra due punti GPS usando la formula di Haversine
   calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Raggio della Terra in km
-    const dLat = (lat2 - lat1) * Math.PI / 180; // Differenza lat in radianti
-    const dLon = (lon2 - lon1) * Math.PI / 180; // Differenza lon in radianti
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) ** 2 + 
               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
               Math.sin(dLon/2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); // Distanza in km
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  // Aggiorna le statistiche visualizzate (tempo, distanza, ritmo, velocità)
   updateDisplay() {
     const timerEl = document.getElementById('timer');
     const distanceEl = document.getElementById('distance');
     const paceEl = document.getElementById('pace');
     const speedEl = document.getElementById('speed');
 
-    // Aggiorna tempo (HH:MM:SS)
     timerEl.textContent = this.formatTime(new Date() - this.startTime, true); 
-    // Aggiorna distanza
     distanceEl.textContent = this.distance.toFixed(2);
-    // Aggiunge classe per animazione cambio valore
-    [distanceEl, timerEl].forEach(el => el.classList.add('value-change')); 
+    
+    [distanceEl, timerEl].forEach(el => el.classList.add('value-change'));
 
-    // Calcola e aggiorna ritmo e velocità solo se ci sono dati validi
     const elapsedHours = (new Date() - this.startTime) / 3600000;
     if (elapsedHours > 0 && this.distance > 0) {
-      const avgPaceMinutes = (elapsedHours * 60) / this.distance; // Ritmo medio in min/km
+      const avgPaceMinutes = (elapsedHours * 60) / this.distance;
       paceEl.textContent = this.formatPace(avgPaceMinutes);
-      speedEl.textContent = (this.distance / elapsedHours).toFixed(1); // Velocità media in km/h
+      speedEl.textContent = (this.distance / elapsedHours).toFixed(1);
       [paceEl, speedEl].forEach(el => el.classList.add('value-change'));
-    } else { // Valori di default se non ci sono dati
-      paceEl.textContent = '0:00'; speedEl.textContent = '0.0';
+    } else {
+      paceEl.textContent = '0:00'; 
+      speedEl.textContent = '0.0';
     }
-    // Rimuove classe animazione dopo 1 secondo
+    
     setTimeout(() => {
       [distanceEl, timerEl, paceEl, speedEl].forEach(el => el.classList.remove('value-change'));
     }, 1000);
   }
 
-  // Aggiorna le metriche avanzate (calorie, salita, efficienza)
   updateAdvancedMetrics() {
     const metrics = this.calculateMetrics();
     document.getElementById('calories').textContent = metrics.calories;
     document.getElementById('elevation').textContent = `+${metrics.elevation.ascent}m`;
     document.getElementById('efficiency').textContent = metrics.efficiency;
-    // Anima i valori che cambiano
-    ['calories', 'elevation', 'efficiency'].forEach(id => document.getElementById(id).classList.add('value-change'));
+    
+    ['calories', 'elevation', 'efficiency'].forEach(id => 
+      document.getElementById(id).classList.add('value-change'));
+    
     setTimeout(() => {
-      ['calories', 'elevation', 'efficiency'].forEach(id => document.getElementById(id).classList.remove('value-change'));
+      ['calories', 'elevation', 'efficiency'].forEach(id => 
+        document.getElementById(id).classList.remove('value-change'));
     }, 1000);
   }
   
-  // Calcola metriche avanzate basate sui dati attuali
   calculateMetrics() {
-    const hours = Math.max(1, (new Date() - this.startTime) / 3600000); // Evita divisione per zero
-    const met = this.getMETValue(); // Valore MET basato sulla velocità
-    const calories = Math.round(met * this.userWeight * hours); // Calcolo calorie
-    const elevation = this.calculateElevationFromPositions(); // Calcolo salita/discesa
-    const efficiency = this.calculateEfficiencyScore(); // Calcolo efficienza
+    const hours = Math.max(1, (new Date() - this.startTime) / 3600000);
+    const met = this.getMETValue();
+    const calories = Math.round(met * this.userWeight * hours);
+    const elevation = this.calculateElevationFromPositions();
+    const efficiency = this.calculateEfficiencyScore();
     return { calories, elevation, efficiency };
   }
 
-  // Stima il valore MET (Metabolic Equivalent of Task) basato sulla velocità media
   getMETValue() {
-    const avgSpeed = this.distance / ((new Date() - this.startTime) / 3600000); // km/h
-    if (avgSpeed < 5) return 4.0;    // Camminata lenta/moderata
-    if (avgSpeed < 8) return 7.0;    // Corsa leggera
-    if (avgSpeed < 12) return 10.0;  // Corsa media
-    return 12.0;                    // Corsa intensa
+    const avgSpeed = this.distance / ((new Date() - this.startTime) / 3600000);
+    if (avgSpeed < 5) return 4.0;
+    if (avgSpeed < 8) return 7.0;
+    if (avgSpeed < 12) return 10.0;
+    return 12.0;
   }
 
-  // Calcola il dislivello totale (salita) basato sulle variazioni di altitudine
   calculateElevationFromPositions() {
-    if (this.positions.length < 2) return { ascent: 0, descent: 0 }; // Non ci sono abbastanza dati
+    if (this.positions.length < 2) return { ascent: 0, descent: 0 };
     let ascent = 0; let descent = 0;
     for (let i = 1; i < this.positions.length; i++) {
-      const alt1 = this.positions[i-1].altitude || 0; // Usa 0 se altitudine non disponibile
+      const alt1 = this.positions[i-1].altitude || 0;
       const alt2 = this.positions[i].altitude || 0;
       const diff = alt2 - alt1;
-      // Considera solo se altitudine è disponibile per entrambi i punti e la variazione è significativa
       if (alt1 > 0 && alt2 > 0) { 
-        if (diff > 2) ascent += diff;       // Salita
-        else if (diff < -2) descent += Math.abs(diff); // Discesa
+        if (diff > 2) ascent += diff;
+        else if (diff < -2) descent += Math.abs(diff);
       }
     }
     return { ascent: Math.round(ascent), descent: Math.round(descent) };
   }
 
-  // Calcola un punteggio di efficienza (valore arbitrario)
   calculateEfficiencyScore() {
-    if (this.distance < 0.1) return '--'; // Non calcolabile con poca distanza
-    const pace = ((new Date() - this.startTime) / 60000) / this.distance; // Ritmo in min/km
-    const elevationRate = this.calculateElevationFromPositions().ascent / this.distance; // Salita in m/km
-    // Formula arbitraria: penalizza ritmo lento, premia salita (adattabile)
+    if (this.distance < 0.1) return '--';
+    const pace = ((new Date() - this.startTime) / 60000) / this.distance;
+    const elevationRate = this.calculateElevationFromPositions().ascent / this.distance;
     let efficiency = 100 - (pace * 8) + (elevationRate * 3); 
-    efficiency = Math.max(0, Math.min(100, efficiency)); // Limita tra 0 e 100
-    // Assegna un grado basato sul punteggio
+    efficiency = Math.max(0, Math.min(100, efficiency));
     if (efficiency >= 80) return 'A+'; if (efficiency >= 60) return 'A';
     if (efficiency >= 40) return 'B'; if (efficiency >= 20) return 'C';
     return 'D';
   }
 
-  // Aggiorna il timer visualizzato
   updateTimer() {
-    if (!this.startTime) return; // Non fare nulla se il tempo non è iniziato
+    if (!this.startTime) return;
     const timerEl = document.getElementById('timer');
-    timerEl.textContent = this.formatTime(new Date() - this.startTime, true); // Formato HH:MM:SS
+    timerEl.textContent = this.formatTime(new Date() - this.startTime, true);
   }
 
-  // Aggiorna la mappa con la nuova posizione e il percorso
   updateMap(pos) {
-    if (!this.miniMap) return; // Non fare nulla se la mappa non è inizializzata
-    const ll = [pos.lat, pos.lng]; // LatLng per Leaflet
-    this.polyline.addLatLng(ll); // Aggiunge punto alla polilinea del percorso
-    this.currentPositionMarker.setLatLng(ll); // Aggiorna posizione marker
+    if (!this.miniMap) return;
+    const ll = [pos.lat, pos.lng];
+    this.polyline.addLatLng(ll);
+    this.currentPositionMarker.setLatLng(ll);
     
-    // Centra la mappa sulla nuova posizione solo per le prime posizioni o se l'utente non sta interagendo
     if (this.positions.length < 5 || this.miniMap.isMoving()) { 
       this.miniMap.setView(ll);
     }
   }
 
-  // Aggiorna l'indicatore visivo del segnale GPS e il badge di stato
   updateGPSIndicator(active) {
-    const el = document.getElementById('gpsIndicator'); // Potrebbe non esistere se non usato nell'HTML
     const statusEl = document.getElementById('gpsStatus');
     if (active) {
-      el?.classList.add('gps-active'); // Usa optional chaining per sicurezza
       statusEl.textContent = "📡 GPS: Attivo";
       statusEl.className = "badge rounded-pill bg-success";
     } else {
-      el?.classList.remove('gps-active');
       statusEl.textContent = "📡 GPS: Inattivo";
       statusEl.className = "badge rounded-pill bg-danger";
     }
   }
 
-  // Aggiorna l'indicatore di accuratezza GPS
   updateAccuracyIndicator(accuracy) {
     const accuracyEl = document.getElementById('accuracyStatus');
     accuracyEl.textContent = `🎯 ${Math.round(accuracy)}m`;
-    // Cambia colore del badge in base all'accuratezza
     accuracyEl.className = `badge rounded-pill ${
       accuracy < 15 ? 'bg-success' : accuracy < 40 ? 'bg-warning text-dark' : 'bg-danger'
     }`;
   }
 
-  // Aggiorna lo stato della batteria visualizzato
   updateBatteryStatus() {
-    if ('getBattery' in navigator) { // Verifica supporto API Batteria
+    if ('getBattery' in navigator) {
       navigator.getBattery().then(battery => {
         const batteryEl = document.getElementById('batteryStatus');
-        const level = Math.round(battery.level * 100); // Percentuale batteria
+        const level = Math.round(battery.level * 100);
         batteryEl.textContent = `🔋 ${level}%`;
-        // Cambia colore del badge in base al livello
         batteryEl.className = `badge rounded-pill ${
           level > 50 ? 'bg-success' : level > 20 ? 'bg-warning text-dark' : 'bg-danger'
         }`;
-      }).catch(() => { /* Ignora se l'API non è disponibile */ });
+      }).catch(() => { });
     }
   }
 
-  // Aggiorna la barra di progresso del percorso selezionato
   updateRouteProgress() {
     const sel = document.getElementById('routeSelect');
     const selectedOption = sel.options[sel.selectedIndex];
-    // Ottieni la distanza del percorso dall'attributo data-distance
     const routeDistance = parseFloat(selectedOption?.getAttribute('data-distance')) || 0;
     
     if (routeDistance > 0) {
-      const progress = Math.min(100, (this.distance / routeDistance) * 100); // Calcola percentuale
+      const progress = Math.min(100, (this.distance / routeDistance) * 100);
       const progressBar = document.getElementById('routeProgress').querySelector('.progress-bar');
-      progressBar.style.width = `${progress}%`; // Imposta larghezza barra
-      progressBar.querySelector('.progress-text').textContent = `${progress.toFixed(0)}%`; // Aggiorna testo
-      document.getElementById('routeProgress').style.display = 'block'; // Mostra barra
+      progressBar.style.width = `${progress}%`;
+      progressBar.querySelector('.progress-text').textContent = `${progress.toFixed(0)}%`;
+      document.getElementById('routeProgress').style.display = 'block';
     } else {
-      document.getElementById('routeProgress').style.display = 'none'; // Nasconde barra se nessun percorso
+      document.getElementById('routeProgress').style.display = 'none';
     }
   }
 
-  // --- FUNZIONI PER GLI SPLIT (es. km completati) ---
   setupSplits() { 
-    this.splits = []; // Resetta array split
-    this.splitDistance = 1; // Distanza tra split (es. 1 km)
-    this.lastSplitAt = 0; // Ultimo km per cui è stato registrato uno split
+    this.splits = [];
+    this.splitDistance = 1;
+    this.lastSplitAt = 0;
   }
 
-  // Controlla se è stato raggiunto un nuovo intero km per registrare uno split
   checkForSplits() {
-    if (!this.isTracking || this.isPaused) return; // Non fare nulla se non attivo o in pausa
-    const kmCompleted = Math.floor(this.distance); // Km interi percorsi
-    // Se il numero di km interi è aumentato rispetto all'ultimo split registrato
+    if (!this.isTracking || this.isPaused) return;
+    const kmCompleted = Math.floor(this.distance);
     if (kmCompleted > this.lastSplitAt) {
       for (let km = this.lastSplitAt + 1; km <= kmCompleted; km++) {
-        this.recordSplit(km); // Registra split per ogni nuovo km
+        this.recordSplit(km);
       }
-      this.lastSplitAt = kmCompleted; // Aggiorna l'ultimo km registrato
+      this.lastSplitAt = kmCompleted;
     }
   }
 
-  // Registra uno split per un dato km
   recordSplit(km) {
-    const splitTime = new Date() - this.startTime; // Tempo trascorso dall'inizio
-    const splitPace = this.calculatePaceForKm(km); // Calcola ritmo per questo km
+    const splitTime = new Date() - this.startTime;
+    const splitPace = this.calculatePaceForKm(km);
     const split = { kilometer: km, time: splitTime, pace: splitPace, timestamp: new Date() };
-    this.splits.push(split); // Aggiunge lo split all'array
-    this.showSplitNotification(split); // Mostra notifica split
-    this.audioFeedback.playKm(); // Riproduce suono per split
+    this.splits.push(split);
+    this.showSplitNotification(split);
+    this.audioFeedback.playKm();
   }
 
-  // Calcola il ritmo medio per un determinato km (basato sul tempo impiegato per quel km)
   calculatePaceForKm(km) {
-    if (km === 1) return this.formatPace((new Date() - this.startTime) / 60000); // Tempo totale per il primo km
-    // Trova l'ultimo split registrato
+    if (km === 1) return this.formatPace((new Date() - this.startTime) / 60000);
     const split = this.splits.find(s => s.kilometer === km - 1); 
-    if (!split) return '0:00'; // Se non trovato, ritorna 0
-    // Tempo impiegato per percorrere l'ultimo km (differenza tra tempo attuale e tempo dello split precedente)
-    const timeForKm = (new Date() - this.startTime - split.time) / 60000; // in minuti
-    return this.formatPace(timeForKm); // Formatta il tempo in min:sec
+    if (!split) return '0:00';
+    const timeForKm = (new Date() - this.startTime - split.time) / 60000;
+    return this.formatPace(timeForKm);
   }
 
-  // --- FUNZIONI PER NOTIFICHE BROWSER ---
   setupBrowserNotifications() { 
-    if (!("Notification" in window)) { // Verifica supporto API notifiche
+    if (!("Notification" in window)) {
       console.log("Browser non supporta notifiche");
       return;
     }
   }
   
-  // Mostra una notifica push nel browser
   showBrowserNotification(title, body) {
     const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-    // Richiede permesso se non concesso e se abilitate nelle impostazioni
     if (Notification.permission === "granted" && settings.notificationsEnabled) {
       new Notification(title, { 
         body: body, 
-        icon: '/static/favicon.ico', // Assicurati che il percorso sia corretto
+        icon: '/static/favicon.ico',
         badge: '/static/favicon.ico' 
       });
     } else if (Notification.permission !== "denied") {
-      // Se non concesso ma non negato, prova a richiederlo
       Notification.requestPermission();
     }
   }
 
-  // --- FUNZIONI PER AUTO-SALVATAGGIO E PRIVACY ---
   startAutoSave() {
-    // Intervallo per salvare backup ogni 60 secondi
     this.autoSaveInterval = setInterval(async () => {
       if (this.isTracking && !this.isPaused && this.positions.length > 0) {
-        await this.backupActivity(); // Esegue il backup
+        await this.backupActivity();
       }
     }, 60000); 
   }
 
-  // Salva i dati correnti dell'attività in localStorage come backup
   async backupActivity() {
     const backupData = {
-      positions: this.positions, // Array di posizioni GPS
-      distance: this.distance,   // Distanza totale
-      startTime: this.startTime, // Data/ora inizio attività
-      duration: new Date() - this.startTime, // Durata in ms
-      splits: this.splits        // Array degli split
+      positions: this.positions,
+      distance: this.distance,
+      startTime: this.startTime,
+      duration: new Date() - this.startTime,
+      splits: this.splits
     };
     localStorage.setItem('activityBackup', JSON.stringify(backupData));
   }
 
-  // Approssima le coordinate per la modalità privacy
   getApproximatePosition(position, radiusKm = 0.3) {
-    // Calcola uno scostamento casuale entro un raggio specificato (in km)
-    const offsetLat = (Math.random() - 0.5) * (radiusKm / 110.574); // ~110.574 km per grado di latitudine
-    const offsetLng = (Math.random() - 0.5) * (radiusKm / (111.320 * Math.cos(position.lat * Math.PI / 180))); // ~111.320 km per grado di longitudine (varia con lat)
+    const offsetLat = (Math.random() - 0.5) * (radiusKm / 110.574);
+    const offsetLng = (Math.random() - 0.5) * (radiusKm / (111.320 * Math.cos(position.lat * Math.PI / 180)));
     return { 
-      ...position, // Copia tutte le proprietà originali
-      lat: position.lat + offsetLat, // Applica offset latitudine
-      lng: position.lng + offsetLng  // Applica offset longitudine
+      ...position,
+      lat: position.lat + offsetLat,
+      lng: position.lng + offsetLng
     };
   }
 
-  // --- CONTROLLI PRINCIPALI (PAUSA, FERMA) ---
-  pauseTracking() {
-    this.isPaused = !this.isPaused; // Inverte lo stato di pausa
-    if (this.isPaused) { // Se ora è in pausa
-      if (this.watchId) navigator.geolocation.clearWatch(this.watchId); // Interrompe il monitoraggio GPS
-      this.watchId = null;
-      document.getElementById('btnPause').innerHTML = '▶️ RIPRENDI'; // Cambia testo pulsante
-      // Aggiorna stili per indicare pausa
-      document.querySelector('.tracking-card').classList.remove('tracking-active');
-      document.querySelector('.tracking-card').classList.add('tracking-paused');
-      this.showStatus("⏸️ Tracciamento in pausa.", "warning");
-      this.updateGPSIndicator(false); // Indica GPS non attivo
-      this.updateStatusBadge('paused'); // Aggiorna badge di stato
-      this.audioFeedback.playPause(); // Suono di pausa
-    } else { // Se ora sta riprendendo
-      // Riavvia il monitoraggio GPS con le stesse opzioni
-      this.watchId = navigator.geolocation.watchPosition(
-        pos => this.handlePosition(pos),
-        err => this.handleError(err),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000, distanceFilter: 5 }
-      );
-      document.getElementById('btnPause').innerHTML = '⏸️ PAUSA'; // Cambia testo pulsante
-      // Aggiorna stili per indicare tracciamento attivo
-      document.querySelector('.tracking-card').classList.remove('tracking-paused');
-      document.querySelector('.tracking-card').classList.add('tracking-active');
-      this.showStatus("✅ Tracciamento ripreso!", "success");
-      this.audioFeedback.playStart(); // Suono di ripresa
-    }
-  }
-
-  // Gestisce errori del GPS
   handleError(err) {
-    this.errorCount++; // Incrementa contatore errori
-    // Se gli errori superano il limite massimo, interrompi il tracciamento
+    this.errorCount++;
     if (this.errorCount >= this.maxErrors) {
       this.showStatus("❌ Segnale GPS perso. Tracciamento sospeso.", "danger");
       this.stopTracking(); 
       return;
     }
-    // Messaggio di errore basato sul codice
+    
     let msg = "Errore GPS";
     if (err.code === err.PERMISSION_DENIED) {
       msg = "Permesso GPS negato."; 
-      // Mostra istruzioni se il permesso è negato
       const modal = new bootstrap.Modal(document.getElementById('gpsInstructionsModal')); 
       modal.show();
     } else if (err.code === err.POSITION_UNAVAILABLE) msg = "Posizione non disponibile.";
     else if (err.code === err.TIMEOUT) msg = "Timeout GPS, riprovo...";
     
-    this.showStatus(`⚠️ ${msg} (${this.errorCount}/${this.maxErrors})`, "danger", 4000); // Mostra messaggio di errore
-    this.updateGPSIndicator(false); // Indica GPS non attivo
+    this.showStatus(`⚠️ ${msg} (${this.errorCount}/${this.maxErrors})`, "danger", 4000);
+    this.updateGPSIndicator(false);
   }
 
-  // Ferma il tracciamento, calcola metriche finali e mostra modal di riepilogo
   async stopTracking() {
-    // Pulisce timer e watchPosition
-    if (this.watchId) navigator.geolocation.clearWatch(this.watchId); this.watchId = null;
+    if (this.watchId) navigator.geolocation.clearWatch(this.watchId); 
+    this.watchId = null;
+    
     if (this.timerInterval) clearInterval(this.timerInterval);
     if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
     
-    this.isTracking = false; // Imposta stato non attivo
-    this.updateGPSIndicator(false); // Disattiva indicatore GPS
-    this.updateStatusBadge('ready'); // Aggiorna badge a "Pronto"
+    this.isTracking = false;
+    this.updateGPSIndicator(false);
+    this.updateStatusBadge('ready');
 
-    // Calcola valori finali
     const sel = document.getElementById('routeSelect');
-    this.route_id = sel.value || null; // ID percorso selezionato
-    this.duration = Math.max(1, Math.round((new Date() - this.startTime) / 1000)); // Durata in secondi (minimo 1)
-    this.distance = Math.max(0.01, this.distance); // Distanza minima 0.01 km
+    this.route_id = sel.value || null;
+    this.duration = Math.max(1, Math.round((new Date() - this.startTime) / 1000));
+    this.distance = Math.max(0.01, this.distance);
 
-    const hours = this.duration / 3600; // Durata in ore
-    this.avgSpeed = (this.distance / hours).toFixed(1); // Velocità media km/h
-    const paceMinutes = (hours * 60) / this.distance; // Ritmo medio min/km
-    this.avgPace = this.formatPace(paceMinutes); // Formatta ritmo
+    const hours = this.duration / 3600;
+    this.avgSpeed = (this.distance / hours).toFixed(1);
+    const paceMinutes = (hours * 60) / this.distance;
+    this.avgPace = this.formatPace(paceMinutes);
 
-    // Calcola metriche avanzate finali
     const finalMetrics = this.calculateMetrics();
     
-    // Aggiorna il modal di riepilogo attività
-    document.getElementById('summaryDuration').textContent = this.formatTime(this.duration * 1000, true); // Formato HH:MM:SS
+    document.getElementById('summaryDuration').textContent = this.formatTime(this.duration * 1000, true);
     document.getElementById('summaryDistance').textContent = this.distance.toFixed(2);
     document.getElementById('summarySpeed').textContent = this.avgSpeed;
     document.getElementById('summaryPace').textContent = this.avgPace;
@@ -1017,57 +1042,56 @@ updateStatusBadge(status) {
     document.getElementById('summaryElevation').textContent = `+${finalMetrics.elevation.ascent}m`;
     document.getElementById('summaryEfficiency').textContent = finalMetrics.efficiency;
 
-    // Mostra il modal di riepilogo
     const modal = new bootstrap.Modal(document.getElementById('activitySummaryModal'));
     modal.show();
 
-    // Gestisce il click sul pulsante di conferma salvataggio
     document.getElementById('confirmSaveBtn').onclick = async () => {
-      modal.hide(); // Chiude il modal
-      // Prepara i dati da inviare al backend
+      modal.hide();
       const data = {
-        route_id: this.route_id, duration: this.duration, distance: this.distance,
-        positions: this.positions, start_time: this.startTime.toISOString(),
-        avg_speed: this.avgSpeed, avg_pace: this.avgPace,
-        calories: finalMetrics.calories, elevation: finalMetrics.elevation.ascent,
+        route_id: this.route_id, 
+        duration: this.duration, 
+        distance: this.distance,
+        positions: this.positions, 
+        start_time: this.startTime.toISOString(),
+        avg_speed: this.avgSpeed, 
+        avg_pace: this.avgPace,
+        calories: finalMetrics.calories, 
+        elevation: finalMetrics.elevation.ascent,
         splits: this.splits
       };
-      await this.saveActivity(data); // Chiama la funzione per salvare l'attività
+      await this.saveActivity(data);
     };
     
-    this.audioFeedback.playStop(); // Suono di stop
-    localStorage.removeItem('activityBackup'); // Rimuove il backup
-    this.resetUI(); // Resetta l'interfaccia utente allo stato iniziale
+    this.audioFeedback.playStop();
+    localStorage.removeItem('activityBackup');
+    this.resetUI();
   }
 
-  // Invia i dati dell'attività al backend per il salvataggio
   async saveActivity(data) {
     const statusEl = document.getElementById('statusMessage');
-    statusEl.innerHTML = '<div class="alert alert-info w-100">💾 Salvataggio in corso...</div>'; // Messaggio di salvataggio
+    statusEl.innerHTML = '<div class="alert alert-info w-100">💾 Salvataggio in corso...</div>';
     try {
-      // Ottiene il token CSRF dal meta tag
       const csrfMeta = document.querySelector('meta[name="csrf-token"]');
       const csrfToken = csrfMeta ? csrfMeta.content : null;
-      // Header per la richiesta
       const headers = { 'Content-Type': 'application/json' };
       if (csrfToken) headers['X-CSRFToken'] = csrfToken;
 
-      // Effettua la richiesta POST all'API
       const res = await fetch('/api/save-live-activity', {
-        method: 'POST', headers: headers, body: JSON.stringify(data), credentials: 'same-origin'
+        method: 'POST', 
+        headers: headers, 
+        body: JSON.stringify(data), 
+        credentials: 'same-origin'
       });
 
-      // Gestisce errori di risposta HTTP
       if (!res.ok) { 
         const text = await res.text(); 
         throw new Error(`Errore server ${res.status}: ${text}`); 
       }
-      const result = await res.json(); // Parsa la risposta JSON
       
-      // Gestisce successo o fallimento basato sulla risposta del server
+      const result = await res.json();
+      
       if (result.success) {
         statusEl.innerHTML = `<div class="alert alert-success w-100">${result.message}</div>`;
-        // Reindirizza alla pagina delle attività dopo un breve ritardo
         setTimeout(() => window.location.href = "{{ url_for('main.all_activities') }}", 2000);
       } else { 
         throw new Error(result.error || "Errore sconosciuto dal server"); 
@@ -1078,45 +1102,38 @@ updateStatusBadge(status) {
     }
   }
 
-  // Mostra un messaggio di stato temporaneo nell'area apposita
   showStatus(msg, type, timeout = 5000) {
     const el = document.getElementById('statusMessage');
-    // Crea l'elemento alert con messaggio e pulsante di chiusura
     el.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show w-100" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
-    // Rimuove l'alert automaticamente dopo il timeout, se specificato
+    
     if (timeout && timeout > 0) {
       setTimeout(() => { 
-        // Controlla se il messaggio è ancora quello visualizzato prima di rimuoverlo
         if (el.innerHTML.includes(msg)) el.innerHTML = ''; 
       }, timeout);
     }
   }
 
-  // Funzioni Helper di Formattazione Tempo e Ritmo
   formatTime(ms, includeHours = false) {
-    const seconds = Math.floor(ms / 1000); // Tempo in secondi
-    const h = Math.floor(seconds / 3600); // Ore
-    const m = Math.floor((seconds % 3600) / 60); // Minuti
-    const s = seconds % 60; // Secondi
-    // Formatta con zero iniziali se necessario
-    if (includeHours) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; // HH:MM:SS
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; // MM:SS
+    const seconds = Math.floor(ms / 1000);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (includeHours) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
   
   formatPace(minutes) {
-    const m = Math.floor(minutes); // Minuti interi
-    const s = Math.floor((minutes - m) * 60); // Secondi
-    return `${m}:${s.toString().padStart(2, '0')}`; // Formatta min:sec
+    const m = Math.floor(minutes);
+    const s = Math.floor((minutes - m) * 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  // Mostra notifica per lo split appena completato e aggiorna l'interfaccia
   showSplitNotification(split) {
-    // Aggiorna l'area dello split nell'interfaccia
     document.getElementById('lastSplitKm').textContent = `${split.kilometer}km`;
-    document.getElementById('lastSplitTime').textContent = this.formatTime(split.time, true); // Formato HH:MM:SS
+    document.getElementById('lastSplitTime').textContent = this.formatTime(split.time, true);
     document.getElementById('lastSplitPace').textContent = `${split.pace}/km`;
     
-    // Crea e mostra una notifica temporanea nell'area statusMessage
     const notificationEl = document.createElement('div');
     notificationEl.className = 'alert alert-info alert-dismissible split-notification w-100';
     notificationEl.innerHTML = `
@@ -1124,25 +1141,19 @@ updateStatusBadge(status) {
       <button type="button" class="btn-close btn-close-white float-end" onclick="this.parentElement.remove()"></button>
     `;
     const statusMessage = document.getElementById('statusMessage');
-    statusMessage.prepend(notificationEl); // Aggiunge la notifica all'inizio della lista
-    // Rimuove la notifica dopo 7 secondi
+    statusMessage.prepend(notificationEl);
+    
     setTimeout(() => { if (notificationEl.parentElement) notificationEl.remove(); }, 7000);
-    // Mostra anche una notifica push del browser
     this.showBrowserNotification(`🎯 ${split.kilometer}km Completato!`, `Ritmo: ${split.pace}/km`);
   }
 
-  // Resetta tutti gli elementi dell'interfaccia utente allo stato iniziale (come se l'app fosse appena caricata)
   resetUI() { 
-    document.getElementById('btnStart').classList.remove('d-none');
-    document.getElementById('btnPause').classList.add('d-none');
-    document.getElementById('btnStop').classList.add('d-none');
-    document.getElementById('liveStats').classList.add('d-none');
+    this.updateUIState('ready');
     document.getElementById('autoStartMessage').classList.add('d-none');
     document.getElementById('splitsContainer').style.display = 'none';
     document.getElementById('routeProgress').style.display = 'none';
-    // Rimuove classi di stato dalla card principale
     document.querySelector('.tracking-card').classList.remove('tracking-active', 'tracking-paused');
-    // Resetta valori delle statistiche
+    
     document.getElementById('timer').textContent = '00:00:00';
     document.getElementById('distance').textContent = '0.00';
     document.getElementById('pace').textContent = '0:00';
@@ -1150,74 +1161,65 @@ updateStatusBadge(status) {
     document.getElementById('calories').textContent = '0';
     document.getElementById('elevation').textContent = '+0m';
     document.getElementById('efficiency').textContent = '--';
-    // Resetta notifiche split
+    
     document.getElementById('lastSplitKm').textContent = '1km';
     document.getElementById('lastSplitTime').textContent = '00:00:00';
     document.getElementById('lastSplitPace').textContent = '0:00/km';
-    // Aggiorna badge stato e GPS
-    this.updateStatusBadge('ready');
-    this.updateGPSIndicator(false);
-    this.updateAccuracyIndicator(0); // Resetta accuratezza
-    this.updateBatteryStatus(); // Aggiorna stato batteria
     
-    // Opzionale: Resetta la mappa
+    this.updateAccuracyIndicator(0);
+    this.updateBatteryStatus();
+    
     if (this.miniMap) { 
-      this.polyline.setLatLngs([]); // Rimuove il percorso tracciato
-      // Potresti anche reimpostare la vista o rimuovere il marker se preferisci
+      this.polyline.setLatLngs([]);
     }
   }
 }
 
 // =============================================
-// APP TOUR SYSTEM (Tour Guidato per l'Utente)
+// APP TOUR SYSTEM
 // =============================================
 class AppTour {
   constructor() {
-    // Definisce i passi del tour, associando elementi HTML a messaggi
     this.steps = [
       { element: '#routeSelect', title: '🎯 Percorsi', content: 'Seleziona un percorso predefinito o usa la modalità libera.' },
       { element: '#btnStart', title: '▶️ Inizia', content: 'Tocca qui per attivare il GPS e avviare il tracciamento.' },
       { element: '#liveStats', title: '📊 Statistiche', content: 'Visualizza tempo, distanza, ritmo e velocità in tempo reale.' },
       { element: '#miniMap', title: '🗺️ Mappa', content: 'Segui il tuo percorso in diretta sulla mappa.' }
     ];
-    this.currentStep = 0; // Indice del passo corrente
+    this.currentStep = 0;
   }
 
-  // Avvia il tour se non è già stato completato
   start() {
-    if (localStorage.getItem('appTourCompleted')) return; // Esce se già completato
-    this.currentStep = 0; // Inizia dal primo passo
-    // Ritardo per assicurarsi che la UI sia caricata prima di mostrare il primo step
+    if (localStorage.getItem('appTourCompleted')) return;
+    this.currentStep = 0;
     setTimeout(() => this.showStep(this.currentStep), 500); 
   }
 
-  // Mostra il passo corrente del tour
   showStep(index) {
-    // Se tutti i passi sono stati mostrati, termina il tour
     if (index >= this.steps.length) { 
-      this.removeOverlay(); // Rimuove l'overlay
-      localStorage.setItem('appTourCompleted', 'true'); // Segna il tour come completato
+      this.removeOverlay();
+      localStorage.setItem('appTourCompleted', 'true');
       return; 
     }
-    this.currentStep = index; // Aggiorna l'indice corrente
-    const step = this.steps[index]; // Ottiene i dati del passo corrente
-    const targetElement = document.querySelector(step.element); // Trova l'elemento HTML da evidenziare
     
-    // Se l'elemento non viene trovato, passa al passo successivo
+    this.currentStep = index;
+    const step = this.steps[index];
+    const targetElement = document.querySelector(step.element);
+    
     if (!targetElement) { 
       this.showStep(index + 1); 
       return; 
     }
-    // Crea e mostra l'overlay per il passo corrente
+    
     this.createStepOverlay(step, index);
   }
 
-  // Crea l'elemento overlay e il contenuto del passo corrente
   createStepOverlay(step, index) {
-    this.removeOverlay(); // Rimuove eventuali overlay precedenti
+    this.removeOverlay();
     const overlay = document.createElement('div');
-    overlay.id = 'tourOverlay'; overlay.className = 'tour-overlay';
-    // HTML per il popup del tour
+    overlay.id = 'tourOverlay'; 
+    overlay.className = 'tour-overlay';
+    
     overlay.innerHTML = `
       <div class="tour-step">
         <div class="tour-content card shadow-lg">
@@ -1235,25 +1237,23 @@ class AppTour {
         </div>
       </div>
     `;
-    document.body.appendChild(overlay); // Aggiunge l'overlay al body
-    this.highlightElement(document.querySelector(step.element)); // Evidenzia l'elemento target
-    // Aggiunge listener per i pulsanti "Avanti" e "Salta"
+    
+    document.body.appendChild(overlay);
+    this.highlightElement(document.querySelector(step.element));
+    
     overlay.querySelector('.tour-next').addEventListener('click', () => this.next());
     overlay.querySelector('.tour-skip').addEventListener('click', () => this.skip());
-    // Chiude il tour se si clicca fuori dal popup
     overlay.addEventListener('click', (e) => { if (e.target === overlay) this.skip(); });
   }
 
-  // Applica stili per evidenziare l'elemento target
   highlightElement(element) {
     if (!element) return;
-    element.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease'; // Transizioni fluide
-    element.style.boxShadow = '0 0 0 4px rgba(50, 150, 255, 0.7)'; // Ombra blu
-    element.style.zIndex = '10002'; // Assicura che sia sopra l'overlay
-    element.style.transform = 'scale(1.02)'; // Leggero zoom per farlo risaltare
+    element.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
+    element.style.boxShadow = '0 0 0 4px rgba(50, 150, 255, 0.7)';
+    element.style.zIndex = '10002';
+    element.style.transform = 'scale(1.02)';
   }
 
-  // Rimuove l'evidenziazione da tutti gli elementi del tour
   removeHighlight() {
     this.steps.forEach(step => {
       const el = document.querySelector(step.element);
@@ -1265,42 +1265,37 @@ class AppTour {
     });
   }
 
-  // Rimuove l'overlay del tour
   removeOverlay() { 
-    this.removeHighlight(); // Prima rimuove l'evidenziazione
+    this.removeHighlight();
     const overlay = document.getElementById('tourOverlay'); 
-    if (overlay) overlay.remove(); // Poi rimuove l'elemento overlay
+    if (overlay) overlay.remove();
   }
   
-  next() { this.showStep(this.currentStep + 1); } // Va al passo successivo
-  skip() { this.removeOverlay(); localStorage.setItem('appTourCompleted', 'true'); } // Salta il tour e segna come completato
+  next() { this.showStep(this.currentStep + 1); }
+  skip() { this.removeOverlay(); localStorage.setItem('appTourCompleted', 'true'); }
 }
 
 // =============================================
 // GESTIONE IMPOSTAZIONI UTENTE
 // =============================================
-// Carica le impostazioni salvate in localStorage e le applica all'interfaccia
 function loadSettings() {
-  const settings = JSON.parse(localStorage.getItem('appSettings') || '{}'); // Carica settings o oggetto vuoto
+  const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
   
-  // Imposta valori per i controlli UI
   document.getElementById('themeColor').value = settings.themeColor || 'default';
   document.getElementById('unitSystem').value = settings.unitSystem || 'metric';
   document.getElementById('userWeight').value = settings.userWeight || 70;
-  document.getElementById('audioToggle').checked = settings.audioEnabled !== false; // Valore booleano
+  document.getElementById('audioToggle').checked = settings.audioEnabled !== false;
   document.getElementById('notificationsToggle').checked = settings.notificationsEnabled || false;
   document.getElementById('privacyMode').checked = settings.privacyMode || false;
   
-  // Gestione Dark Mode Toggle
-  const darkModeEnabled = settings.darkModeEnabled === true; // Assicura che sia true/false
+  const darkModeEnabled = settings.darkModeEnabled === true;
   document.getElementById('darkModeToggle').querySelector('.dark-icon').classList.toggle('d-none', !darkModeEnabled);
   document.getElementById('darkModeToggle').querySelector('.light-icon').classList.toggle('d-none', darkModeEnabled);
   document.body.classList.toggle('dark-mode', darkModeEnabled);
   
-  applySettings(settings); // Applica le impostazioni visive (colori)
+  applySettings(settings);
 }
 
-// Salva le impostazioni correnti selezionate dall'utente in localStorage
 function saveSettings() {
   const settings = {
     themeColor: document.getElementById('themeColor').value,
@@ -1309,104 +1304,107 @@ function saveSettings() {
     audioEnabled: document.getElementById('audioToggle').checked,
     notificationsEnabled: document.getElementById('notificationsToggle').checked,
     privacyMode: document.getElementById('privacyMode').checked,
-    darkModeEnabled: document.body.classList.contains('dark-mode') // Salva stato dark mode
+    darkModeEnabled: document.body.classList.contains('dark-mode')
   };
-  localStorage.setItem('appSettings', JSON.stringify(settings)); // Salva in localStorage
-  applySettings(settings); // Ricarica impostazioni visive
-  if (window.tracker) window.tracker.loadUserSettings(); // Aggiorna il tracker se esiste
   
-  // Chiude il modal delle impostazioni
+  localStorage.setItem('appSettings', JSON.stringify(settings));
+  applySettings(settings);
+  
+  if (window.tracker) window.tracker.loadUserSettings();
+  
   const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
   if (modal) modal.hide();
   
-  showTempAlert('Impostazioni salvate!', 'success'); // Mostra notifica di successo
+  showTempAlert('Impostazioni salvate!', 'success');
 }
 
-// Applica le impostazioni visive (tema colore) al body
 function applySettings(settings) {
-  // Rimuove classi tema precedenti
   document.body.className = document.body.className.replace(/\btheme-\w+/g, ''); 
-  // Aggiunge la classe del nuovo tema
   document.body.classList.add(`theme-${settings.themeColor || 'default'}`); 
 }
 
-// Mostra un alert temporaneo in alto allo schermo
 function showTempAlert(message, type) {
   const alert = document.createElement('div');
-  // Classi per stile e posizione fissa
   alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-2 start-50 translate-middle-x w-75 w-md-auto shadow-lg`;
-  alert.style.zIndex = '1051'; // Sopra i modali
-  // Contenuto con messaggio e pulsante chiudi
+  alert.style.zIndex = '1051';
   alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-  document.body.appendChild(alert); // Aggiunge l'alert alla pagina
-  // Rimuove l'alert dopo 3 secondi
+  document.body.appendChild(alert);
+  
   setTimeout(() => { if (alert.parentElement) alert.remove(); }, 3000); 
 }
 
 // =============================================
-// INIZIALIZZAZIONE APP - AL CARICAMENTO DOM
+// INIZIALIZZAZIONE APP
 // =============================================
-let tracker; // Variabile globale per l'istanza di ActivityTracker
+let tracker;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Nasconde la splash screen dopo un breve ritardo
+  // Nasconde splash screen
   setTimeout(() => {
     const splash = document.getElementById('welcomeSplash');
     if (splash) {
-      splash.style.opacity = '0'; // Dissolvenza
-      setTimeout(() => splash.remove(), 500); // Rimuove l'elemento dopo la dissolvenza
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 500);
     }
   }, 1200);
 
-  tracker = new ActivityTracker(); // Crea istanza del tracker
-  loadSettings(); // Carica impostazioni utente
+  // Inizializza tracker
+  tracker = new ActivityTracker();
+  loadSettings();
 
-  // Setup del pulsante Dark Mode Toggle
+  // Setup dark mode toggle
   const darkModeToggle = document.getElementById('darkModeToggle');
   darkModeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode'); // Alterna classe dark-mode
+    document.body.classList.toggle('dark-mode');
     const lightIcon = darkModeToggle.querySelector('.light-icon');
     const darkIcon = darkModeToggle.querySelector('.dark-icon');
-    // Alterna visibilità icone luna/sole
     darkIcon.classList.toggle('d-none'); 
     lightIcon.classList.toggle('d-none');
-    // Salva la preferenza dark mode in localStorage
     localStorage.setItem('darkModeEnabled', document.body.classList.contains('dark-mode'));
   });
 
-  // Event Listeners per i pulsanti principali del tracking
-  document.getElementById('btnStart').addEventListener('click', () => tracker.startTracking());
-  document.getElementById('btnPause').addEventListener('click', () => tracker.pauseTracking());
-  document.getElementById('btnStop').addEventListener('click', () => tracker.stopTracking());
+  // Event listeners per i pulsanti
+  document.getElementById('btnStart').addEventListener('click', () => {
+    console.log('Start clickato');
+    tracker.startTracking();
+  });
   
-  // Event Listener per salvare le impostazioni dal modal
+  document.getElementById('btnPause').addEventListener('click', () => {
+    console.log('Pause clickato');
+    tracker.pauseTracking();
+  });
+  
+  document.getElementById('btnStop').addEventListener('click', () => {
+    console.log('Stop clickato');
+    tracker.stopTracking();
+  });
+  
+  // Salva impostazioni
   document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
   
-  // Aggiorna lo stato della batteria ogni minuto
-  tracker.updateBatteryStatus(); // Aggiornamento iniziale
-  setInterval(tracker.updateBatteryStatus.bind(tracker), 60000); // Aggiornamenti periodici
+  // Aggiorna batteria
+  tracker.updateBatteryStatus();
+  setInterval(tracker.updateBatteryStatus.bind(tracker), 60000);
   
-  // Avvia il tour guidato solo se non è stato completato
+  // Avvia tour
   if (!localStorage.getItem('appTourCompleted')) {
      const tour = new AppTour();
      tour.start();
   }
 
-  // Gestione dell'uscita accidentale dalla pagina durante il tracciamento
+  // Gestione uscita pagina
   window.addEventListener('beforeunload', (e) => {
-    // Se il tracciamento è attivo e non in pausa, mostra un messaggio di conferma
     if (tracker.isTracking && !tracker.isPaused) {
-      e.preventDefault(); // Necessario per alcuni browser
-      e.returnValue = 'Tracciamento in corso. Uscire?'; // Messaggio mostrato all'utente
+      e.preventDefault();
+      e.returnValue = 'Tracciamento in corso. Uscire?';
     }
   });
 
-  // Recupero sessione di tracciamento interrotta da localStorage
+  // Recupero sessione
   const backup = localStorage.getItem('activityBackup');
-  if (backup) { // Se esiste un backup
+  if (backup) {
     try {
-      const backupData = JSON.parse(backup); // Parsa i dati del backup
-      // Crea e mostra il modal di recupero sessione
+      const backupData = JSON.parse(backup);
       const modalHtml = `
         <div class="modal fade" id="recoveryModal" tabindex="-1" aria-labelledby="recoveryModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
@@ -1432,19 +1430,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       `;
-      document.body.insertAdjacentHTML('beforeend', modalHtml); // Aggiunge il modal HTML
-      new bootstrap.Modal(document.getElementById('recoveryModal')).show(); // Mostra il modal
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      new bootstrap.Modal(document.getElementById('recoveryModal')).show();
       
-      // Funzione globale per gestire il recupero della sessione
       window.recoverSession = () => {
-        localStorage.removeItem('activityBackup'); // Rimuove il backup dopo averlo gestito
+        localStorage.removeItem('activityBackup');
         showTempAlert('Sessione recuperata. Premi "RIPRENDI" o "INIZIA" per continuare.', 'info');
-        // Nota: Il ripristino completo dei dati nel tracker richiederebbe logica aggiuntiva qui.
-        // Per ora, l'utente viene informato e può riprendere o iniziare una nuova attività.
       };
     } catch (error) { 
       console.error('Errore recupero sessione:', error); 
-      localStorage.removeItem('activityBackup'); // Rimuove backup corrotto
+      localStorage.removeItem('activityBackup');
     }
   }
 });
