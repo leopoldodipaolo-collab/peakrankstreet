@@ -137,7 +137,7 @@ class Route(db.Model):
     __tablename__ = 'Routes'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, index=True)
-    description = db.Column(db.String(500), nullable=True)
+    description = db.Column(db.Text, nullable=True)
     coordinates = db.Column(db.Text, nullable=False)
     duration = db.Column(db.Integer)
     activity_type = db.Column(db.String(50), nullable=False, default='Corsa', index=True)

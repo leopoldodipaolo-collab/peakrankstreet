@@ -349,15 +349,21 @@ async function loadClassicRoutes(city) {
 // FUNZIONE HELPER: CREA CARD PERCORSO CLASSICO
 // =======================================================
 function createClassicRouteCard(route) {
-    // Trasforma automaticamente i dati in formato compatibile con createTopTimesHtml
+    // Limita la lunghezza della descrizione (in caratteri)
+    const maxLength = 180;
+    const shortDescription = route.description && route.description.length > maxLength
+        ? route.description.substring(0, maxLength).trim() + "..."
+        : route.description || "";
+
+    // Top 5 tempi
     const topTimes = (route.top_5_times || route.top_5_activities || []).map(t => ({
         username: t.username,
         profile_image: t.profile_image,
         duration: t.duration
     }));
-
     const topTimesHtml = createTopTimesHtml(topTimes);
 
+    // Immagine di copertina
     const featuredImageHtml = route.featured_image
         ? `<img src="/static/featured_routes/${route.featured_image}" 
                 class="card-img-top route-card-img" alt="${route.name}">`
@@ -371,30 +377,30 @@ function createClassicRouteCard(route) {
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0 text-truncate">${route.name}</h5>
                 <div class="badge-container">
-                    <span class="badge bg-light text-dark me-1" data-bs-toggle="tooltip" title="Attività: ${route.activity_type}">${route.activity_type}</span>
-                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Difficoltà: ${route.difficulty}">${route.difficulty}</span>
+                    <span class="badge bg-light text-dark me-1" title="Attività: ${route.activity_type}">${route.activity_type}</span>
+                    <span class="badge bg-warning text-dark" title="Difficoltà: ${route.difficulty}">${route.difficulty}</span>
                 </div>
             </div>
 
             ${featuredImageHtml}
 
             <div class="card-body d-flex flex-column">
-                <p class="card-text text-truncate-3">${route.description}</p>
+                <!-- 🔹 Mostra solo una descrizione breve -->
+                <p class="card-text">${shortDescription}</p>
                 <div class="route-details mb-3">
                     ${createRouteDetailsHtml(route)}
                 </div>
 
-                <!-- Top 5 Tempi -->
                 ${topTimesHtml}
 
                 <div class="row mt-auto g-3">
                     <div class="col-12 col-md-7"></div>
                     <div class="col-12 col-md-5">
                         <div class="action-buttons h-100 d-flex flex-column justify-content-between">
-                            <a href="/activities/record?route_id=${route.id}" class="btn btn-success btn-sm w-100 mb-2 action-btn">
+                            <a href="/activities/record?route_id=${route.id}" class="btn btn-success btn-sm w-100 mb-2">
                                 <i class="bi bi-stopwatch me-1"></i>Registra Tempo
                             </a>
-                            <a href="/challenges/new?route_id=${route.id}" class="btn btn-warning btn-sm w-100 action-btn">
+                            <a href="/challenges/new?route_id=${route.id}" class="btn btn-warning btn-sm w-100">
                                 <i class="bi bi-trophy me-1"></i>Sfida
                             </a>
                         </div>
@@ -406,14 +412,14 @@ function createClassicRouteCard(route) {
                 <small class="text-muted">
                     <i class="bi bi-activity me-1"></i>${route.total_activities} attività
                 </small>
-                <a href="/route/${route.id}" class="btn btn-primary btn-sm action-btn">
+                <a href="/route/${route.id}" class="btn btn-primary btn-sm">
                     <i class="bi bi-eye me-1"></i>Dettagli
                 </a>
             </div>
         </div>
-    </div>
-    `;
+    </div>`;
 }
+
 
 // =======================================================
 // FUNZIONE HELPER: CREA HTML DETTAGLI PERCORSO
