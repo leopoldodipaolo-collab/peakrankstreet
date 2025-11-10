@@ -3,110 +3,813 @@
 {% block title %}Classifica - Distanza Totale{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
-    <div class="mb-4">
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left-circle me-1"></i> Torna alla Home
-        </a>
+<div class="container-fluid px-3 py-3">
+    <!-- Header responsive -->
+    <div class="row align-items-center mb-3">
+        <div class="col-6 col-md-4">
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> 
+                <span class="d-none d-sm-inline">Home</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-8 text-end">
+            <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm active timeframe-btn" data-timeframe="weekly">
+                    <span class="d-none d-md-inline">Settimana</span>
+                    <span class="d-md-none">Sett.</span>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm timeframe-btn" data-timeframe="monthly">
+                    <span class="d-none d-md-inline">Mese</span>
+                    <span class="d-md-none">Mese</span>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm timeframe-btn" data-timeframe="all">
+                    <span class="d-none d-md-inline">Totale</span>
+                    <span class="d-md-none">Totale</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="card shadow-sm rounded-4">
-        <div class="card-header bg-primary text-white text-center rounded-top-4">
-            <h2 class="mb-0">
-                <i class="bi bi-star-fill me-2"></i>Classifica Generale: Distanza Totale
-            </h2>
+    <!-- Contatori per tutti i dispositivi -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-4">
+            <div class="card bg-primary text-white text-center py-2">
+                <div class="fs-6 fw-bold counter" data-target="{{ leaderboard_data|length }}">0</div>
+                <small class="d-none d-md-block">Atleti</small>
+                <small class="d-md-none">Atleti</small>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="col-6 col-md-4">
+            <div class="card bg-success text-white text-center py-2">
+                <div class="fs-6 fw-bold counter" data-target="{{ total_kms }}">0</div>
+                <small class="d-none d-md-block">Km Totali</small>
+                <small class="d-md-none">Km</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-4 d-none d-md-block">
+            <div class="card bg-info text-white text-center py-2">
+                <div class="fs-6 fw-bold">+5.2%</div>
+                <small>Crescita Settimana</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card principale -->
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mb-3">
+        <div class="card-header bg-gradient-primary text-white py-3">
+            <div class="text-center">
+                <h1 class="h5 mb-1 fw-bold">
+                    <i class="bi bi-trophy-fill me-2"></i>Classifica Live
+                </h1>
+                <p class="mb-0 small opacity-75" id="last-update">Distanza Totale</p>
+            </div>
+            
+            <!-- Barra di ricerca -->
+            <div class="mt-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white text-dark">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="search-athlete" class="form-control" placeholder="Cerca atleta...">
+                    <button class="btn btn-light d-none d-md-block" type="button" id="clear-search">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
             {% if leaderboard_data %}
             
-            <!-- Desktop Table -->
+            <!-- Podio - visibile su tutti i dispositivi ma con layout diverso -->
+            <div class="bg-light py-3 podium-section">
+                <div class="container-fluid">
+                    <div class="row justify-content-center g-2" id="podium-container">
+                        <!-- Podio viene popolato via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabella per desktop -->
             <div class="d-none d-md-block table-responsive">
-                <table class="table table-hover align-middle mt-3">
-                    <thead class="table-primary text-center">
+                <table class="table table-hover align-middle mb-0" id="leaderboard-table">
+                    <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Atleta</th>
-                            <th>Distanza Totale (km)</th>
+                            <th class="ps-3" style="width: 80px;">
+                                <button class="btn btn-sm sort-btn" data-sort="position">
+                                    Pos <i class="bi bi-arrow-down"></i>
+                                </button>
+                            </th>
+                            <th>
+                                <button class="btn btn-sm sort-btn" data-sort="name">
+                                    Atleta <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
+                            <th class="text-end pe-3" style="width: 120px;">
+                                <button class="btn btn-sm sort-btn" data-sort="distance">
+                                    Distanza <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
+                            <th class="text-center" style="width: 100px;">
+                                <button class="btn btn-sm sort-btn" data-sort="progress">
+                                    Trend <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for entry in leaderboard_data %}
-                        <tr class="{% if loop.index <= 3 %}table-warning{% endif %}">
-                            <td class="text-center">
-                                {% if loop.index == 1 %}
-                                    <i class="bi bi-trophy-fill text-warning"></i>
-                                {% elif loop.index == 2 %}
-                                    <i class="bi bi-trophy-fill" style="color: silver;"></i>
-                                {% elif loop.index == 3 %}
-                                    <i class="bi bi-trophy-fill" style="color: #cd7f32;"></i>
-                                {% else %}
-                                    {{ loop.index }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                                         class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                                    <div>
-                                        <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" 
-                                           class="text-decoration-none text-primary fw-semibold">
-                                            {{ entry.username }}
-                                        </a>
-                                        {# --- CORREZIONE QUI --- #}
-                                        {# Mostra il badge solo se il titolo esiste #}
-                                        {% if entry.title %}
-                                            <span class="badge bg-secondary fw-normal ms-1">{{ entry.title }}</span> 
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="text-center fw-bold">{{ "%.2f"|format(entry.total_distance) }}</td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="leaderboard-body-desktop">
+                        <!-- Dati desktop -->
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Mobile Cards -->
-            <div class="d-md-none">
-                {% for entry in leaderboard_data %}
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            {% if loop.index == 1 %}
-                                <i class="bi bi-trophy-fill text-warning fs-3 me-2"></i>
-                            {% elif loop.index == 2 %}
-                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: silver;"></i>
-                            {% elif loop.index == 3 %}
-                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: #cd7f32;"></i>
-                            {% else %}
-                                <span class="fw-bold fs-4 me-3">{{ loop.index }}</span>
-                            {% endif %}
-                            <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                                 class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                            <div>
-                                <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="text-decoration-none text-primary fw-semibold">
-                                    {{ entry.username }}
-                                </a>
-                                {# --- CORREZIONE ANCHE QUI PER CONSISTENZA --- #}
-                                {% if entry.title %}
-                                    <div><span class="badge bg-secondary fw-normal">{{ entry.title }}</span></div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="fw-bold">{{ "%.2f"|format(entry.total_distance) }} km</div>
-                    </div>
-                </div>
-                {% endfor %}
+
+            <!-- Lista card per mobile -->
+            <div class="d-md-none" id="mobile-leaderboard">
+                <!-- Card atleti per mobile -->
             </div>
-            
+
+            <!-- Paginazione unificata -->
+            <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                <div class="text-muted small">
+                    <span id="showing-count">{{ leaderboard_data|length }}</span> di {{ leaderboard_data|length }} atleti
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary btn-sm" id="prev-page">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" id="next-page">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
             {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-info-circle display-4 mb-3"></i>
-                <p>Nessuna distanza registrata.<br>Inizia a correre e scala la classifica!</p>
+            <!-- Stato vuoto -->
+            <div class="text-center py-5">
+                <i class="bi bi-bar-chart display-4 text-muted mb-3"></i>
+                <h5 class="text-muted mb-2">Nessuna attività registrata</h5>
+                <p class="text-muted small mb-3">Inizia a correre per entrare in classifica!</p>
+                <a href="{{ url_for('main.record_activity') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Aggiungi attività
+                </a>
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Toggle aggiornamento live -->
+    <div class="card bg-light border-0 rounded-3 mb-3">
+        <div class="card-body py-2">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="live-update" checked>
+                <label class="form-check-label small" for="live-update">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>Aggiornamento Live
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pulsante azioni rapide - solo mobile -->
+    <div class="d-md-none position-fixed bottom-0 end-0 m-3" style="z-index: 1030;">
+        <div class="dropdown">
+            <button class="btn btn-primary rounded-circle shadow" type="button" 
+                    data-bs-toggle="dropdown" style="width: 50px; height: 50px;">
+                <i class="bi bi-lightning-fill"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('main.record_activity') }}">
+                    <i class="bi bi-plus-circle me-2"></i>Nuova Attività
+                </a></li>
+                <li><a class="dropdown-item" href="#" id="refresh-data">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Aggiorna
+                </a></li>
+                <li><a class="dropdown-item" href="#search-athlete">
+                    <i class="bi bi-search me-2"></i>Cerca
+                </a></li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+<!-- Modal dettagli atleta -->
+<div class="modal fade" id="athleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Dettagli Atleta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="athleteModalBody">
+                <!-- Contenuto caricato via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template per card atleta mobile -->
+<template id="mobile-athlete-card">
+    <div class="card mb-2 athlete-card-mobile border-0 shadow-sm">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-2 text-center">
+                    <div class="position-relative">
+                        <span class="badge athlete-position-mobile fw-bold"></span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <img src="" class="rounded-circle athlete-avatar-mobile border" 
+                         width="45" height="45" alt="Avatar">
+                </div>
+                <div class="col-5">
+                    <div class="athlete-name-mobile fw-bold mb-1"></div>
+                    <div class="athlete-distance-mobile text-primary fw-bold fs-6"></div>
+                    <div class="athlete-badges-mobile"></div>
+                </div>
+                <div class="col-2 text-end">
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Template podio unificato -->
+<template id="podium-item">
+    <div class="col-md-4 col-12 mb-2">
+        <div class="text-center podium-item">
+            <div class="position-relative mb-2">
+                <div class="podium-avatar mx-auto">
+                    <img src="" class="rounded-circle border athlete-avatar-podium" 
+                         width="60" height="60" alt="Avatar">
+                </div>
+                <span class="position-absolute top-0 start-50 translate-middle badge podium-badge fw-bold"></span>
+            </div>
+            <div class="athlete-name-podium fw-bold text-truncate px-2"></div>
+            <div class="athlete-distance-podium text-muted"></div>
+            <div class="athlete-badges-podium mt-1"></div>
+        </div>
+    </div>
+</template>
+
+<style>
+/* Reset per scroll */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.container-fluid {
+    padding-left: 12px;
+    padding-right: 12px;
+    overflow: visible !important;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    overflow: visible !important;
+}
+
+.card-body {
+    overflow: visible !important;
+}
+
+/* Podio responsive */
+.podium-section {
+    overflow: visible !important;
+}
+
+.podium-item {
+    padding: 15px 10px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.podium-item:hover {
+    transform: translateY(-2px);
+}
+
+.podium-avatar {
+    width: 60px;
+    height: 60px;
+}
+
+.podium-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
+/* Card atleta mobile */
+.athlete-card-mobile {
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    background: #fff;
+    cursor: pointer;
+}
+
+.athlete-card-mobile:active {
+    transform: scale(0.98);
+    background: #f8f9fa;
+}
+
+.athlete-position-mobile {
+    font-size: 0.8rem;
+    min-width: 30px;
+    padding: 6px 8px;
+}
+
+.athlete-avatar-mobile {
+    border: 3px solid #e9ecef;
+}
+
+.athlete-name-mobile {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.athlete-distance-mobile {
+    font-size: 0.85rem;
+}
+
+/* Tabella desktop */
+.table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Modal responsive */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px;
+    }
+}
+
+/* Animazioni */
+.athlete-card-mobile {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Touch-friendly */
+.btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Scrollbar personalizzata */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Safe area per iPhone */
+@supports(padding: max(0px)) {
+    .container-fluid {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+}
+
+/* Gradiente header */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Colori posizioni */
+.bg-gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important; }
+.bg-silver { background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%) !important; }
+.bg-bronze { background: linear-gradient(135deg, #CD7F32 0%, #A65C00 100%) !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dati della classifica
+    const leaderboardData = {{ leaderboard_data | tojson | safe }};
+    let currentSort = { field: 'position', direction: 'asc' };
+    let currentPage = 1;
+    const pageSizeMobile = 8;
+    const pageSizeDesktop = 15;
+    let filteredData = [...leaderboardData];
+    let liveUpdateInterval;
+
+    // Inizializzazione
+    initApplication();
+
+    function initApplication() {
+        initCounters();
+        renderPodium();
+        renderDesktopLeaderboard();
+        renderMobileLeaderboard();
+        initEventListeners();
+        startLiveUpdates();
+        
+        // Nascondi elementi non necessari in base al dispositivo
+        toggleViewBasedOnDevice();
+    }
+
+    function initCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            animateCounter(counter, target, 1500);
+        });
+    }
+
+    function animateCounter(element, target, duration) {
+        let start = 0;
+        const increment = target / (duration / 16);
+        
+        function updateCounter() {
+            start += increment;
+            if (start < target) {
+                element.textContent = Math.floor(start);
+                requestAnimationFrame(updateCounter);
+            } else {
+                element.textContent = target;
+            }
+        }
+        updateCounter();
+    }
+
+    function renderPodium() {
+        const podiumContainer = document.getElementById('podium-container');
+        const template = document.getElementById('podium-item');
+        
+        podiumContainer.innerHTML = '';
+        
+        const podiumAthletes = filteredData.slice(0, 3);
+        
+        podiumAthletes.forEach((athlete, index) => {
+            const clone = template.content.cloneNode(true);
+            const podiumItem = clone.querySelector('.podium-item');
+            
+            const positions = ['1°', '2°', '3°'];
+            const badgeClasses = ['bg-gold text-dark', 'bg-silver text-dark', 'bg-bronze text-white'];
+            const borderColors = ['border-warning', 'border-secondary', 'border-brown'];
+            
+            // Imposta avatar
+            const avatar = clone.querySelector('.athlete-avatar-podium');
+            avatar.src = `/static/profile_pics/${athlete.profile_image}`;
+            avatar.className = `rounded-circle border ${borderColors[index]} athlete-avatar-podium`;
+            avatar.style.borderWidth = '3px';
+            
+            // Imposta badge posizione
+            const badge = clone.querySelector('.podium-badge');
+            badge.textContent = positions[index];
+            badge.className = `position-absolute top-0 start-50 translate-middle badge ${badgeClasses[index]} podium-badge`;
+            
+            // Imposta nome e distanza
+            clone.querySelector('.athlete-name-podium').textContent = athlete.username;
+            clone.querySelector('.athlete-distance-podium').textContent = `${athlete.total_distance} km`;
+            
+            // Badge titolo
+            if (athlete.title) {
+                clone.querySelector('.athlete-badges-podium').innerHTML = 
+                    `<span class="badge bg-primary small">${athlete.title}</span>`;
+            }
+            
+            // Click handler
+            podiumItem.addEventListener('click', () => showAthleteDetails(athlete));
+            
+            podiumContainer.appendChild(clone);
+        });
+    }
+
+    function renderDesktopLeaderboard() {
+        const tbody = document.getElementById('leaderboard-body-desktop');
+        const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageData = filteredData.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        pageData.forEach((athlete, index) => {
+            const globalIndex = startIndex + index;
+            const row = document.createElement('tr');
+            row.className = `leaderboard-row ${globalIndex < 3 ? 'table-warning' : ''}`;
+            
+            row.innerHTML = `
+                <td class="ps-3">
+                    <div class="d-flex align-items-center">
+                        <div class="${getPositionClass(globalIndex + 1)} rounded-circle d-flex align-items-center justify-content-center me-2" 
+                             style="width: 35px; height: 35px;">
+                            <span class="fw-bold text-white">${globalIndex + 1}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="/static/profile_pics/${athlete.profile_image}" 
+                             class="rounded-circle me-3" width="45" height="45" 
+                             alt="${athlete.username}">
+                        <div>
+                            <a href="#" class="text-decoration-none fw-semibold text-dark athlete-name-link">
+                                ${athlete.username}
+                            </a>
+                            ${athlete.title ? `<span class="badge bg-primary fw-normal ms-2">${athlete.title}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end pe-3">
+                    <div class="fw-bold text-primary fs-6">${athlete.total_distance} km</div>
+                    <div class="text-muted small">${getLastActivityText()}</div>
+                </td>
+                <td class="text-center">
+                    <div class="trend-indicator ${getTrendClass()}">
+                        <i class="bi ${getTrendIcon()} me-1"></i>
+                        <small>${getTrendText()}</small>
+                    </div>
+                </td>
+            `;
+            
+            row.querySelector('.athlete-name-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showAthleteDetails(athlete);
+            });
+            
+            tbody.appendChild(row);
+        });
+        
+        updatePagination();
+    }
+
+    function renderMobileLeaderboard() {
+        const container = document.getElementById('mobile-leaderboard');
+        const template = document.getElementById('mobile-athlete-card');
+        const pageSize = pageSizeMobile;
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageData = filteredData.slice(startIndex, endIndex);
+        
+        container.innerHTML = '';
+        
+        pageData.forEach((athlete, index) => {
+            const globalIndex = startIndex + index;
+            const clone = template.content.cloneNode(true);
+            const card = clone.querySelector('.athlete-card-mobile');
+            
+            // Imposta posizione
+            const positionBadge = clone.querySelector('.athlete-position-mobile');
+            positionBadge.textContent = `${globalIndex + 1}°`;
+            positionBadge.className = `badge athlete-position-mobile ${getPositionClass(globalIndex + 1)}`;
+            
+            // Imposta avatar
+            clone.querySelector('.athlete-avatar-mobile').src = `/static/profile_pics/${athlete.profile_image}`;
+            
+            // Imposta nome e distanza
+            clone.querySelector('.athlete-name-mobile').textContent = athlete.username;
+            clone.querySelector('.athlete-distance-mobile').textContent = `${athlete.total_distance} km`;
+            
+            // Badge titolo
+            if (athlete.title) {
+                clone.querySelector('.athlete-badges-mobile').innerHTML = 
+                    `<span class="badge bg-primary small">${athlete.title}</span>`;
+            }
+            
+            // Click handler
+            card.addEventListener('click', () => showAthleteDetails(athlete));
+            
+            container.appendChild(clone);
+        });
+        
+        updatePagination();
+    }
+
+    function getPositionClass(position) {
+        switch(position) {
+            case 1: return 'bg-warning';
+            case 2: return 'bg-secondary';
+            case 3: return 'bg-brown';
+            default: return 'bg-light text-dark';
+        }
+    }
+
+    function getLastActivityText() {
+        const texts = ['Oggi', 'Ieri', '2gg fa'];
+        return texts[Math.floor(Math.random() * texts.length)];
+    }
+
+    function getTrendClass() {
+        const trends = ['text-success', 'text-danger', 'text-muted'];
+        return trends[Math.floor(Math.random() * trends.length)];
+    }
+
+    function getTrendIcon() {
+        const icons = ['bi-arrow-up-right', 'bi-arrow-down-right', 'bi-dash'];
+        return icons[Math.floor(Math.random() * icons.length)];
+    }
+
+    function getTrendText() {
+        const texts = ['+5%', '-2%', 'Stabile'];
+        return texts[Math.floor(Math.random() * texts.length)];
+    }
+
+    function initEventListeners() {
+        // Filtri temporali
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                simulateDataRefresh();
+            });
+        });
+
+        // Ricerca
+        document.getElementById('search-athlete').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredData = leaderboardData.filter(athlete => 
+                athlete.username.toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+            renderAllViews();
+        });
+
+        // Pulizia ricerca
+        const clearSearch = document.getElementById('clear-search');
+        if (clearSearch) {
+            clearSearch.addEventListener('click', function() {
+                document.getElementById('search-athlete').value = '';
+                filteredData = [...leaderboardData];
+                currentPage = 1;
+                renderAllViews();
+            });
+        }
+
+        // Paginazione
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderAllViews();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+            if (currentPage * pageSize < filteredData.length) {
+                currentPage++;
+                renderAllViews();
+            }
+        });
+
+        // Aggiornamento live
+        document.getElementById('live-update').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                startLiveUpdates();
+            } else {
+                stopLiveUpdates();
+            }
+        });
+
+        // Refresh dati
+        const refreshBtn = document.getElementById('refresh-data');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                simulateDataRefresh();
+            });
+        }
+
+        // Ridimensionamento finestra
+        window.addEventListener('resize', toggleViewBasedOnDevice);
+    }
+
+    function renderAllViews() {
+        renderPodium();
+        if (isMobile()) {
+            renderMobileLeaderboard();
+        } else {
+            renderDesktopLeaderboard();
+        }
+    }
+
+    function toggleViewBasedOnDevice() {
+        if (isMobile()) {
+            document.getElementById('mobile-leaderboard').classList.remove('d-none');
+            document.getElementById('leaderboard-table').closest('.table-responsive').classList.add('d-none');
+        } else {
+            document.getElementById('mobile-leaderboard').classList.add('d-none');
+            document.getElementById('leaderboard-table').closest('.table-responsive').classList.remove('d-none');
+        }
+        updatePagination();
+    }
+
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+
+    function updatePagination() {
+        const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+        const showingCount = document.getElementById('showing-count');
+        const total = filteredData.length;
+        const start = (currentPage - 1) * pageSize + 1;
+        const end = Math.min(currentPage * pageSize, total);
+        
+        showingCount.textContent = `${start}-${end}`;
+        
+        document.getElementById('prev-page').disabled = currentPage === 1;
+        document.getElementById('next-page').disabled = end >= total;
+    }
+
+    function showAthleteDetails(athlete) {
+        document.getElementById('athleteModalLabel').textContent = `Profilo di ${athlete.username}`;
+        document.getElementById('athleteModalBody').innerHTML = `
+            <div class="text-center mb-4">
+                <img src="/static/profile_pics/${athlete.profile_image}" 
+                     class="rounded-circle mb-3" width="100" height="100" 
+                     alt="${athlete.username}">
+                <h4>${athlete.username}</h4>
+                ${athlete.title ? `<span class="badge bg-primary fs-6">${athlete.title}</span>` : ''}
+            </div>
+            
+            <div class="row text-center mb-4">
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-primary mb-1">${athlete.total_distance}</h5>
+                        <small class="text-muted">Km Totali</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-success mb-1">${Math.floor(Math.random() * 50) + 10}</h5>
+                        <small class="text-muted">Attività</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-info mb-1">#${leaderboardData.indexOf(athlete) + 1}</h5>
+                        <small class="text-muted">Posizione</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <a href="/user/${athlete.id}" class="btn btn-primary">
+                    Vedi Profilo Completo
+                </a>
+            </div>
+        `;
+        
+        new bootstrap.Modal(document.getElementById('athleteModal')).show();
+    }
+
+    function simulateDataRefresh() {
+        document.getElementById('last-update').innerHTML = 
+            `<small>Aggiornato: ${new Date().toLocaleTimeString()}</small>`;
+        
+        // Simula variazione dati
+        leaderboardData.forEach(athlete => {
+            const variation = (Math.random() - 0.5) * 0.02;
+            athlete.total_distance = parseFloat((athlete.total_distance * (1 + variation)).toFixed(2));
+        });
+        
+        leaderboardData.sort((a, b) => b.total_distance - a.total_distance);
+        filteredData = [...leaderboardData];
+        
+        renderAllViews();
+    }
+
+    function startLiveUpdates() {
+        stopLiveUpdates();
+        liveUpdateInterval = setInterval(() => {
+            if (document.getElementById('live-update').checked) {
+                simulateDataRefresh();
+            }
+        }, 10000);
+    }
+
+    function stopLiveUpdates() {
+        if (liveUpdateInterval) {
+            clearInterval(liveUpdateInterval);
+        }
+    }
+
+    // Cleanup
+    window.addEventListener('beforeunload', stopLiveUpdates);
+});
+</script>
 {% endblock %}

@@ -14,9 +14,9 @@
                 </div>
                 <div class="col-md-6">
                     <h1 class="display-5 fw-bold mb-0">
-                        {{ user.username }} 
+                        {{ user.username }}
                         {% if user.surname %} {# Controlla se il cognome esiste prima di mostrarlo #}
-                            <small class="text-muted fs-5"><i class="bi bi-person-badge"></i> {{ user.surname }}</small>
+                            <small class="text-muted fs-6"><i class="bi bi-person-badge"></i> {{ user.surname }}</small>
                         {% endif %}
                     </h1>
                     {% if user.title %}

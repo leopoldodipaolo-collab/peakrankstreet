@@ -3,107 +3,787 @@
 {% block title %}Classifica - Percorsi Creati{% endblock %}
 
 {% block content %}
-<div class="container mt-5 pt-5">
-    <div class="mb-4">
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left-circle me-1"></i> Torna alla Home
-        </a>
+<div class="container-fluid px-3 py-3">
+    <!-- Header responsive -->
+    <div class="row align-items-center mb-3">
+        <div class="col-6 col-md-4">
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> 
+                <span class="d-none d-sm-inline">Home</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-8 text-end">
+            <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm active timeframe-btn" data-timeframe="weekly">
+                    <span class="d-none d-md-inline">Settimana</span>
+                    <span class="d-md-none">Sett.</span>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm timeframe-btn" data-timeframe="monthly">
+                    <span class="d-none d-md-inline">Mese</span>
+                    <span class="d-md-none">Mese</span>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm timeframe-btn" data-timeframe="all">
+                    <span class="d-none d-md-inline">Totale</span>
+                    <span class="d-md-none">Totale</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="card shadow-sm rounded-4">
-        <div class="card-header bg-primary text-white text-center rounded-top-4">
-            <h2 class="mb-0">
-                <i class="bi bi-list-check me-2"></i>Classifica Generale: Percorsi Creati
-            </h2>
+    <!-- Contatori per tutti i dispositivi -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-4">
+            <div class="card bg-info text-white text-center py-2">
+                <div class="fs-6 fw-bold counter" data-target="{{ leaderboard_data|length }}">0</div>
+                <small class="d-none d-md-block">Creatori</small>
+                <small class="d-md-none">Creatori</small>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="col-6 col-md-4">
+            <div class="card bg-success text-white text-center py-2">
+                <div class="fs-6 fw-bold counter" data-target="{{ total_routes }}">0</div>
+                <small class="d-none d-md-block">Percorsi Totali</small>
+                <small class="d-md-none">Percorsi</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-4 d-none d-md-block">
+            <div class="card bg-warning text-white text-center py-2">
+                <div class="fs-6 fw-bold">+{{ growth_percentage }}%</div>
+                <small>Crescita Settimana</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card principale -->
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden mb-3">
+        <div class="card-header bg-gradient-info text-white py-3">
+            <div class="text-center">
+                <h1 class="h5 mb-1 fw-bold">
+                    <i class="bi bi-list-check me-2"></i>Classifica Creatori
+                </h1>
+                <p class="mb-0 small opacity-75" id="last-update">Percorsi Creati</p>
+            </div>
+            
+            <!-- Barra di ricerca -->
+            <div class="mt-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white text-dark">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="search-creator" class="form-control" placeholder="Crea creatore...">
+                    <button class="btn btn-light d-none d-md-block" type="button" id="clear-search">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
             {% if leaderboard_data %}
             
-            <!-- Desktop Table -->
+            <!-- Podio - visibile su tutti i dispositivi -->
+            <div class="bg-light py-3 podium-section">
+                <div class="container-fluid">
+                    <div class="row justify-content-center g-2" id="podium-container">
+                        <!-- Podio viene popolato via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabella per desktop -->
             <div class="d-none d-md-block table-responsive">
-                <table class="table table-hover align-middle mt-3">
-                    <thead class="table-primary text-center">
+                <table class="table table-hover align-middle mb-0" id="leaderboard-table">
+                    <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Atleta</th>
-                            <th>Percorsi Creati</th>
+                            <th class="ps-3" style="width: 80px;">
+                                <button class="btn btn-sm sort-btn" data-sort="position">
+                                    Pos <i class="bi bi-arrow-down"></i>
+                                </button>
+                            </th>
+                            <th>
+                                <button class="btn btn-sm sort-btn" data-sort="name">
+                                    Creatore <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
+                            <th class="text-end pe-3" style="width: 120px;">
+                                <button class="btn btn-sm sort-btn" data-sort="routes">
+                                    Percorsi <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
+                            <th class="text-center" style="width: 100px;">
+                                <button class="btn btn-sm sort-btn" data-sort="activity">
+                                    Attività <i class="bi bi-arrow-down-up"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for entry in leaderboard_data %}
-                        <tr class="{% if loop.index <= 3 %}table-warning{% endif %}">
-                            <td class="text-center">
-                                {% if loop.index == 1 %}
-                                    <i class="bi bi-trophy-fill text-warning"></i>
-                                {% elif loop.index == 2 %}
-                                    <i class="bi bi-trophy-fill" style="color: silver;"></i>
-                                {% elif loop.index == 3 %}
-                                    <i class="bi bi-trophy-fill" style="color: #cd7f32;"></i>
-                                {% else %}
-                                    {{ loop.index }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                                         class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                                    <div>
-                                        <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="text-decoration-none text-primary fw-semibold">
-                                            {{ entry.username }}
-                                        </a>
-                                        {# Aggiunto per coerenza con l'altra classifica #}
-                                        {% if entry.title %}
-                                            <span class="badge bg-secondary fw-normal ms-1">{{ entry.title }}</span> 
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="text-center fw-bold">{{ entry.total_routes_created }}</td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="leaderboard-body-desktop">
+                        <!-- Dati desktop -->
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Mobile Cards -->
-            <div class="d-md-none">
-                {% for entry in leaderboard_data %}
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            {% if loop.index == 1 %}
-                                <i class="bi bi-trophy-fill text-warning fs-3 me-2"></i>
-                            {% elif loop.index == 2 %}
-                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: silver;"></i>
-                            {% elif loop.index == 3 %}
-                                <i class="bi bi-trophy-fill fs-3 me-2" style="color: #cd7f32;"></i>
-                            {% else %}
-                                <span class="fw-bold fs-4 me-3">{{ loop.index }}</span>
-                            {% endif %}
-                            <img src="{{ url_for('static', filename='profile_pics/' + entry.profile_image) }}" 
-                                 class="rounded-circle me-3" width="50" height="50" alt="Avatar {{ entry.username }}">
-                            <div>
-                                <a href="{{ url_for('main.user_profile', user_id=entry.id) }}" class="text-decoration-none text-primary fw-semibold">
-                                    {{ entry.username }}
-                                </a>
-                                {% if entry.title %}
-                                    <div><span class="badge bg-secondary fw-normal">{{ entry.title }}</span></div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="fw-bold">{{ entry.total_routes_created }}</div>
-                    </div>
-                </div>
-                {% endfor %}
+
+            <!-- Lista card per mobile -->
+            <div class="d-md-none" id="mobile-leaderboard">
+                <!-- Card creatori per mobile -->
             </div>
-            
+
+            <!-- Paginazione unificata -->
+            <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                <div class="text-muted small">
+                    <span id="showing-count">{{ leaderboard_data|length }}</span> di {{ leaderboard_data|length }} creatori
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary btn-sm" id="prev-page">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" id="next-page">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
             {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-info-circle display-4 mb-3"></i>
-                <p>Nessun percorso ancora creato.<br>Inizia a disegnare e lascia il tuo segno!</p>
+            <!-- Stato vuoto -->
+            <div class="text-center py-5">
+                <i class="bi bi-map display-4 text-muted mb-3"></i>
+                <h5 class="text-muted mb-2">Nessun percorso creato</h5>
+                <p class="text-muted small mb-3">Inizia a creare percorsi per entrare in classifica!</p>
+                <a href="{{ url_for('main.create_route') }}" class="btn btn-info btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Crea Primo Percorso
+                </a>
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Toggle aggiornamento live -->
+    <div class="card bg-light border-0 rounded-3 mb-3">
+        <div class="card-body py-2">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="live-update" checked>
+                <label class="form-check-label small" for="live-update">
+                    <i class="bi bi-lightning-charge-fill me-1"></i>Aggiornamento Live
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pulsante azioni rapide - solo mobile -->
+    <div class="d-md-none position-fixed bottom-0 end-0 m-3" style="z-index: 1030;">
+        <div class="dropdown">
+            <button class="btn btn-info rounded-circle shadow" type="button" 
+                    data-bs-toggle="dropdown" style="width: 50px; height: 50px;">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('main.create_route') }}">
+                    <i class="bi bi-map me-2"></i>Nuovo Percorso
+                </a></li>
+                <li><a class="dropdown-item" href="#" id="refresh-data">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Aggiorna
+                </a></li>
+                <li><a class="dropdown-item" href="#search-creator">
+                    <i class="bi bi-search me-2"></i>Cerca
+                </a></li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+<!-- Modal dettagli creatore -->
+<div class="modal fade" id="creatorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Dettagli Creatore</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="creatorModalBody">
+                <!-- Contenuto caricato via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template per card creatore mobile -->
+<template id="mobile-creator-card">
+    <div class="card mb-2 creator-card-mobile border-0 shadow-sm">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-2 text-center">
+                    <div class="position-relative">
+                        <span class="badge creator-position-mobile fw-bold"></span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <img src="" class="rounded-circle creator-avatar-mobile border" 
+                         width="45" height="45" alt="Avatar">
+                </div>
+                <div class="col-5">
+                    <div class="creator-name-mobile fw-bold mb-1"></div>
+                    <div class="creator-routes-mobile text-info fw-bold fs-6"></div>
+                    <div class="creator-badges-mobile"></div>
+                </div>
+                <div class="col-2 text-end">
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Template podio unificato -->
+<template id="podium-item">
+    <div class="col-md-4 col-12 mb-2">
+        <div class="text-center podium-item">
+            <div class="position-relative mb-2">
+                <div class="podium-avatar mx-auto">
+                    <img src="" class="rounded-circle border creator-avatar-podium" 
+                         width="60" height="60" alt="Avatar">
+                </div>
+                <span class="position-absolute top-0 start-50 translate-middle badge podium-badge fw-bold"></span>
+            </div>
+            <div class="creator-name-podium fw-bold text-truncate px-2"></div>
+            <div class="creator-routes-podium text-muted"></div>
+            <div class="creator-badges-podium mt-1"></div>
+        </div>
+    </div>
+</template>
+
+<style>
+/* Stili specifici per classifica percorsi */
+.bg-gradient-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+}
+
+.creator-card-mobile {
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    background: #fff;
+    cursor: pointer;
+}
+
+.creator-card-mobile:active {
+    transform: scale(0.98);
+    background: #f8f9fa;
+}
+
+.creator-position-mobile {
+    font-size: 0.8rem;
+    min-width: 30px;
+    padding: 6px 8px;
+}
+
+.creator-avatar-mobile {
+    border: 3px solid #e9ecef;
+}
+
+.creator-name-mobile {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.creator-routes-mobile {
+    font-size: 0.85rem;
+}
+
+/* Podio creatori */
+.podium-item {
+    padding: 15px 10px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.podium-item:hover {
+    transform: translateY(-2px);
+}
+
+.podium-avatar {
+    width: 60px;
+    height: 60px;
+}
+
+.podium-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
+/* Colori posizioni specifici */
+.bg-gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important; }
+.bg-silver { background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%) !important; }
+.bg-bronze { background: linear-gradient(135deg, #CD7F32 0%, #A65C00 100%) !important; }
+
+/* Animazioni */
+.creator-card-mobile {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px;
+    }
+}
+
+/* Scroll e layout */
+.container-fluid {
+    padding-left: 12px;
+    padding-right: 12px;
+    overflow: visible !important;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    overflow: visible !important;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dati della classifica
+    const leaderboardData = {{ leaderboard_data | tojson | safe }};
+    let currentSort = { field: 'position', direction: 'asc' };
+    let currentPage = 1;
+    const pageSizeMobile = 8;
+    const pageSizeDesktop = 15;
+    let filteredData = [...leaderboardData];
+    let liveUpdateInterval;
+
+    // Inizializzazione
+    initApplication();
+
+    function initApplication() {
+        initCounters();
+        renderPodium();
+        renderDesktopLeaderboard();
+        renderMobileLeaderboard();
+        initEventListeners();
+        startLiveUpdates();
+        
+        toggleViewBasedOnDevice();
+    }
+
+    function initCounters() {
+        const counters = document.querySelectorAll('.counter');
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target'));
+            animateCounter(counter, target, 1500);
+        });
+    }
+
+    function animateCounter(element, target, duration) {
+        let start = 0;
+        const increment = target / (duration / 16);
+        
+        function updateCounter() {
+            start += increment;
+            if (start < target) {
+                element.textContent = Math.floor(start);
+                requestAnimationFrame(updateCounter);
+            } else {
+                element.textContent = target;
+            }
+        }
+        updateCounter();
+    }
+
+    function renderPodium() {
+        const podiumContainer = document.getElementById('podium-container');
+        const template = document.getElementById('podium-item');
+        
+        podiumContainer.innerHTML = '';
+        
+        const podiumCreators = filteredData.slice(0, 3);
+        
+        podiumCreators.forEach((creator, index) => {
+            const clone = template.content.cloneNode(true);
+            const podiumItem = clone.querySelector('.podium-item');
+            
+            const positions = ['1°', '2°', '3°'];
+            const badgeClasses = ['bg-gold text-dark', 'bg-silver text-dark', 'bg-bronze text-white'];
+            const borderColors = ['border-warning', 'border-secondary', 'border-brown'];
+            
+            // Imposta avatar
+            const avatar = clone.querySelector('.creator-avatar-podium');
+            avatar.src = `/static/profile_pics/${creator.profile_image}`;
+            avatar.className = `rounded-circle border ${borderColors[index]} creator-avatar-podium`;
+            avatar.style.borderWidth = '3px';
+            
+            // Imposta badge posizione
+            const badge = clone.querySelector('.podium-badge');
+            badge.textContent = positions[index];
+            badge.className = `position-absolute top-0 start-50 translate-middle badge ${badgeClasses[index]} podium-badge`;
+            
+            // Imposta nome e percorsi
+            clone.querySelector('.creator-name-podium').textContent = creator.username;
+            clone.querySelector('.creator-routes-podium').textContent = `${creator.total_routes_created} percorsi`;
+            
+            // Badge titolo
+            if (creator.title) {
+                clone.querySelector('.creator-badges-podium').innerHTML = 
+                    `<span class="badge bg-info small">${creator.title}</span>`;
+            }
+            
+            // Click handler
+            podiumItem.addEventListener('click', () => showCreatorDetails(creator));
+            
+            podiumContainer.appendChild(clone);
+        });
+    }
+
+    function renderDesktopLeaderboard() {
+        const tbody = document.getElementById('leaderboard-body-desktop');
+        const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageData = filteredData.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        pageData.forEach((creator, index) => {
+            const globalIndex = startIndex + index;
+            const row = document.createElement('tr');
+            row.className = `leaderboard-row ${globalIndex < 3 ? 'table-warning' : ''}`;
+            
+            row.innerHTML = `
+                <td class="ps-3">
+                    <div class="d-flex align-items-center">
+                        <div class="${getPositionClass(globalIndex + 1)} rounded-circle d-flex align-items-center justify-content-center me-2" 
+                             style="width: 35px; height: 35px;">
+                            <span class="fw-bold text-white">${globalIndex + 1}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <img src="/static/profile_pics/${creator.profile_image}" 
+                             class="rounded-circle me-3" width="45" height="45" 
+                             alt="${creator.username}">
+                        <div>
+                            <a href="#" class="text-decoration-none fw-semibold text-dark creator-name-link">
+                                ${creator.username}
+                            </a>
+                            ${creator.title ? `<span class="badge bg-info fw-normal ms-2">${creator.title}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end pe-3">
+                    <div class="fw-bold text-info fs-6">${creator.total_routes_created}</div>
+                    <div class="text-muted small">${getLastActivityText()}</div>
+                </td>
+                <td class="text-center">
+                    <div class="activity-indicator ${getActivityClass()}">
+                        <i class="bi ${getActivityIcon()} me-1"></i>
+                        <small>${getActivityText()}</small>
+                    </div>
+                </td>
+            `;
+            
+            row.querySelector('.creator-name-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                showCreatorDetails(creator);
+            });
+            
+            tbody.appendChild(row);
+        });
+        
+        updatePagination();
+    }
+
+    function renderMobileLeaderboard() {
+        const container = document.getElementById('mobile-leaderboard');
+        const template = document.getElementById('mobile-creator-card');
+        const pageSize = pageSizeMobile;
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageData = filteredData.slice(startIndex, endIndex);
+        
+        container.innerHTML = '';
+        
+        pageData.forEach((creator, index) => {
+            const globalIndex = startIndex + index;
+            const clone = template.content.cloneNode(true);
+            const card = clone.querySelector('.creator-card-mobile');
+            
+            // Imposta posizione
+            const positionBadge = clone.querySelector('.creator-position-mobile');
+            positionBadge.textContent = `${globalIndex + 1}°`;
+            positionBadge.className = `badge creator-position-mobile ${getPositionClass(globalIndex + 1)}`;
+            
+            // Imposta avatar
+            clone.querySelector('.creator-avatar-mobile').src = `/static/profile_pics/${creator.profile_image}`;
+            
+            // Imposta nome e percorsi
+            clone.querySelector('.creator-name-mobile').textContent = creator.username;
+            clone.querySelector('.creator-routes-mobile').textContent = `${creator.total_routes_created} percorsi`;
+            
+            // Badge titolo
+            if (creator.title) {
+                clone.querySelector('.creator-badges-mobile').innerHTML = 
+                    `<span class="badge bg-info small">${creator.title}</span>`;
+            }
+            
+            // Click handler
+            card.addEventListener('click', () => showCreatorDetails(creator));
+            
+            container.appendChild(clone);
+        });
+        
+        updatePagination();
+    }
+
+    function getPositionClass(position) {
+        switch(position) {
+            case 1: return 'bg-warning';
+            case 2: return 'bg-secondary';
+            case 3: return 'bg-brown';
+            default: return 'bg-light text-dark';
+        }
+    }
+
+    function getLastActivityText() {
+        const texts = ['Oggi', 'Ieri', '2gg fa', 'Questa settimana'];
+        return texts[Math.floor(Math.random() * texts.length)];
+    }
+
+    function getActivityClass() {
+        const activities = ['text-success', 'text-warning', 'text-muted'];
+        return activities[Math.floor(Math.random() * activities.length)];
+    }
+
+    function getActivityIcon() {
+        const icons = ['bi-lightning-fill', 'bi-pencil-fill', 'bi-clock-fill'];
+        return icons[Math.floor(Math.random() * icons.length)];
+    }
+
+    function getActivityText() {
+        const texts = ['Attivo', 'Moderato', 'Occasionale'];
+        return texts[Math.floor(Math.random() * texts.length)];
+    }
+
+    function initEventListeners() {
+        // Filtri temporali
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                simulateDataRefresh();
+            });
+        });
+
+        // Ricerca
+        document.getElementById('search-creator').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredData = leaderboardData.filter(creator => 
+                creator.username.toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+            renderAllViews();
+        });
+
+        // Pulizia ricerca
+        const clearSearch = document.getElementById('clear-search');
+        if (clearSearch) {
+            clearSearch.addEventListener('click', function() {
+                document.getElementById('search-creator').value = '';
+                filteredData = [...leaderboardData];
+                currentPage = 1;
+                renderAllViews();
+            });
+        }
+
+        // Paginazione
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderAllViews();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+            if (currentPage * pageSize < filteredData.length) {
+                currentPage++;
+                renderAllViews();
+            }
+        });
+
+        // Aggiornamento live
+        document.getElementById('live-update').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                startLiveUpdates();
+            } else {
+                stopLiveUpdates();
+            }
+        });
+
+        // Refresh dati
+        const refreshBtn = document.getElementById('refresh-data');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                simulateDataRefresh();
+            });
+        }
+
+        // Ridimensionamento finestra
+        window.addEventListener('resize', toggleViewBasedOnDevice);
+    }
+
+    function renderAllViews() {
+        renderPodium();
+        if (isMobile()) {
+            renderMobileLeaderboard();
+        } else {
+            renderDesktopLeaderboard();
+        }
+    }
+
+    function toggleViewBasedOnDevice() {
+        if (isMobile()) {
+            document.getElementById('mobile-leaderboard').classList.remove('d-none');
+            document.getElementById('leaderboard-table').closest('.table-responsive').classList.add('d-none');
+        } else {
+            document.getElementById('mobile-leaderboard').classList.add('d-none');
+            document.getElementById('leaderboard-table').closest('.table-responsive').classList.remove('d-none');
+        }
+        updatePagination();
+    }
+
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+
+    function updatePagination() {
+        const pageSize = isMobile() ? pageSizeMobile : pageSizeDesktop;
+        const showingCount = document.getElementById('showing-count');
+        const total = filteredData.length;
+        const start = (currentPage - 1) * pageSize + 1;
+        const end = Math.min(currentPage * pageSize, total);
+        
+        showingCount.textContent = `${start}-${end}`;
+        
+        document.getElementById('prev-page').disabled = currentPage === 1;
+        document.getElementById('next-page').disabled = end >= total;
+    }
+
+    function showCreatorDetails(creator) {
+        document.getElementById('creatorModalLabel').textContent = `Profilo di ${creator.username}`;
+        document.getElementById('creatorModalBody').innerHTML = `
+            <div class="text-center mb-4">
+                <img src="/static/profile_pics/${creator.profile_image}" 
+                     class="rounded-circle mb-3" width="100" height="100" 
+                     alt="${creator.username}">
+                <h4>${creator.username}</h4>
+                ${creator.title ? `<span class="badge bg-info fs-6">${creator.title}</span>` : ''}
+            </div>
+            
+            <div class="row text-center mb-4">
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-info mb-1">${creator.total_routes_created}</h5>
+                        <small class="text-muted">Percorsi Creati</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-success mb-1">${Math.floor(creator.total_routes_created * 2.5)}</h5>
+                        <small class="text-muted">Km Totali</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded-3 p-3">
+                        <h5 class="text-warning mb-1">#${leaderboardData.indexOf(creator) + 1}</h5>
+                        <small class="text-muted">Posizione</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h6>Percorsi Più Popolari</h6>
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Giro del Parco Centrale</span>
+                        <span class="badge bg-info rounded-pill">12 utilizzi</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Salita al Belvedere</span>
+                        <span class="badge bg-info rounded-pill">8 utilizzi</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Lungofiume Panoramico</span>
+                        <span class="badge bg-info rounded-pill">15 utilizzi</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <a href="/user/${creator.id}" class="btn btn-info me-2">
+                    Vedi Profilo
+                </a>
+                <a href="/routes?creator=${creator.id}" class="btn btn-outline-info">
+                    Esplora Percorsi
+                </a>
+            </div>
+        `;
+        
+        new bootstrap.Modal(document.getElementById('creatorModal')).show();
+    }
+
+    function simulateDataRefresh() {
+        document.getElementById('last-update').innerHTML = 
+            `<small>Aggiornato: ${new Date().toLocaleTimeString()}</small>`;
+        
+        // Simula variazione dati
+        leaderboardData.forEach(creator => {
+            const variation = Math.random() > 0.7 ? 1 : 0; // 30% chance di nuovo percorso
+            creator.total_routes_created += variation;
+        });
+        
+        leaderboardData.sort((a, b) => b.total_routes_created - a.total_routes_created);
+        filteredData = [...leaderboardData];
+        
+        renderAllViews();
+    }
+
+    function startLiveUpdates() {
+        stopLiveUpdates();
+        liveUpdateInterval = setInterval(() => {
+            if (document.getElementById('live-update').checked) {
+                simulateDataRefresh();
+            }
+        }, 10000);
+    }
+
+    function stopLiveUpdates() {
+        if (liveUpdateInterval) {
+            clearInterval(liveUpdateInterval);
+        }
+    }
+
+    // Cleanup
+    window.addEventListener('beforeunload', stopLiveUpdates);
+});
+</script>
 {% endblock %}

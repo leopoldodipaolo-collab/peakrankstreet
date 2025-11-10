@@ -498,10 +498,10 @@
                         <input type="hidden" id="post_type_hidden" name="post_type" value="text">
                         
                         <div class="d-flex align-items-start mb-3">
-                            <img src="{{ current_user.avatar(50) }}" alt="Avatar utente" class="rounded-circle me-3">
+                            <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
                             <div class="flex-grow-1">
                                 <h6 class="mb-0">{{ current_user.username }}</h6>
-                                
+                                <small class="text-muted fs-5"><i class="bi bi-person-badge"></i> {{ current_user.surname }}</small>
                                 <!-- SELETTORE PUBBLICA IN: -->
                                 <select class="form-select form-select-sm mt-1" id="group_id" name="group_id" style="max-width: 250px;">
                                     <option value="">Feed Pubblico (principale)</option>
