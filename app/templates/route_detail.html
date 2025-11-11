@@ -1,35 +1,48 @@
 {% extends "base.html" %}
 
-{% block title %}Dettaglio Percorso: {{ route.name }}{% endblock %}
+{% block title %}{{ route.name }} | Dettaglio Percorso{% endblock %}
 
 {% block content %}
 <div class="container my-5 pt-5">
-    <!-- Intestazione -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 fw-bold text-dark">{{ route.name }}</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a></li>
-                    <li class="breadcrumb-item active">Dettaglio Percorso</li>
-                </ol>
-            </nav>
+
+    <!-- HERO SECTION -->
+    <div class="position-relative mb-5">
+        <img src="{{ url_for('static', filename='featured_routes/' + (route.featured_image or 'default_route.jpg')) }}" 
+             class="img-fluid rounded-4 shadow w-100" 
+             alt="{{ route.name }}" 
+             style="max-height: 400px; object-fit: cover;">
+        <div class="position-absolute bottom-0 start-0 w-100 bg-gradient-to-t from-black/70 to-transparent p-4 rounded-bottom-4">
+            <h1 class="text-white fw-bold mb-1">{{ route.name }}</h1>
+            <p class="text-white-50 mb-2">{{ route.activity_type or 'Attività' }} • {{ route.created_at.strftime('%d/%m/%Y') }}</p>
+            <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-light btn-sm">
+                <i class="bi bi-play-circle me-1"></i> Registra Attività
+            </a>
         </div>
-        <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-primary">
-            <i class="bi bi-play-circle me-2"></i>Registra Attività
-        </a>
     </div>
 
-    <div class="row">
-        <!-- Colonna Principale -->
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a>
+            </li>
+            <li class="breadcrumb-item active text-primary fw-semibold">Dettaglio Percorso</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- MAIN COLUMN -->
         <div class="col-lg-8">
-            <!-- Mappa -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary">
+
+            <!-- MAPPA -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-map me-2"></i>Mappa del Percorso</h5>
                 </div>
                 <div class="card-body p-0">
-                    <div id="routeDetailMap" style="height: 400px; background: #f8f9fa;">
+                    <div id="routeDetailMap" style="height: 420px; background-color: #f0f2f5; border-radius: 0 0 0.5rem 0.5rem;">
+                        
+                        <div id="routeDetailMap" style="height: 400px; background: #f8f9fa;">
                         <div class="h-100 d-flex justify-content-center align-items-center">
                             <div class="text-center text-muted">
                                 <i class="bi bi-map display-4 mb-3"></i>
@@ -37,166 +50,133 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Commenti -->
-            <div class="card">
-                <div class="card-header bg-primary">
-                    <h5 class="mb-0"><i class="bi bi-chat me-2"></i>Commenti</h5>
+            <!-- DESCRIZIONE -->
+            {% if route.description %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-info-circle me-2"></i>Descrizione</h5>
+                    <p class="text-muted mb-0">{{ route.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- COMMENTI -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Commenti</h5>
                 </div>
                 <div class="card-body">
                     {% if current_user.is_authenticated %}
                     <form method="POST" class="mb-4">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-3">
                             <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
-                                 class="rounded-circle" width="40" height="40" alt="{{ current_user.username }}">
+                                 class="rounded-circle" width="50" height="50" alt="{{ current_user.username }}">
                             <div class="flex-grow-1">
-                                <textarea name="comment_content" class="form-control" rows="3" 
-                                          placeholder="Condividi la tua esperienza..." required></textarea>
-                                <div class="mt-2">
-                                    <button type="submit" class="btn btn-primary btn-sm">Invia commento</button>
-                                </div>
+                                <textarea name="comment_content" class="form-control" rows="3" placeholder="Scrivi un commento..." required></textarea>
+                                <button type="submit" class="btn btn-primary btn-sm mt-2 float-end">
+                                    <i class="bi bi-send me-1"></i> Invia
+                                </button>
                             </div>
                         </div>
                     </form>
                     {% else %}
                     <div class="alert alert-info">
-                        <a href="{{ url_for('auth.login') }}" class="alert-link">Accedi</a> per commentare.
+                        <a href="{{ url_for('auth.login') }}" class="alert-link">Accedi</a> per aggiungere un commento.
                     </div>
                     {% endif %}
 
-                    <div class="comments-section">
+                    {% if comments_with_like_info %}
                         {% for item in comments_with_like_info %}
-                        <div class="d-flex mb-3">
+                        <div class="d-flex mb-4 pb-3 border-bottom">
                             <img src="{{ url_for('static', filename='profile_pics/' + item.comment.author.profile_image) }}" 
                                  class="rounded-circle me-3" width="50" height="50" alt="{{ item.comment.author.username }}">
                             <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                    <strong>{{ item.comment.author.username }}</strong>
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold mb-0">{{ item.comment.author.username }}</h6>
                                     <small class="text-muted">{{ item.comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
                                 </div>
-                                <p class="mb-1">{{ item.comment.content }}</p>
+                                <p class="text-muted mb-2 mt-1">{{ item.comment.content }}</p>
                                 <div class="d-flex align-items-center gap-2">
                                     {% if current_user.is_authenticated %}
-                                    <button class="btn btn-sm btn-outline-primary like-button" 
-                                            data-comment-id="{{ item.comment.id }}">
-                                        <i class="bi bi-hand-thumbs-up"></i> Mi Piace
+                                    <button class="btn btn-sm btn-outline-primary like-button" data-comment-id="{{ item.comment.id }}">
+                                        <i class="bi bi-hand-thumbs-up"></i> Mi piace
                                     </button>
                                     {% endif %}
-                                    <span class="text-muted small">{{ item.like_count }} mi piace</span>
+                                    <span class="small text-muted">{{ item.like_count }} mi piace</span>
                                 </div>
                             </div>
                         </div>
-                        {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-chat-quote display-4 mb-3"></i>
-                            <p>Ancora nessun commento. Sii il primo a commentare!</p>
-                        </div>
                         {% endfor %}
-                    </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-chat-quote display-5 mb-3"></i>
+                            <p>Nessun commento ancora. Sii il primo a condividere la tua esperienza!</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- SIDEBAR -->
         <div class="col-lg-4">
-            <!-- Informazioni Percorso -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informazioni</h5>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Statistiche & Info</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">{{ route.description or "Nessuna descrizione disponibile." }}</p>
-                    
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item d-flex justify-content-between px-0">
-                            <span>Tipo:</span>
-                            <strong>{{ route.activity_type or 'Non specificato' }}</strong>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between px-0">
-                            <span>Creato da:</span>
-                            <strong>
-                                <a href="{{ url_for('main.user_profile', user_id=route.creator.id) }}" class="text-decoration-none">
-                                    {{ route.creator.username }}
-                                </a>
-                            </strong>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between px-0">
-                            <span>Data creazione:</span>
-                            <strong>{{ route.created_at.strftime('%d/%m/%Y') }}</strong>
-                        </div>
-                        {% if route.difficulty %}
-                        <div class="list-group-item d-flex justify-content-between px-0">
-                            <span>Difficoltà:</span>
-                            <strong>{{ route.difficulty }}</strong>
-                        </div>
-                        {% endif %}
-                        {% if route.elevation_gain %}
-                        <div class="list-group-item d-flex justify-content-between px-0">
-                            <span>Dislivello:</span>
-                            <strong>{{ route.elevation_gain }} m</strong>
-                        </div>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><strong>Tipo:</strong> {{ route.activity_type or 'Non specificato' }}</li>
+                        <li class="mb-2"><strong>Difficoltà:</strong> {{ route.difficulty or 'N/D' }}</li>
+                        <li class="mb-2"><strong>Dislivello:</strong> {{ route.elevation_gain or '0' }} m</li>
+                        <li class="mb-2"><strong>Distanza:</strong> {{ "%.1f"|format(route.distance_km) if route.distance_km else '0.0' }} km</li>
+                        <li class="mb-2"><strong>Creato da:</strong> 
+                            <a href="{{ url_for('main.user_profile', user_id=route.creator.id) }}" class="text-decoration-none">
+                                {{ route.creator.username }}
+                            </a>
+                        </li>
+                        <li><strong>Data creazione:</strong> {{ route.created_at.strftime('%d/%m/%Y') }}</li>
+                    </ul>
+                    <hr>
+                    <div class="text-center">
+                        <h6 class="fw-bold text-secondary mb-2">Record del percorso</h6>
+                        {% set fastest = top_5_activities_for_route[0][0] if top_5_activities_for_route else None %}
+                        {% if fastest %}
+                        <div class="display-6 fw-bold text-warning">{{ '%02d:%02d'|format(fastest.duration // 3600, (fastest.duration % 3600) // 60) }}</div>
+                        {% else %}
+                        <div class="text-muted">Nessun record disponibile</div>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- Statistiche -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary">
-                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistiche</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <div class="h5 fw-bold text-primary">{{ "%.1f"|format(route.distance_km) if route.distance_km else '0.0' }}</div>
-                            <small class="text-muted">km</small>
-                        </div>
-                        <div class="col-4">
-                            <div class="h5 fw-bold text-success">{{ route.activities.count() }}</div>
-                            <small class="text-muted">Attività</small>
-                        </div>
-                        <div class="col-4">
-                            {% set fastest = top_5_activities_for_route[0][0] if top_5_activities_for_route else None %}
-                            <div class="h5 fw-bold text-warning">
-                                {% if fastest %}
-                                    {{ '%02d:%02d'|format(fastest.duration // 3600, (fastest.duration % 3600) // 60) }}
-                                {% else %}
-                                    N/D
-                                {% endif %}
-                            </div>
-                            <small class="text-muted">Record</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Classifica -->
-            <div class="card">
-                <div class="card-header bg-primary">
-                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Classifica</h5>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Top 5 Classifica</h5>
                 </div>
                 <div class="list-group list-group-flush">
                     {% for activity_tuple in top_5_activities_for_route %}
                         {% set activity = activity_tuple[0] %}
                         {% set user = activity_tuple[1] %}
                         <div class="list-group-item d-flex align-items-center">
-                            <span class="fw-bold me-3">#{{ loop.index }}</span>
+                            <span class="fw-bold text-primary me-3">#{{ loop.index }}</span>
                             <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}" 
-                                 class="rounded-circle me-2" width="32" height="32" alt="{{ user.username }}">
-                            <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="text-decoration-none text-dark me-auto">
+                                 class="rounded-circle me-2" width="36" height="36" alt="{{ user.username }}">
+                            <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="text-decoration-none text-dark flex-grow-1">
                                 {{ user.username }}
                             </a>
-                            <span class="fw-semibold">
+                            <span class="fw-semibold text-muted">
                                 {{ '%02d:%02d'|format(activity.duration // 3600, (activity.duration % 3600) // 60) }}
                             </span>
                         </div>
                     {% else %}
-                        <div class="list-group-item text-center text-muted">
-                            <i class="bi bi-trophy display-4 mb-2"></i>
-                            <p>Nessuna attività registrata</p>
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="bi bi-emoji-neutral display-5 d-block mb-2"></i>
+                            <p class="mb-0">Nessuna attività registrata</p>
                         </div>
                     {% endfor %}
                 </div>
@@ -211,7 +191,6 @@
 <script>
     // Definisci la variabile globale per i dati della mappa
     const routeGeoJSON = {{ route_geojson_data|tojson }};
-    console.log('Dati GeoJSON:', routeGeoJSON); // Debug
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

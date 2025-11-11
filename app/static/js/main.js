@@ -680,49 +680,250 @@ function populateRecentActivities(activities) {
         recentActivitiesListDiv.innerHTML = `<p class="text-center text-muted p-3">Nessuna attività recente in quest'area. <a href="/activities/record">Registra la tua!</a></p>`;
     }
 }
-
+/**
+ * 🚀 POPOLA LE CLASSIFICHE LOCALI CON EFFETTI NEXT-LEVEL
+ * @param {Object} leaderboards - Dati delle classifiche
+ */
 function populateLocalLeaderboards(leaderboards) {
-    const distanceList = document.querySelector('#top-distance-list');
-    const creatorsList = document.querySelector('#top-creators-list');
+    const distanceList = document.getElementById('top-distance-list');
+    const creatorsList = document.getElementById('top-creators-list');
+    
     if (!distanceList || !creatorsList) return;
 
-    // Distanza percorsa
-    distanceList.innerHTML = '';
-    if (leaderboards.distance && leaderboards.distance.length > 0) {
-        leaderboards.distance.forEach((entry, index) => {
-            distanceList.innerHTML += `
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>
-                        <span class="badge bg-secondary rounded-pill me-2">${index + 1}</span>
-                        <img src="${profilePicsBaseUrl}${entry.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
-                        <a href="${userProfileUrlBase.replace('12345', entry.id)}">${entry.username}</a>
-                    </span>
-                    <span class="badge bg-success rounded-pill">${entry.total_distance.toFixed(2)} km</span>
-                </li>`;
-        });
-    } else {
-        distanceList.innerHTML = '<li class="list-group-item text-center text-muted">Nessun dato per l\'area.</li>';
-    }
+    // Animazione di entrata
+    gsap.fromTo([distanceList, creatorsList], 
+        { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 0.8, stagger: 0.2 }
+    );
 
-    // Percorsi creati
-    creatorsList.innerHTML = '';
-    if (leaderboards.creators && leaderboards.creators.length > 0) {
-        leaderboards.creators.forEach((entry, index) => {
-            creatorsList.innerHTML += `
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>
-                        <span class="badge bg-secondary rounded-pill me-2">${index + 1}</span>
-                        <img src="${profilePicsBaseUrl}${entry.profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
-                        <a href="${userProfileUrlBase.replace('12345', entry.id)}">${entry.username}</a>
-                    </span>
-                    <span class="badge bg-success rounded-pill">${entry.total_routes_created} percorsi</span>
-                </li>`;
-        });
-    } else {
-        creatorsList.innerHTML = '<li class="list-group-item text-center text-muted">Nessun dato per l\'area.</li>';
-    }
+    // Popola con effetti sequenziali
+    renderLeaderboardWithFlair(distanceList, leaderboards.distance, 'distance');
+    renderLeaderboardWithFlair(creatorsList, leaderboards.creators, 'creators');
 }
 
+/**
+ * 💫 RENDER CON EFFETTI SPECIALI
+ */
+function renderLeaderboardWithFlair(container, data, type) {
+    container.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        container.innerHTML = createEpicEmptyState();
+        return;
+    }
+
+    // Prepara container per animazioni
+    container.style.opacity = '0';
+    
+    setTimeout(() => {
+        container.innerHTML = data.map((entry, index) => 
+            createEpicLeaderboardItem(entry, index, type)
+        ).join('');
+        
+        // ANIMAZIONE ENTRATA ITEMS
+        gsap.fromTo(container.children,
+            {
+                opacity: 0,
+                x: -100,
+                rotationY: 90
+            },
+            {
+                opacity: 1,
+                x: 0,
+                rotationY: 0,
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "back.out(1.7)",
+                onComplete: () => addHoverEffects(container)
+            }
+        );
+        
+        container.style.opacity = '1';
+    }, 300);
+}
+
+/**
+ * 🏆 CREA ITEM CON DESIGN PREMIUM
+ */
+function createEpicLeaderboardItem(entry, index, type) {
+    const rankInfo = getEpicRankInfo(index);
+    
+    return `
+        <li class="list-group-item epic-leaderboard-item" data-rank="${index + 1}">
+            <div class="item-content">
+                <!-- RANK BADGE CON EFFETTO SPECIALE -->
+                <div class="rank-container">
+                    <div class="rank-badge ${rankInfo.class}">
+                        <div class="rank-shine"></div>
+                        <span class="rank-number">${index + 1}</span>
+                        ${index < 3 ? `<div class="rank-crown">${rankInfo.icon}</div>` : ''}
+                    </div>
+                </div>
+
+                <!-- USER INFO CON AVATAR E DETTAGLI -->
+                <div class="user-info">
+                    <div class="avatar-container">
+                        <div class="avatar-wrapper">
+                            <div class="avatar-background-glow"></div>
+                            <div class="avatar-border-animation"></div>
+                            <img src="${profilePicsBaseUrl}${entry.profile_image}" 
+                                class="user-avatar epic-avatar"
+                                alt="${entry.username}"
+                                loading="lazy"
+                                onerror="this.src='/img/LogoX_SS.png'">
+                            <div class="avatar-glow-effect"></div>
+                            <div class="floating-particles">
+                                <div class="particle p1"></div>
+                                <div class="particle p2"></div>
+                            </div>
+                            ${index < 3 ? `
+                            <div class="premium-rank-badge ${rankInfo.class}">
+                                <div class="badge-inner">
+                                    <span class="badge-icon">${rankInfo.icon}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- NOME E VALORE VERTICALI -->
+                    <div class="user-details">
+                        <a href="${userProfileUrlBase.replace('12345', entry.id)}" 
+                           class="username-link">
+                            <span class="username-text">${entry.username}</span>
+                        </a>
+                        <div class="achievement-value">
+                            <span class="value-display">
+                                <i class="fas ${type === 'distance' ? 'fa-route' : 'fa-map-marked-alt'} pulse-icon"></i>
+                                ${type === 'distance' 
+                                    ? `${entry.total_distance.toFixed(2)} km`
+                                    : `${entry.total_routes_created} percorsi`
+                                }
+                            </span>
+                            <div class="progress-sparkle"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BACKGROUND EFFETTI -->
+            <div class="item-background">
+                <div class="liquid-shape"></div>
+                <div class="particle-field"></div>
+            </div>
+        </li>
+    `;
+}
+
+/**
+ * 👑 INFO RANK CON ICONE PERSONALIZZATE
+ */
+function getEpicRankInfo(index) {
+    const ranks = [
+        { 
+            class: 'rank-1', 
+            icon: '👑', 
+            badge: '🏆 TOP 1',
+            color: 'linear-gradient(135deg, #FFD700, #FF6B00)'
+        },
+        { 
+            class: 'rank-2', 
+            icon: '⭐', 
+            badge: '🥈 TOP 2',
+            color: 'linear-gradient(135deg, #C0C0C0, #E8E8E8)'
+        },
+        { 
+            class: 'rank-3', 
+            icon: '🔥', 
+            badge: '🥉 TOP 3',
+            color: 'linear-gradient(135deg, #CD7F32, #FFA500)'
+        },
+        { 
+            class: 'rank-other', 
+            icon: '⚡', 
+            badge: '🚀',
+            color: 'linear-gradient(135deg, #667eea, #764ba2)'
+        }
+    ];
+    
+    return index < 3 ? ranks[index] : ranks[3];
+}
+
+/**
+ * 🌌 STATO VUOTO EPICO
+ */
+function createEpicEmptyState() {
+    return `
+        <li class="list-group-item epic-empty-state">
+            <div class="empty-content">
+                <div class="floating-astronaut">👨‍🚀</div>
+                <div class="empty-glow"></div>
+                <h4 class="empty-title">Nessun dato cosmico trovato!</h4>
+                <p class="empty-text">Sii il primo a esplorare questa area</p>
+                <button class="btn btn-galaxy start-exploring-btn">
+                    <span class="btn-glow"></span>
+                    🚀 Inizia l'esplorazione
+                </button>
+            </div>
+        </li>
+    `;
+}
+
+/**
+ * ✨ AGGIUNGI EFFETTI HOVER
+ */
+function addHoverEffects(container) {
+    const items = container.querySelectorAll('.epic-leaderboard-item');
+    
+    items.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            gsap.to(this, {
+                y: -5,
+                scale: 1.02,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+            
+            // Effetto particelle
+            const particles = this.querySelector('.particle-field');
+            animateParticles(particles);
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            gsap.to(this, {
+                y: 0,
+                scale: 1,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+        });
+    });
+}
+
+/**
+ * 🌟 ANIMAZIONE PARTICELLE
+ */
+function animateParticles(container) {
+    const particles = Array.from({length: 8}, (_, i) => {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.setProperty('--i', i);
+        container.appendChild(particle);
+        return particle;
+    });
+
+    gsap.to(particles, {
+        x: () => gsap.utils.random(-50, 50),
+        y: () => gsap.utils.random(-50, 50),
+        opacity: 0,
+        scale: 0,
+        duration: 1,
+        stagger: 0.1,
+        onComplete: () => {
+            particles.forEach(p => p.remove());
+        }
+    });
+}
 // =======================================================
 // LIKE ATTIVITÀ
 // =======================================================

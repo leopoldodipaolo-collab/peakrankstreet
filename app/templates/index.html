@@ -140,12 +140,18 @@
             </div>
         </div>
 
-        <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner">
-            <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" class="card-img" alt="Panorama montano" style="opacity: 0.3; object-fit: cover; height: 150px;">
-            <div class="card-img-overlay d-flex flex-column justify-content-center align-items-center text-center">
-                <h3 class="card-title">Conosci un percorso leggendario?</h3>
-                <p class="card-text">Aiutaci a mappare i percorsi "Classici" della tua zona. Proponi il tuo preferito!</p>
-                <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-warning fw-bold">
+        <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner position-relative overflow-hidden">
+            <!-- Immagine di sfondo solo su desktop -->
+            <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" 
+                class="d-none d-sm-block w-100 position-absolute top-0 start-0 h-100" 
+                alt="Panorama montano" 
+                style="object-fit: cover; opacity: 0.3; z-index: 1;">
+
+            <!-- Overlay testo -->
+            <div class="d-flex flex-column justify-content-center align-items-center text-center p-4 position-relative" style="z-index: 2;">
+                <h3 class="card-title fw-bold mb-2 fs-5 fs-sm-4">Conosci un percorso leggendario?</h3>
+                <p class="card-text mb-3 fs-6 fs-sm-5">Aiutaci a mappare i percorsi "Classici" della tua zona. Proponi il tuo preferito!</p>
+                <a href="{{ url_for('main.propose_classic_route') }}" class="btn btn-warning fw-bold btn-sm btn-md">
                     <i class="bi bi-award-fill me-2"></i>Proponi un Percorso Classico
                 </a>
             </div>
@@ -180,7 +186,7 @@
                         <p class="card-text"><small class="text-muted" id="detail-route-meta"></small></p>
                         
                         <div id="detail-king-queen" class="king-queen-highlight mt-3 p-3 bg-warning bg-opacity-10 rounded" role="alert" style="display:none;">
-                            <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Re/Regina del Percorso!</h5>
+                            <h5 class="mb-2"><i class="bi bi-trophy-fill trophy-icon me-2"></i>Duca/Duchessa del Percorso!</h5>
                             <p class="mb-1">Detenuto da: <strong id="kq-username"></strong> - <strong id="kq-duration"></strong>
                                 <a href="#" id="kq-activity-link" class="btn btn-sm btn-link p-0 ms-1 text-dark" style="font-size:0.8em; vertical-align: baseline;">(Attività)</a>
                             </p>
@@ -264,6 +270,7 @@
 
             <!-- SEZIONE PERCORSI CLASSICI & SFIDE RECENTI -->
             <div class="tab-pane fade show active d-lg-block" id="challenges-pane" role="tabpanel">
+                <!-- SOTTO-SEZIONE PERCORSI CLASSICI -->
                 <div class="classic-routes-section card shadow-lg my-5" id="classic-routes-section">
                     <div class="card-header bg-secondary-custom text-white">
                         <h3 class="mb-0"><i class="bi bi-signpost-fill me-2"></i>Percorsi Classici di <span id="classic-routes-city">L'Aquila</span></h3>
@@ -275,125 +282,6 @@
                             <p class="text-muted mb-1">Nessun percorso classico trovato per questa città.</p>
                             <p class="text-muted"><small>I percorsi classici vengono aggiunti dagli amministratori della community.</small></p>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-lg my-5">
-                    <div class="card-body p-4">
-                        {% if invited_challenges %}
-                        <div class="card shadow-sm mb-4 bet-card">
-                            <div class="card-header bg-warning text-dark">
-                                <h4 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Sfide a Cui Sei Invitato</h4>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="list-group list-group-flush">
-                                    {% for challenge in invited_challenges %}
-                                    <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
-                                        <div class="flex-grow-1 mb-2 mb-md-0">
-                                            <h5 class="mb-1 d-flex align-items-center">
-                                                {% if challenge.bet_type != 'none' %}
-                                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
-                                                        {% if challenge.bet_type == 'beer' %} 🍺
-                                                        {% elif challenge.bet_type == 'dinner' %} 🍝
-                                                        {% elif challenge.bet_type == 'coffee' %} ☕
-                                                        {% elif challenge.bet_type == 'custom' %} 🎁
-                                                        {% endif %}
-                                                    </span>
-                                                {% endif %}
-                                                {{ challenge.name }}
-                                            </h5>
-                                            <p class="mb-1 text-muted">
-                                                <strong>Percorso:</strong> <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a>
-                                                • <strong>Creato da:</strong> <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a>
-                                            </p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-calendar-range me-1"></i>Periodo: {{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}
-                                            </small>
-                                            {% if challenge.bet_type != 'none' %}
-                                                <p class="mb-0 mt-2 challenge-bet-details-preview-list">
-                                                    <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
-                                                </p>
-                                            {% endif %}
-                                        </div>
-                                        <div class="text-end mt-2 mt-md-0">
-                                            <span class="badge bg-warning text-dark status-badge me-2">In attesa</span>
-                                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm btn-bet-action">
-                                                Dettagli <i class="bi bi-chevron-right"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if challenges %}
-                            <div class="list-group list-group-flush">
-                                {% for challenge in challenges %}
-                                    <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 mb-2 {% if challenge.bet_type != 'none' %}challenge-with-bet-list{% endif %}">
-                                        <div class="route-info flex-grow-1 mb-2 mb-md-0">
-                                            <h5 class="mb-1 d-flex align-items-center">
-                                                {% if challenge.bet_type != 'none' %}
-                                                    <span class="bet-icon me-2" title="Sfida con scommessa: {{ challenge.bet_value }}">
-                                                        {% if challenge.bet_type == 'beer' %} 🍺
-                                                        {% elif challenge.bet_type == 'dinner' %} 🍝
-                                                        {% elif challenge.bet_type == 'coffee' %} ☕
-                                                        {% elif challenge.bet_type == 'custom' %} 🎁
-                                                        {% endif %}
-                                                    </span>
-                                                {% endif %}
-                                                {{ challenge.name }}
-                                            </h5>
-                                            <p class="mb-1 text-muted">Percorso: <a href="{{ url_for('main.route_detail', route_id=challenge.route_info.id) }}" class="user-link text-success">{{ challenge.route_info.name }}</a></p>
-                                            <p class="mb-1 text-muted"><i class="bi bi-calendar-range me-1"></i>Periodo: Dal {{ challenge.start_date.strftime('%d/%m/%Y') }} al {{ challenge.end_date.strftime('%d/%m/%Y') }}</p>
-                                            <small class="text-muted">Creata da: <a href="{{ url_for('main.user_profile', user_id=challenge.challenger.id) }}" class="user-link text-primary">{{ challenge.challenger.username }}</a> il {{ challenge.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
-                                            {% if challenge.bet_type != 'none' %}
-                                                <p class="mb-0 mt-2 challenge-bet-details-preview-list">
-                                                    <small class="text-muted"><i class="bi bi-currency-exchange me-1"></i> Posta in gioco: <strong>{{ challenge.bet_value }}</strong></small>
-                                                </p>
-                                            {% endif %}
-                                        </div>
-                                        <div class="route-actions text-end ms-md-auto mt-2 mt-md-0">
-                                            {% if current_user.is_authenticated and challenge.end_date >= now %}
-                                                <a href="{{ url_for('main.record_activity', challenge_id=challenge.id) }}" class="btn btn-primary btn-sm me-2 btn-bet-action">Partecipa <i class="bi bi-arrow-right-circle"></i></a>
-                                            {% elif challenge.end_date < now %}
-                                                <span class="badge bg-secondary status-badge me-2">Terminata</span>
-                                            {% endif %}
-                                            <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}" class="btn btn-success btn-sm btn-bet-action">Classifica <i class="bi bi-bar-chart-fill"></i></a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-
-                            <nav aria-label="Pagina di navigazione sfide" class="mt-4">
-                                <ul class="pagination justify-content-center">
-                                    <li class="page-item {% if not challenges_pagination.has_prev %}disabled{% endif %}">
-                                        <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.prev_num, status=status_filter) }}" aria-label="Precedente">
-                                            <span aria-hidden="true">&laquo;</span>
-                                            <span class="sr-only">Precedente</span>
-                                        </a>
-                                    </li>
-                                    {% for page_num in challenges_pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                                        {% if page_num %}
-                                            {% if challenges_pagination.page == page_num %}
-                                                <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ page_num }}</a></li>
-                                            {% else %}
-                                                <li class="page-item"><a class="page-link" href="{{ url_for('main.challenges_list', page=page_num, status=status_filter) }}">{{ page_num }}</a></li>
-                                            {% endif %}
-                                        {% else %}
-                                            <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    <li class="page-item {% if not challenges_pagination.has_next %}disabled{% endif %}">
-                                        <a class="page-link" href="{{ url_for('main.challenges_list', page=challenges_pagination.next_num, status=status_filter) }}" aria-label="Successivo">
-                                            <span aria-hidden="true">&raquo;</span>
-                                            <span class="sr-only">Successivo</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        {% endif %}
                     </div>
                 </div>
             </div>

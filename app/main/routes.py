@@ -454,18 +454,6 @@ def create_route():
 def route_detail(route_id):
     route = Route.query.options(joinedload(Route.creator)).get_or_404(route_id)
     
-    # DEBUG: Verifica i dati del percorso
-    print(f"=== DEBUG PERCORSO {route_id} ===")
-    print(f"Nome: {route.name}")
-    print(f"Descrizione: {route.description}")
-    print(f"Tipo attività: {route.activity_type}")
-    print(f"Creato da: {route.creator.username if route.creator else 'N/A'}")
-    print(f"Distanza: {route.distance_km}")
-    print(f"Coordinate: {route.coordinates[:100] if route.coordinates else 'Nessuna'}...")  # Solo primi 100 caratteri
-    print(f"Difficoltà: {route.difficulty}")
-    print(f"Dislivello: {route.elevation_gain}")
-    print("================================")
-    
     # Gestione corretta delle coordinate GeoJSON
     route_geojson_data = None
     if route.coordinates:
@@ -718,7 +706,6 @@ def get_bet_value(bet_type, custom_bet):
 @login_required
 def record_activity():
     if request.method == "POST":
-        print("\n--- DEBUG: Inizio processamento attività POST ---")
         
         selected_challenge_id = request.form.get("challenge_id", type=int)
         selected_route_id = request.form.get("route_id", type=int)
@@ -833,7 +820,7 @@ def record_activity():
                     if total_activity_points > 0:
                         geofence_match_threshold = 0.80
                         match_percentage = points_inside_geofence / total_activity_points
-                        print(f"--- DEBUG: Punti nel geofence: {points_inside_geofence}/{total_activity_points} ({match_percentage:.2%}) ---")
+                      
                         
                         if match_percentage < geofence_match_threshold:
                             print("--- DEBUG: !!! VALIDAZIONE GEOFENCING FALLITA !!! ---")
@@ -949,20 +936,19 @@ def parse_gps_to_geojson(gps_data_string):
 
         # CASO 1: Oggetto GeoJSON "Feature"
         if isinstance(data, dict) and data.get('type') == 'Feature':
-            print("DEBUG PARSER :: Detected GPS format: GeoJSON Feature.")
+      
             geometry = data.get('geometry')
             if isinstance(geometry, dict) and geometry.get('type') == 'LineString':
                 return geometry
         
         # CASO 2: Oggetto GeoJSON "LineString"
         if isinstance(data, dict) and data.get('type') == 'LineString':
-            print("DEBUG PARSER :: Detected GPS format: Pre-formatted GeoJSON LineString.")
+
             return data
 
         # CASO 3: I dati sono una lista
         if isinstance(data, list):
             if not data:
-                print("DEBUG PARSER :: GPS track is an empty list.")
                 return None
 
             first_point = data[0]
@@ -978,13 +964,13 @@ def parse_gps_to_geojson(gps_data_string):
                 # ----------------------------------------------------
                 
                 if lon_key:
-                    print(f"DEBUG PARSER :: Detected format: List of Dictionaries (using key: '{lon_key}').")
+                   
                     coordinates = [[point[lon_key], point['lat']] for point in data]
                     return {"type": "LineString", "coordinates": coordinates}
             
             # Sottocaso 3b: Lista di Liste
             if isinstance(first_point, list) and len(first_point) >= 2:
-                print("DEBUG PARSER :: Detected GPS format: List of Lists.")
+            
                 return {"type": "LineString", "coordinates": data}
 
         # Se nessun formato valido è stato riconosciuto
@@ -992,14 +978,12 @@ def parse_gps_to_geojson(gps_data_string):
         return None
 
     except Exception as e:
-        print(f"Error parsing GPS data string: {e}")
         return None
     
 @main.route("/activity/<int:activity_id>")
 def activity_detail(activity_id):
     activity = Activity.query.get_or_404(activity_id)
-    
-    print(f"\n=== DEBUG activity_detail (Activity ID: {activity.id}) ===")
+
     
     # --- GESTIONE GEOJSON DEL PERCORSO ---
     route_geojson_data = None
@@ -2774,11 +2758,8 @@ def save_gpx_item():
             db.session.add(new_route)
             db.session.commit()
             
-            # DEBUG per verificare
-            print(f"✅ Percorso salvato con ID: {new_route.id}")
-            print(f"✅ Distance_km salvata: {new_route.distance_km} km")
-            print(f"✅ Coordinate salvate come GeoJSON: {type(new_route.coordinates)}")
-            
+
+
             return jsonify({
                 "status": "success", 
                 "message": "Percorso salvato con successo!", 
