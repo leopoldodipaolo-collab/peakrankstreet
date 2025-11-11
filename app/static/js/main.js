@@ -493,24 +493,22 @@ function displayRouteDetails(routeProps) {
     console.log('Display details for:', routeProps.name);
     
     const detailsCard = document.getElementById('selected-route-details');
-    if (!detailsCard) {
-        console.error('Details card not found!');
-        return;
-    }
-    
-    // Popola i dettagli
-    document.getElementById('detail-route-name').textContent = routeProps.name;
+    if (!detailsCard) return;
+
+    // Popola nome percorso sia header che body
+    document.getElementById('detail-route-name-header').textContent = routeProps.name;
+    document.getElementById('detail-route-name-body').textContent = routeProps.name;
+
     document.getElementById('detail-route-description').textContent = routeProps.description || 'Nessuna descrizione.';
-    
+
     let createdByHtml = `Creato il: ${routeProps.created_at} da <a href="${userProfileUrlBase.replace('12345', routeProps.created_by_id)}">${routeProps.created_by_username}</a>`;
     document.getElementById('detail-route-meta').innerHTML = `${createdByHtml}<br>Distanza: ${routeProps.distance_km ? routeProps.distance_km.toFixed(2) + ' km' : 'N/D'}`;
-    
-    // Link ai dettagli completi
+
     document.getElementById('detail-route-link').href = routeDetailUrlBase.replace('12345', routeProps.id);
     document.getElementById('record-activity-link').href = `/activities/record?route_id=${routeProps.id}`;
     document.getElementById('create-challenge-link').href = `/challenges/new?route_id=${routeProps.id}`;
 
-    // Gestione King/Queen
+    // King/Queen
     if (routeProps.king_queen && routeProps.king_queen.username) {
         document.getElementById('kq-username').innerHTML = `<a href="${userProfileUrlBase.replace('12345', routeProps.king_queen.user_id)}" class="user-link text-dark">${routeProps.king_queen.username}</a>`;
         document.getElementById('kq-duration').textContent = formatDuration(routeProps.king_queen.duration);
@@ -521,7 +519,7 @@ function displayRouteDetails(routeProps) {
         document.getElementById('detail-king-queen').style.display = 'none';
     }
 
-    // Gestione Top 5 Times
+    // Top 5 tempi
     const top5List = document.getElementById('top-5-list');
     top5List.innerHTML = '';
     if (routeProps.top_5_activities && routeProps.top_5_activities.length > 0) {
@@ -541,43 +539,27 @@ function displayRouteDetails(routeProps) {
         document.getElementById('detail-top-5-times').style.display = 'none';
     }
 
-    // Mostra la card dei dettagli
     detailsCard.style.display = 'block';
-    
-    // Nascondi le istruzioni della mappa
+
+    // Nascondi istruzioni mappa e evidenzia percorso
     const mapInstructions = document.getElementById('map-instructions');
-    if (mapInstructions) {
-        mapInstructions.style.display = 'none';
-    }
-    // Evidenzia percorso selezionato sulla mappa
+    if (mapInstructions) mapInstructions.style.display = 'none';
     if (routeProps.coordinates?.geometry?.coordinates?.length > 0 && selectedRouteLayer) {
         selectedRouteLayer.clearLayers();
         selectedRouteLayer.addData(routeProps.coordinates);
     }
-    
-    // Scroll smooth ai dettagli
-    setTimeout(() => {
-        detailsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 100);
+
+    setTimeout(() => detailsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
-// Funzione per nascondere i dettagli
+
 function hideRouteDetails() {
     const detailsCard = document.getElementById('selected-route-details');
-    if (detailsCard) {
-        detailsCard.style.display = 'none';
-    }
-    
-    // Pulisci il percorso dalla mappa
-    if (selectedRouteLayer) {
-        selectedRouteLayer.clearLayers();
-    }
-    
-    // Mostra di nuovo le istruzioni
+    if (detailsCard) detailsCard.style.display = 'none';
+    if (selectedRouteLayer) selectedRouteLayer.clearLayers();
     const mapInstructions = document.getElementById('map-instructions');
-    if (mapInstructions) {
-        mapInstructions.style.display = 'block';
-    }
+    if (mapInstructions) mapInstructions.style.display = 'block';
 }
+
 
 // =======================================================
 // FUNZIONI PER POPOLARE LISTE
@@ -1006,6 +988,61 @@ document.addEventListener("submit", async (e) => {
         form.remove();
     }
 });
+
+// FUNZIONE PER MOSTRARE IL CAVALIERE
+function showKnightHighlight(routeData, kingQueenData) {
+    const knightElement = document.getElementById('detail-king-queen');
+    
+    if (!kingQueenData || !kingQueenData.username) {
+        knightElement.style.display = 'none';
+        return;
+    }
+    
+    // Prendi il nome dal percorso selezionato
+    const routeName = routeData.name || "Questo Percorso";
+    
+    // Popola i dati
+    document.getElementById('royal-full-title').innerHTML = 
+        `Cavaliere di <span class="activity-name">${routeName}</span>`;
+    
+    document.getElementById('kq-activity-name').textContent = routeName;
+    document.getElementById('kq-username').textContent = kingQueenData.username;
+    document.getElementById('kq-duration').textContent = kingQueenData.duration;
+    document.getElementById('kq-created-at').textContent = kingQueenData.created_at;
+    document.getElementById('kq-avatar').src = kingQueenData.avatar_url;
+    
+    // Imposta il link all'attività
+    const activityUrlBase = document.getElementById('activity-detail-url-base').textContent;
+    document.getElementById('kq-activity-link').href = 
+        activityUrlBase.replace('12345', kingQueenData.activity_id);
+    
+    // Mostra l'elemento
+    knightElement.style.display = 'block';
+    
+    // Animazione entrata
+    gsap.fromTo(knightElement, 
+        { opacity: 0, y: 30, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(1.7)" }
+    );
+}
+
+// ESEMPIO DI UTILIZZO QUANDO SI SELEZIONA UN PERCORSO
+function onRouteSelected(route) {
+    // Mostra dettagli percorso
+    document.getElementById('detail-route-name').textContent = route.name;
+    document.getElementById('detail-route-description').textContent = route.description;
+    
+    // Recupera dati del cavaliere per questo percorso
+    fetch(`/api/route/${route.id}/king`)
+        .then(response => response.json())
+        .then(kingData => {
+            showKnightHighlight(route, kingData);
+        })
+        .catch(() => {
+            // Nascondi se non ci sono dati
+            document.getElementById('detail-king-queen').style.display = 'none';
+        });
+}
 
 function createRoyalParticles() {
     const container = document.querySelector('.royal-particles');
