@@ -1311,728 +1311,387 @@ a:hover {
         letter-spacing: 1px;
         color: rgba(255, 255, 255, 0.8);
     }
-/* 🎨 VARIABILI CSS PERSONALIZZATE */
-:root {
-    --gold-gradient: linear-gradient(135deg, #FFD700, #FF6B00, #FFD700);
-    --silver-gradient: linear-gradient(135deg, #C0C0C0, #E8E8E8, #C0C0C0);
-    --bronze-gradient: linear-gradient(135deg, #CD7F32, #FFA500, #CD7F32);
-    --galaxy-gradient: linear-gradient(135deg, #667eea, #764ba2, #667eea);
-    --neon-glow: 0 0 20px rgba(255, 255, 255, 0.5);
-}
-
-/* 🚀 ITEM PRINCIPALE */
-.epic-leaderboard-item {
+/* 🎨 VARIABILI CSS PERSONALIZZATE */ :root { --gold-gradient: linear-gradient(135deg, #FFD700, #FF6B00, #FFD700); --silver-gradient: linear-gradient(135deg, #C0C0C0, #E8E8E8, #C0C0C0); --bronze-gradient: linear-gradient(135deg, #CD7F32, #FFA500, #CD7F32); --galaxy-gradient: linear-gradient(135deg, #667eea, #764ba2, #667eea); --neon-glow: 0 0 20px rgba(255, 255, 255, 0.5); } /* 🚀 ITEM PRINCIPALE */ .epic-leaderboard-item { position: relative; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; margin: 15px 0; padding: 20px; overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; } .epic-leaderboard-item::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); transition: left 0.6s; } .epic-leaderboard-item:hover::before { left: 100%; } /* 👑 RANK BADGE ANIMATO */ .rank-badge { position: relative; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); animation: float 3s ease-in-out infinite; } .rank-1 { background: var(--gold-gradient); } .rank-2 { background: var(--silver-gradient); } .rank-3 { background: var(--bronze-gradient); } .rank-other { background: var(--galaxy-gradient); } .rank-shine { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%); animation: shine 3s infinite; } .rank-crown { position: absolute; top: -10px; font-size: 1.5rem; animation: bounce 2s infinite; } /* 🎭 AVATAR CON EFFETTI */ .avatar-container { position: relative; margin-right: 20px; } .animated-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid transparent; background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: avatarGlow 2s ease-in-out infinite alternate; } .avatar-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; border-radius: 50%; background: conic-gradient(from 0deg, #ff6b6b, #4ecdc4, #45b7d1, #ff6b6b); opacity: 0.3; filter: blur(10px); animation: rotate 4s linear infinite; } /* ✨ ANIMAZIONI */ @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(5deg); } } @keyframes shine { 0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); } 100% { transform: translateX(100%) translateY(100%) rotate(45deg); } } @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } } @keyframes avatarGlow { 0% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); } 100% { box-shadow: 0 0 30px rgba(69, 183, 209, 0.8); } } @keyframes rotate { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } } /* 🌌 STATO VUOTO EPICO */ .epic-empty-state { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 25px; color: white; text-align: center; padding: 60px 40px; position: relative; overflow: hidden; } .floating-astronaut { font-size: 4rem; animation: float 3s ease-in-out infinite; margin-bottom: 20px; } .btn-galaxy { background: linear-gradient(135deg, #ff6b6b, #4ecdc4); border: none; border-radius: 50px; padding: 12px 30px; color: white; font-weight: bold; position: relative; overflow: hidden; transition: all 0.3s ease; } .btn-glow { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s; } .btn-galaxy:hover .btn-glow { left: 100%; } /* 💫 PARTICELLE */ .particle-field { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; } .particle { position: absolute; width: 4px; height: 4px; background: gold; border-radius: 50%; top: 50%; left: 50%; opacity: 1; } /* 📱 LAYOUT MODERNO */ .item-content { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; } .user-details { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; flex: 1; min-width: 0; /* Permette al testo di truncare */ } .username-link { color: #2c3e50; text-decoration: none; font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; transition: all 0.3s ease; display: block; width: 100%; } .username-link:hover { color: #3498db; transform: translateX(3px); } .username-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; } .distance-value { font-size: 0.9rem; font-weight: 600; color: #27ae60; background: rgba(39, 174, 96, 0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(39, 174, 96, 0.2); animation: pulseSubtle 2s infinite; } /* Versione mobile */ @media (max-width: 768px) { .username-text { max-width: 150px; font-size: 1rem; } .distance-value { font-size: 0.8rem; padding: 3px 10px; } } @media (max-width: 480px) { .username-text { max-width: 120px; } } @keyframes pulseSubtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } } .achievement-value { font-size: 1.2rem; font-weight: bold; position: relative; } .pulse-icon { animation: pulse 1.5s infinite; } @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } } .avatar-container { position: relative; margin-right: 15px; /* Disabilita 3D su mobile per performance */ perspective: none; } .avatar-wrapper { position: relative; width: 60px; /* Ridotto per mobile */ height: 60px; border-radius: 50%; /* Transizione semplificata */ transition: transform 0.3s ease; will-change: transform; } /* DISABILITA ANIMAZIONI COMPLESSE SU MOBILE LENTI */ @media (max-width: 768px) and (prefers-reduced-motion: reduce) { .avatar-wrapper { transition: none; } } .avatar-wrapper:hover { transform: scale(1.05); /* Effetto semplificato */ } /* SFONDO GRADIENTE - RIDOTTO */ .avatar-background-glow { position: absolute; top: -3px; left: -3px; width: 66px; height: 66px; border-radius: 50%; background: conic-gradient( from 0deg at 50% 50%, #ff0080, #0070f3, #00f260, #ff0080 ); /* Animazione semplificata */ animation: rotateGradientMobile 6s linear infinite; filter: blur(5px); opacity: 0.6; z-index: 1; } /* BORDO OTTIMIZZATO */ .avatar-border-animation { position: absolute; top: -2px; left: -2px; width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1); background-size: 200% 200%; /* Ridotto per performance */ animation: borderFlowMobile 4s ease infinite; z-index: 2; padding: 1px; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: subtract; /* Disabilita su device lenti */ @media (prefers-reduced-motion: reduce) { animation: none; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); } } .epic-avatar { position: relative; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.1); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Filter pesante disabilitato su mobile */ filter: none; transition: border-color 0.3s ease; } /* GLOW SEMPLIFICATO */ .avatar-glow-effect { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); opacity: 0; z-index: 2; animation: pulseGlowMobile 3s ease-in-out infinite alternate; } /* PARTICELLE CONDIZIONALI */ .floating-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; z-index: 4; /* Disabilita particelle su mobile base */ @media (max-width: 768px) and (max-resolution: 1.5dppx) { display: none; } } .particle { position: absolute; width: 3px; height: 3px; background: gold; border-radius: 50%; opacity: 0; } /* BADGE OTTIMIZZATO */ .premium-rank-badge { position: absolute; bottom: -3px; right: -3px; width: 24px; /* Ridotto */ height: 24px; border-radius: 50%; z-index: 5; transform: scale(0); animation: badgeAppearMobile 0.4s ease-out 0.5s forwards; } .badge-inner { position: relative; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; /* Ridotto */ animation: badgeFloatMobile 3s ease-in-out infinite; } /* ANIMAZIONI OTTIMIZZATE PER MOBILE */ @keyframes rotateGradientMobile { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } @keyframes borderFlowMobile { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } } @keyframes pulseGlowMobile { 0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.2; } 100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.4; } } @keyframes badgeAppearMobile { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } } @keyframes badgeFloatMobile { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } } /* OTTIMIZZAZIONI SPECIFICHE PER DISPOSITIVI */ @media (max-width: 480px) { .avatar-wrapper { width: 50px; height: 50px; } .avatar-background-glow { width: 56px; height: 56px; animation-duration: 8s; /* Più lento su device piccoli */ } .avatar-border-animation { width: 54px; height: 54px; } .premium-rank-badge { width: 20px; height: 20px; bottom: -2px; right: -2px; } .badge-inner { font-size: 0.6rem; } } /* OTTIMIZZAZIONI PER TABLET */ @media (min-width: 769px) and (max-width: 1024px) { .avatar-wrapper { width: 70px; height: 70px; } .avatar-background-glow { width: 76px; height: 76px; } .avatar-border-animation { width: 74px; height: 74px; } } /* DISABILITA COMPLETAMENTE ANIMAZIONI SE RICHIESTO */ @media (prefers-reduced-motion: reduce) { .avatar-background-glow, .avatar-border-animation, .avatar-glow-effect, .floating-particles, .premium-rank-badge { animation: none !important; } .avatar-wrapper { transition: none !important; } } /* OTTIMIZZAZIONE PER RETINE DISPLAY */ @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { .avatar-wrapper { width: 65px; height: 65px; } .epic-avatar { border-width: 1.5px; /* Bordo più sottile */ } } /* OTTIMIZZAZIONE PERFORMANCE */ .avatar-container { /* Abilita accelerazione GPU */ transform: translateZ(0); backface-visibility: hidden; } /* CARICAMENTO PROGRESSIVO */ .epic-avatar { background-color: #f0f0f0; /* Colore di fallback */ background-image: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px); background-size: 200% 100%; animation: loadingShine 1.5s infinite; } @keyframes loadingShine { 0% { background-position: -100px; } 100% { background-position: 100px; } } .epic-avatar[src] { background: none; animation: none; } .epic-leaderboard-item { position: relative; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; margin: 12px 0; padding: 18px; overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); } .item-content { display: flex; align-items: flex-start; position: relative; z-index: 2; gap: 15px; } .user-info { display: flex; align-items: flex-start; flex: 1; gap: 15px; } .user-details { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; } .username-link { color: #2c3e50; text-decoration: none; font-weight: 700; font-size: 1.2rem; transition: all 0.3s ease; display: block; } .username-link:hover { color: #3498db; transform: translateX(5px); } .username-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .achievement-value { display: inline-flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; color: #27ae60; background: rgba(39, 174, 96, 0.1); padding: 6px 12px; border-radius: 20px; border: 2px solid rgba(39, 174, 96, 0.2); animation: pulseSubtle 2s infinite; width: fit-content; } .value-display { display: flex; align-items: center; gap: 6px; } .pulse-icon { font-size: 0.9rem; animation: pulse 1.5s infinite; } .progress-sparkle { display: none; /* Nascondi per versione compatta */ } @keyframes pulseSubtle { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(39, 174, 96, 0.4); } 50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(39, 174, 96, 0.6); } } /* Responsive */ @media (max-width: 768px) { .item-content { gap: 12px; } .user-info { gap: 12px; } .user-details { gap: 6px; } .username-link { font-size: 1.1rem; } .achievement-value { font-size: 0.9rem; padding: 5px 10px; } .value-display { gap: 4px; } } @media (max-width: 480px) { .username-text { max-width: 150px; } .achievement-value { font-size: 0.85rem; padding: 4px 8px; } .pulse-icon { font-size: 0.8rem; } } /* Ottimizzazioni mobile */ @media (max-width: 768px) { .avatar-background-glow, .avatar-border-animation, .avatar-glow-effect, .floating-particles, .rank-shine { display: none; } .epic-leaderboard-item { padding: 15px; backdrop-filter: none; background: white; } }
+/* 👑 CONTENITORE REALE */
+.king-queen-highlight {
     position: relative;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    margin: 15px 0;
-    padding: 20px;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transform-style: preserve-3d;
-}
-
-.epic-leaderboard-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.6s;
-}
-
-.epic-leaderboard-item:hover::before {
-    left: 100%;
-}
-
-/* 👑 RANK BADGE ANIMATO */
-.rank-badge {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
-    animation: float 3s ease-in-out infinite;
-}
-
-.rank-1 { background: var(--gold-gradient); }
-.rank-2 { background: var(--silver-gradient); }
-.rank-3 { background: var(--bronze-gradient); }
-.rank-other { background: var(--galaxy-gradient); }
-
-.rank-shine {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
-    animation: shine 3s infinite;
-}
-
-.rank-crown {
-    position: absolute;
-    top: -10px;
-    font-size: 1.5rem;
-    animation: bounce 2s infinite;
-}
-
-/* 🎭 AVATAR CON EFFETTI */
-.avatar-container {
-    position: relative;
-    margin-right: 20px;
-}
-
-.animated-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1) border-box;
-    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: avatarGlow 2s ease-in-out infinite alternate;
-}
-
-.avatar-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg, #ff6b6b, #4ecdc4, #45b7d1, #ff6b6b);
-    opacity: 0.3;
-    filter: blur(10px);
-    animation: rotate 4s linear infinite;
-}
-
-/* ✨ ANIMAZIONI */
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(5deg); }
-}
-
-@keyframes shine {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-}
-
-@keyframes avatarGlow {
-    0% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); }
-    100% { box-shadow: 0 0 30px rgba(69, 183, 209, 0.8); }
-}
-
-@keyframes rotate {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* 🌌 STATO VUOTO EPICO */
-.epic-empty-state {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
     border-radius: 25px;
-    color: white;
-    text-align: center;
-    padding: 60px 40px;
-    position: relative;
     overflow: hidden;
+    margin: 20px 0;
+    box-shadow: 0 15px 50px rgba(255, 215, 0, 0.3);
 }
 
-.floating-astronaut {
-    font-size: 4rem;
-    animation: float 3s ease-in-out infinite;
-    margin-bottom: 20px;
-}
-
-.btn-galaxy {
-    background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
-    border: none;
-    border-radius: 50px;
-    padding: 12px 30px;
-    color: white;
-    font-weight: bold;
+.royal-container {
     position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0.15) 0%,
+        rgba(255, 165, 0, 0.2) 50%,
+        rgba(255, 215, 0, 0.15) 100%);
+    backdrop-filter: blur(15px);
+    border: 2px solid transparent;
+    padding: 30px 25px;
+    border-radius: 25px;
 }
 
-.btn-glow {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s;
-}
-
-.btn-galaxy:hover .btn-glow {
-    left: 100%;
-}
-
-/* 💫 PARTICELLE */
-.particle-field {
+/* 🌟 SFONDO ANIMATO */
+.royal-background {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    animation: royalBackgroundShift 8s ease-in-out infinite;
+    z-index: 1;
 }
 
-.particle {
+.royal-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+.royal-particle {
     position: absolute;
     width: 4px;
     height: 4px;
     background: gold;
     border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    opacity: 1;
+    animation: royalParticleFloat 6s infinite;
 }
 
-/* 📱 LAYOUT MODERNO */
-.item-content {
+/* 👑 CORONA FLUTTUANTE */
+.floating-crown {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 4rem;
+    filter: drop-shadow(0 0 20px gold);
+    animation: crownBounce 3s ease-in-out infinite;
+    z-index: 10;
+}
+
+/* 🎭 CONTENUTO PRINCIPALE */
+.royal-content {
+    position: relative;
+    z-index: 3;
+}
+
+.royal-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    position: relative;
-    z-index: 2;
-}
-
-.user-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
     justify-content: center;
-    flex: 1;
-    min-width: 0; /* Permette al testo di truncare */
+    gap: 15px;
+    margin-bottom: 25px;
 }
 
-.username-link {
-    color: #2c3e50;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 4px;
-    transition: all 0.3s ease;
-    display: block;
-    width: 100%;
+.royal-crown-icon {
+    font-size: 2rem;
+    color: gold;
+    animation: iconPulse 2s ease-in-out infinite;
 }
 
-.username-link:hover {
-    color: #3498db;
-    transform: translateX(3px);
+.royal-title {
+    color: #8B4513;
+    font-weight: 800;
+    font-size: 1.8rem;
+    text-align: center;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(45deg, #8B4513, #D2691E, #8B4513);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: royalTitleShine 3s ease-in-out infinite;
 }
 
-.username-text {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+/* 👤 INFO UTENTE REALE */
+.royal-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
-.distance-value {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #27ae60;
-    background: rgba(39, 174, 96, 0.1);
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(39, 174, 96, 0.2);
-    animation: pulseSubtle 2s infinite;
-}
-
-/* Versione mobile */
-@media (max-width: 768px) {
-    .username-text {
-        max-width: 150px;
-        font-size: 1rem;
-    }
-    
-    .distance-value {
-        font-size: 0.8rem;
-        padding: 3px 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .username-text {
-        max-width: 120px;
-    }
-}
-
-@keyframes pulseSubtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-}
-
-.achievement-value {
-    font-size: 1.2rem;
-    font-weight: bold;
+.royal-avatar-container {
     position: relative;
+    flex-shrink: 0;
 }
 
-.pulse-icon {
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-
-.avatar-container {
-    position: relative;
-    margin-right: 15px;
-    /* Disabilita 3D su mobile per performance */
-    perspective: none;
-}
-
-.avatar-wrapper {
-    position: relative;
-    width: 60px; /* Ridotto per mobile */
-    height: 60px;
+.royal-avatar {
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    /* Transizione semplificata */
-    transition: transform 0.3s ease;
-    will-change: transform;
-}
-
-/* DISABILITA ANIMAZIONI COMPLESSE SU MOBILE LENTI */
-@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    .avatar-wrapper {
-        transition: none;
-    }
-}
-
-.avatar-wrapper:hover {
-    transform: scale(1.05); /* Effetto semplificato */
-}
-
-/* SFONDO GRADIENTE - RIDOTTO */
-.avatar-background-glow {
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    width: 66px;
-    height: 66px;
-    border-radius: 50%;
-    background: conic-gradient(
-        from 0deg at 50% 50%,
-        #ff0080,
-        #0070f3,
-        #00f260,
-        #ff0080
-    );
-    /* Animazione semplificata */
-    animation: rotateGradientMobile 6s linear infinite;
-    filter: blur(5px);
-    opacity: 0.6;
-    z-index: 1;
-}
-
-/* BORDO OTTIMIZZATO */
-.avatar-border-animation {
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-    background-size: 200% 200%; /* Ridotto per performance */
-    animation: borderFlowMobile 4s ease infinite;
-    z-index: 2;
-    padding: 1px;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: subtract;
-    /* Disabilita su device lenti */
-    @media (prefers-reduced-motion: reduce) {
-        animation: none;
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-    }
-}
-
-.epic-avatar {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
+    border: 3px solid gold;
     object-fit: cover;
-    z-index: 3;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    /* Filter pesante disabilitato su mobile */
-    filter: none;
-    transition: border-color 0.3s ease;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
 }
 
-/* GLOW SEMPLIFICATO */
-.avatar-glow-effect {
+.royal-avatar-glow {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-    opacity: 0;
-    z-index: 2;
-    animation: pulseGlowMobile 3s ease-in-out infinite alternate;
+    background: radial-gradient(circle, gold 0%, transparent 70%);
+    opacity: 0.4;
+    animation: avatarGlowPulse 2s ease-in-out infinite;
+    z-index: 1;
 }
 
-/* PARTICELLE CONDIZIONALI */
-.floating-particles {
+.royal-avatar-sparkles {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    border-radius: 50%;
-    z-index: 4;
-    /* Disabilita particelle su mobile base */
-    @media (max-width: 768px) and (max-resolution: 1.5dppx) {
-        display: none;
-    }
 }
 
-.particle {
+.sparkle {
     position: absolute;
-    width: 3px;
-    height: 3px;
-    background: gold;
+    width: 6px;
+    height: 6px;
+    background: white;
     border-radius: 50%;
-    opacity: 0;
+    animation: sparkleTwinkle 2s infinite;
 }
 
-/* BADGE OTTIMIZZATO */
-.premium-rank-badge {
-    position: absolute;
-    bottom: -3px;
-    right: -3px;
-    width: 24px; /* Ridotto */
-    height: 24px;
-    border-radius: 50%;
-    z-index: 5;
-    transform: scale(0);
-    animation: badgeAppearMobile 0.4s ease-out 0.5s forwards;
+.s1 { top: 10%; left: 20%; animation-delay: 0s; }
+.s2 { top: 70%; left: 80%; animation-delay: 0.7s; }
+.s3 { top: 40%; left: 10%; animation-delay: 1.4s; }
+
+/* 📝 DETTAGLI TESTUALI */
+.royal-details {
+    flex: 1;
 }
 
-.badge-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
+.royal-holder, .royal-duration {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.royal-label {
+    color: #8B4513;
+    font-weight: 600;
+}
+
+.royal-username {
+    color: #D2691E;
+    font-size: 1.3rem;
+    background: linear-gradient(45deg, #D2691E, #FF8C00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.royal-duration-value {
+    color: #B8860B;
+    font-size: 1.2rem;
+}
+
+.royal-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.7rem; /* Ridotto */
-    animation: badgeFloatMobile 3s ease-in-out infinite;
+    justify-content: space-between;
+    margin-top: 15px;
 }
 
-/* ANIMAZIONI OTTIMIZZATE PER MOBILE */
-@keyframes rotateGradientMobile {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.btn-royal-action {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: #8B4513 !important;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
 }
 
-@keyframes borderFlowMobile {
-    0%, 100% { background-position: 0% 50%; }
+.btn-royal-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 165, 0, 0.5);
+    color: #8B4513;
+}
+
+.royal-date {
+    color: #A0522D;
+    font-style: italic;
+}
+
+/* 🎞️ ANIMAZIONI */
+@keyframes royalBackgroundShift {
+    0%, 100% { 
+        background-position: 0% 0%, 100% 100%, 50% 50%;
+    }
+    50% { 
+        background-position: 100% 100%, 0% 0%, 80% 80%;
+    }
+}
+
+@keyframes crownBounce {
+    0%, 100% { 
+        transform: translateX(-50%) translateY(0px) rotate(-5deg);
+        filter: drop-shadow(0 0 20px gold) brightness(1);
+    }
+    50% { 
+        transform: translateX(-50%) translateY(-10px) rotate(5deg);
+        filter: drop-shadow(0 0 30px #FFD700) brightness(1.3);
+    }
+}
+
+@keyframes iconPulse {
+    0%, 100% { 
+        transform: scale(1) rotate(0deg);
+        color: gold;
+    }
+    50% { 
+        transform: scale(1.1) rotate(10deg);
+        color: #FFA500;
+    }
+}
+
+@keyframes royalTitleShine {
+    0%, 100% { 
+        background-position: 0% 50%;
+    }
+    50% { 
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes avatarGlowPulse {
+    0%, 100% { 
+        opacity: 0.3;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+@keyframes sparkleTwinkle {
+    0%, 100% { 
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes royalParticleFloat {
+    0% { 
+        transform: translate(0, 0);
+        opacity: 0;
+    }
+    10% { 
+        opacity: 1;
+    }
+    90% { 
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(100px, -100px);
+        opacity: 0;
+    }
+}
+
+/* 🎯 EFFETTI BORDO */
+.royal-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 25px;
+    background: linear-gradient(45deg, gold, #FFA500, gold, #FFA500);
+    background-size: 400% 400%;
+    animation: borderFlow 4s linear infinite;
+    z-index: -1;
+    padding: 3px;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: subtract;
+}
+
+.royal-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+    animation: royalShine 6s infinite;
+    z-index: 2;
+}
+
+@keyframes borderFlow {
+    0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-@keyframes pulseGlowMobile {
-    0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.2; }
-    100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.4; }
+@keyframes royalShine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
-@keyframes badgeAppearMobile {
-    0% { transform: scale(0); }
-    80% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-@keyframes badgeFloatMobile {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2px); }
-}
-
-/* OTTIMIZZAZIONI SPECIFICHE PER DISPOSITIVI */
-@media (max-width: 480px) {
-    .avatar-wrapper {
-        width: 50px;
-        height: 50px;
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+    .royal-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
     }
     
-    .avatar-background-glow {
-        width: 56px;
-        height: 56px;
-        animation-duration: 8s; /* Più lento su device piccoli */
+    .royal-header {
+        flex-direction: column;
+        gap: 10px;
     }
     
-    .avatar-border-animation {
-        width: 54px;
-        height: 54px;
+    .royal-title {
+        font-size: 1.5rem;
     }
     
-    .premium-rank-badge {
-        width: 20px;
-        height: 20px;
-        bottom: -2px;
-        right: -2px;
-    }
-    
-    .badge-inner {
-        font-size: 0.6rem;
-    }
-}
-
-/* OTTIMIZZAZIONI PER TABLET */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .avatar-wrapper {
+    .royal-avatar {
         width: 70px;
         height: 70px;
     }
     
-    .avatar-background-glow {
-        width: 76px;
-        height: 76px;
+    .floating-crown {
+        font-size: 3rem;
+        top: -20px;
     }
     
-    .avatar-border-animation {
-        width: 74px;
-        height: 74px;
+    .royal-actions {
+        flex-direction: column;
+        gap: 10px;
     }
 }
 
-/* DISABILITA COMPLETAMENTE ANIMAZIONI SE RICHIESTO */
+/* ⚡ OTTIMIZZAZIONI PERFORMANCE */
 @media (prefers-reduced-motion: reduce) {
-    .avatar-background-glow,
-    .avatar-border-animation,
-    .avatar-glow-effect,
-    .floating-particles,
-    .premium-rank-badge {
+    .royal-background,
+    .floating-crown,
+    .royal-crown-icon,
+    .royal-avatar-glow,
+    .sparkle,
+    .royal-border,
+    .royal-shine {
         animation: none !important;
-    }
-    
-    .avatar-wrapper {
-        transition: none !important;
-    }
-}
-
-/* OTTIMIZZAZIONE PER RETINE DISPLAY */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .avatar-wrapper {
-        width: 65px;
-        height: 65px;
-    }
-    
-    .epic-avatar {
-        border-width: 1.5px; /* Bordo più sottile */
-    }
-}
-
-/* OTTIMIZZAZIONE PERFORMANCE */
-.avatar-container {
-    /* Abilita accelerazione GPU */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-}
-
-/* CARICAMENTO PROGRESSIVO */
-.epic-avatar {
-    background-color: #f0f0f0; /* Colore di fallback */
-    background-image: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
-    background-size: 200% 100%;
-    animation: loadingShine 1.5s infinite;
-}
-
-@keyframes loadingShine {
-    0% { background-position: -100px; }
-    100% { background-position: 100px; }
-}
-
-.epic-avatar[src] {
-    background: none;
-    animation: none;
-}
-
-.epic-leaderboard-item {
-    position: relative;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    margin: 12px 0;
-    padding: 18px;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.item-content {
-    display: flex;
-    align-items: flex-start;
-    position: relative;
-    z-index: 2;
-    gap: 15px;
-}
-
-.user-info {
-    display: flex;
-    align-items: flex-start;
-    flex: 1;
-    gap: 15px;
-}
-
-.user-details {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.username-link {
-    color: #2c3e50;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
-    display: block;
-}
-
-.username-link:hover {
-    color: #3498db;
-    transform: translateX(5px);
-}
-
-.username-text {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.achievement-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #27ae60;
-    background: rgba(39, 174, 96, 0.1);
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 2px solid rgba(39, 174, 96, 0.2);
-    animation: pulseSubtle 2s infinite;
-    width: fit-content;
-}
-
-.value-display {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.pulse-icon {
-    font-size: 0.9rem;
-    animation: pulse 1.5s infinite;
-}
-
-.progress-sparkle {
-    display: none; /* Nascondi per versione compatta */
-}
-
-@keyframes pulseSubtle {
-    0%, 100% { 
-        transform: scale(1);
-        box-shadow: 0 0 0 rgba(39, 174, 96, 0.4);
-    }
-    50% { 
-        transform: scale(1.02);
-        box-shadow: 0 0 15px rgba(39, 174, 96, 0.6);
-    }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .item-content {
-        gap: 12px;
-    }
-    
-    .user-info {
-        gap: 12px;
-    }
-    
-    .user-details {
-        gap: 6px;
-    }
-    
-    .username-link {
-        font-size: 1.1rem;
-    }
-    
-    .achievement-value {
-        font-size: 0.9rem;
-        padding: 5px 10px;
-    }
-    
-    .value-display {
-        gap: 4px;
-    }
-}
-
-@media (max-width: 480px) {
-    .username-text {
-        max-width: 150px;
-    }
-    
-    .achievement-value {
-        font-size: 0.85rem;
-        padding: 4px 8px;
-    }
-    
-    .pulse-icon {
-        font-size: 0.8rem;
-    }
-}
-
-/* Ottimizzazioni mobile */
-@media (max-width: 768px) {
-    .avatar-background-glow,
-    .avatar-border-animation,
-    .avatar-glow-effect,
-    .floating-particles,
-    .rank-shine {
-        display: none;
-    }
-    
-    .epic-leaderboard-item {
-        padding: 15px;
-        backdrop-filter: none;
-        background: white;
     }
 }

@@ -1007,6 +1007,40 @@ document.addEventListener("submit", async (e) => {
     }
 });
 
+function createRoyalParticles() {
+    const container = document.querySelector('.royal-particles');
+    if (!container) return;
+    
+    // Crea particelle dinamiche
+    for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'royal-particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        container.appendChild(particle);
+    }
+}
 
+// Inizializza quando mostra il componente
+function showKingQueenHighlight(data) {
+    const element = document.getElementById('detail-king-queen');
+    element.style.display = 'block';
+    
+    // Popola dati
+    document.getElementById('kq-username').textContent = data.username;
+    document.getElementById('kq-duration').textContent = data.duration;
+    document.getElementById('kq-created-at').textContent = data.createdAt;
+    document.getElementById('kq-avatar').src = data.avatarUrl;
+    
+    // Avvia effetti
+    createRoyalParticles();
+    
+    // Animazione entrata
+    gsap.fromTo(element, 
+        { opacity: 0, y: 50, scale: 0.8 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.7)" }
+    );
+}
 
 console.log('🚀 Main.js completamente caricato!');
