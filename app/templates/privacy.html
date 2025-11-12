@@ -1,75 +1,70 @@
 {% extends "base.html" %}
 
-{% block title %}Privacy Policy{% endblock %}
+{% block title %}Privacy Policy - PeakRankStreet{% endblock %}
 
 {% block content %}
 <div class="container my-5 pt-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <h1 class="mb-4">Privacy Policy</h1>
-            <p class="lead">La tua privacy è importante per noi. Questa Privacy Policy spiega quali dati raccogliamo, perché li raccogliamo e come li utilizziamo.</p>
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h1 class="card-title text-center mb-4">Informativa sulla Privacy</h1>
+                    <p class="text-center text-muted">Ultimo aggiornamento: 3 Novembre 2025</p>
 
-            <h3 class="mt-5">1. Quali dati raccogliamo</h3>
-            <p>Raccogliamo diverse tipologie di dati per vari scopi per fornire e migliorare il nostro Servizio.</p>
-            <ul>
-                <li><strong>Dati Personali:</strong> Durante l'utilizzo del nostro Servizio, potremmo chiederti di fornirci alcune informazioni personali identificabili che possono essere utilizzate per contattarti o identificarti ("Dati Personali"). Queste possono includere, a titolo esemplificativo:
+                    <hr class="my-4">
+
+                    <p class="lead">La tua privacy è di fondamentale importanza per noi di PeakRankStreet. Questa informativa sulla privacy descrive quali dati personali raccogliamo dagli utenti del nostro sito web e della nostra applicazione, per quali finalità li utilizziamo e come li proteggiamo.</p>
+
+                    <h3 class="mt-5">1. Titolare del Trattamento</h3>
+                    <p>Il titolare del trattamento dei dati è peakrankstreet.com, contattabile all'indirizzo email: info@peakrankstreet.com.</p>
+
+                    <h3 class="mt-5">2. Dati Raccolti</h3>
+                    <p>Raccogliamo diverse tipologie di dati al fine di fornire e migliorare il nostro Servizio.</p>
+                    
+                    <h5 class="mt-4">a) Dati forniti volontariamente dall'utente</h5>
                     <ul>
-                        <li>Indirizzo email</li>
-                        <li>Nome utente</li>
-                        <li>Password (memorizzata in formato hash)</li>
-                        <li>Città</li>
-                        <li>Immagine del profilo</li>
-                        <li>Dati relativi alle tue attività sportive (distanza, durata, percorsi, ecc.)</li>
-                        <li>Cognome (se fornito)</li>
+                        <li><strong>Dati di Registrazione:</strong> Per creare un account, raccogliamo il tuo nome utente, indirizzo email e password (memorizzata esclusivamente in formato crittografato/hash).</li>
+                        <li><strong>Dati del Profilo:</strong> Puoi scegliere di arricchire il tuo profilo con informazioni aggiuntive come la tua città e un'immagine del profilo.</li>
+                        <li><strong>Contenuti Generati dall'Utente:</strong> Raccogliamo tutti i dati che pubblichi attivamente sul Servizio, inclusi post, commenti, percorsi creati, sfide e scommesse.</li>
                     </ul>
-                </li>
-                <li><strong>Dati di Utilizzo:</strong> Potremmo anche raccogliere informazioni su come si accede e si utilizza il Servizio ("Dati di Utilizzo"). Questi Dati di Utilizzo possono includere informazioni come l'indirizzo IP del tuo computer, il tipo di browser, la versione del browser, le pagine del nostro Servizio che visiti, l'ora e la data della tua visita, il tempo trascorso su tali pagine, identificatori unici del dispositivo e altri dati diagnostici.</li>
-            </ul>
 
-            <h3 class="mt-5">2. Come utilizziamo i tuoi dati</h3>
-            <p>Utilizziamo i dati raccolti per vari scopi, tra cui:</p>
-            <ul>
-                <li>Fornire e mantenere il nostro Servizio</li>
-                <li>Notificarti modifiche al nostro Servizio</li>
-                <li>Consentirti di partecipare a funzionalità interattive del nostro Servizio quando scegli di farlo</li>
-                <li>Fornire assistenza clienti</li>
-                <li>Analizzare o raccogliere informazioni preziose in modo da poter migliorare il nostro Servizio</li>
-                <li>Monitorare l'utilizzo del nostro Servizio</li>
-                <li>Rilevare, prevenire e risolvere problemi tecnici</li>
-            </ul>
+                    <h5 class="mt-4">b) Dati generati durante l'utilizzo del Servizio</h5>
+                    <ul>
+                        <li><strong>Dati di Attività Sportiva:</strong> Quando carichi un file GPX o registri un'attività, raccogliamo i dati geografici e di performance in esso contenuti (es. coordinate GPS, distanza, durata, velocità, altimetria). Questi dati sono il cuore del Servizio.</li>
+                        <li><strong>Dati di Interazione:</strong> Memorizziamo le tue interazioni con la community, come i "Mi Piace" che metti, gli utenti che segui e i gruppi a cui ti iscrivi.</li>
+                    </ul>
 
-            <h3 class="mt-5">3. Cookie</h3>
-            <p>Utilizziamo cookie e tecnologie di tracciamento simili per monitorare l'attività sul nostro Servizio e conservare determinate informazioni. Per maggiori dettagli, consulta la nostra <a href="{{ url_for('main.cookie_policy') }}">Cookie Policy</a>.</p>
+                    <h5 class="mt-4">c) Dati di Navigazione</h5>
+                    <p>Raccogliamo automaticamente informazioni tecniche durante la navigazione, come l'indirizzo IP, il tipo di browser, le pagine visitate e gli orari di accesso. Questi dati vengono utilizzati in forma aggregata per monitorare e migliorare il Servizio.</p>
 
-            <h3 class="mt-5">4. Divulgazione dei Dati</h3>
-            <p>Potremmo divulgare i tuoi Dati Personali in buona fede, ritenendo che tale azione sia necessaria per:</p>
-            <ul>
-                <li>Rispettare un obbligo legale</li>
-                <li>Proteggere e difendere i diritti o la proprietà di PeakRankStreet App</li>
-                <li>Prevenire o indagare su possibili illeciti in relazione al Servizio</li>
-                <li>Proteggere la sicurezza personale degli utenti del Servizio o del pubblico</li>
-                <li>Proteggere dalla responsabilità legale</li>
-            </ul>
+                    <h3 class="mt-5">3. Finalità del Trattamento</h3>
+                    <p>Utilizziamo i dati raccolti per le seguenti finalità:</p>
+                    <ul>
+                        <li><strong>Erogazione del Servizio:</strong> Per permetterti di registrare attività, partecipare a sfide, interagire con la community e utilizzare tutte le funzionalità della piattaforma.</li>
+                        <li><strong>Personalizzazione dell'Esperienza:</strong> Per mostrarti contenuti rilevanti, come il tuo feed personale o le sfide nella tua città.</li>
+                        <li><strong>Comunicazioni di Servizio:</strong> Per inviarti notifiche relative alle tue interazioni (es. menzioni, inviti a sfide, scommesse vinte).</li>
+                        <li><strong>Miglioramento e Analisi:</strong> Per analizzare l'utilizzo del Servizio, identificare problemi tecnici e sviluppare nuove funzionalità.</li>
+                        <li><strong>Sicurezza:</strong> Per proteggere il nostro Servizio e i nostri utenti da frodi o abusi.</li>
+                    </ul>
+                    
+                    <h3 class="mt-5">4. Condivisione dei Dati e Visibilità Pubblica</h3>
+                    <p>PeakRankStreet è una piattaforma social. Per sua natura, alcune delle informazioni che fornisci sono visibili ad altri utenti.</p>
+                    <ul>
+                        <li><strong>Informazioni Pubbliche:</strong> Il tuo nome utente, l'immagine del profilo, il titolo nobiliare, la città e i contenuti che crei (post pubblici, percorsi, attività non private) sono visibili ad altri utenti della piattaforma e, potenzialmente, al pubblico e ai motori di ricerca.</li>
+                        <li><strong>Informazioni Limitate ai Gruppi:</strong> I post pubblicati all'interno di un gruppo sono visibili solo ai membri di quel gruppo.</li>
+                        <li><strong>Nessuna Cessione a Terzi:</strong> Non vendiamo, affittiamo o cediamo i tuoi dati personali a terze parti per scopi di marketing senza il tuo esplicito consenso.</li>
+                    </ul>
 
-            <h3 class="mt-5">5. I tuoi diritti (GDPR)</h3>
-            <p>Se sei residente nello Spazio Economico Europeo (SEE), hai alcuni diritti di protezione dei dati. PeakRankStreet App mira a prendere misure ragionevoli per consentirti di correggere, modificare, eliminare o limitare l'uso dei tuoi Dati Personali.</p>
-            <ul>
-                <li>Il diritto di accedere, aggiornare o eliminare le informazioni che abbiamo su di te.</li>
-                <li>Il diritto di rettifica.</li>
-                <li>Il diritto di opporsi.</li>
-                <li>Il diritto di restrizione.</li>
-                <li>Il diritto alla portabilità dei dati.</li>
-                <li>Il diritto di revocare il consenso.</li>
-            </ul>
-            <p>Se desideri essere informato su quali Dati Personali deteniamo su di te e se desideri che vengano rimossi dal nostro sistema, ti preghiamo di contattarci via email all'indirizzo [TUA_EMAIL_SUPPORTO].</p>
+                    <h3 class="mt-5">5. Conservazione dei Dati</h3>
+                    <p>Conserveremo i tuoi dati personali solo per il tempo necessario a perseguire le finalità descritte in questa informativa. Potrai richiedere la cancellazione del tuo account e dei dati associati in qualsiasi momento.</p>
 
-            <h3 class="mt-5">6. Contatti</h3>
-            <p>Per qualsiasi domanda relativa a questa Privacy Policy, ti preghiamo di contattarci:</p>
-            <ul>
-                <li>Via email: [TUA_EMAIL_SUPPORTO]</li>
-            </ul>
+                    <h3 class="mt-5">6. Diritti dell'Interessato (GDPR)</h3>
+                    <p>Se risiedi nello Spazio Economico Europeo (SEE), hai il diritto di accedere, rettificare, cancellare, limitare o opporti al trattamento dei tuoi dati, nonché il diritto alla portabilità degli stessi. Puoi esercitare la maggior parte di questi diritti autonomamente tramite la pagina "Modifica Profilo". Per richieste più complesse, come la cancellazione completa dell'account, puoi contattarci.</p>
 
-            <p class="text-muted mt-5">Ultimo aggiornamento: {{ 'now().strftime("%d %B %Y")' }}</p>
+                    <h3 class="mt-5">7. Contatti</h3>
+                    <p>Per qualsiasi domanda o richiesta relativa a questa informativa sulla privacy, ti preghiamo di contattarci all'indirizzo: <a href="mailto:[LA TUA EMAIL]">info@peakrankstreet.com</a>.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

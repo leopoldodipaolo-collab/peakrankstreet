@@ -1,47 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Cookie Policy{% endblock %}
+{% block title %}Cookie Policy - PeakRankStreet{% endblock %}
 
 {% block content %}
 <div class="container my-5 pt-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <h1 class="mb-4">Cookie Policy</h1>
-            <p class="lead">Questa Cookie Policy spiega cosa sono i cookie e come li utilizziamo. Dovresti leggere questa policy per capire cosa sono i cookie, come li usiamo, i tipi di cookie che utilizziamo, le informazioni che raccogliamo utilizzando i cookie e come tali informazioni vengono utilizzate e come controllare le preferenze sui cookie. Per ulteriori informazioni su come utilizziamo, memorizziamo e manteniamo i tuoi dati personali al sicuro, consulta la nostra <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>.</p>
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h1 class="card-title text-center mb-4">Informativa sui Cookie</h1>
+                    <p class="text-center text-muted">Ultimo aggiornamento: 3 Novembre 2025</p>
 
-            <h3 class="mt-5">1. Cosa sono i cookie?</h3>
-            <p>I cookie sono piccoli file di testo che vengono memorizzati sul tuo dispositivo (computer, tablet o telefono cellulare) quando navighi su Internet, inclusi i siti web. Sono ampiamente utilizzati per far funzionare i siti web, o per farli funzionare in modo più efficiente, e per fornire informazioni ai proprietari del sito.</p>
+                    <hr class="my-4">
 
-            <h3 class="mt-5">2. Come utilizziamo i cookie</h3>
-            <p>Il nostro sito web utilizza i cookie per migliorare la tua esperienza di navigazione, per ricordare le tue preferenze e per scopi analitici. Utilizziamo sia cookie di sessione che cookie persistenti.</p>
-            <ul>
-                <li><strong>Cookie di sessione:</strong> Vengono eliminati automaticamente quando chiudi il browser. Li usiamo per gestire la tua sessione di login.</li>
-                <li><strong>Cookie persistenti:</strong> Rimangono sul tuo dispositivo per un periodo di tempo specificato o fino a quando non li elimini. Li usiamo per ricordare le tue preferenze (es. lingua) e per scopi analitici.</li>
-            </ul>
+                    <h3 class="mt-5">1. Cosa Sono i Cookie?</h3>
+                    <p>I cookie sono piccoli file di testo che vengono memorizzati sul tuo dispositivo quando visiti un sito web. Sono essenziali per il corretto funzionamento di molte funzionalità e ci aiutano a capire come utilizzi il nostro Servizio.</p>
 
-            <h3 class="mt-5">3. Tipi di cookie che utilizziamo</h3>
-            <ul>
-                <li><strong>Cookie Essenziali:</strong> Questi cookie sono strettamente necessari per fornirti i servizi disponibili attraverso il nostro sito web e per utilizzare alcune delle sue funzionalità, come l'accesso ad aree sicure.</li>
-                <li><strong>Cookie di Analisi e Performance:</strong> Questi cookie vengono utilizzati per raccogliere informazioni sul traffico verso il nostro sito web e su come gli utenti utilizzano il sito. Le informazioni raccolte tramite questi cookie non identificano direttamente alcun singolo visitatore.</li>
-                <li><strong>Cookie di Funzionalità:</strong> Questi cookie consentono al nostro sito web di ricordare le scelte che fai quando usi il sito, come ricordare i dettagli di accesso o le preferenze.</li>
-            </ul>
+                    <h3 class="mt-5">2. Come Utilizziamo i Cookie su PeakRankStreet</h3>
+                    <p>Attualmente, utilizziamo i cookie esclusivamente per le finalità strettamente necessarie a garantirti l'accesso e l'utilizzo della nostra piattaforma. Non utilizziamo cookie per scopi di marketing o profilazione di terze parti.</p>
+                    
+                    <p>Nello specifico, i cookie che utilizziamo rientrano nelle seguenti categorie:</p>
+                    
+                    <ul>
+                        <li>
+                            <strong>Cookie Tecnici e di Sessione (Strettamente Necessari):</strong> Questi cookie sono fondamentali per il funzionamento del nostro Servizio.
+                            <ul>
+                                <li><strong>Sessione di Login:</strong> Utilizziamo un cookie (`session`) per mantenerti autenticato dopo aver effettuato il login. Senza questo cookie, dovresti inserire le tue credenziali su ogni pagina.</li>
+                                <li><strong>Protezione CSRF:</strong> Utilizziamo un cookie (`csrf_token`) per proteggere i nostri form da attacchi informatici (Cross-Site Request Forgery). Questo garantisce che le azioni (come pubblicare un post o iscriverti a un gruppo) provengano effettivamente da te.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    
+                    <p>Poiché utilizziamo solo cookie tecnici essenziali, la legislazione vigente non richiede un banner di consenso preventivo.</p>
 
-            <h3 class="mt-5">4. Le tue scelte sui cookie</h3>
-            <p>Puoi scegliere di accettare o rifiutare i cookie. La maggior parte dei browser web accetta automaticamente i cookie, ma di solito puoi modificare le impostazioni del tuo browser per rifiutare i cookie se preferisci. Tieni presente che la disabilitazione dei cookie potrebbe influire sulla funzionalità del nostro Servizio.</p>
-            <p>Per ulteriori informazioni su come gestire i cookie nel tuo browser, consulta le seguenti risorse:</p>
-            <ul>
-                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
-                <li><a href="https://support.mozilla.org/it/kb/Attivare%20e%20disattivare%20i%20cookie" target="_blank">Mozilla Firefox</a></li>
-                <li><a href="https://support.microsoft.com/it-it/topic/eliminare-e-gestire-i-cookie-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank">Microsoft Edge</a></li>
-                <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank">Safari</a></li>
-            </ul>
+                    <h3 class="mt-5">3. Cookie di Terze Parti</h3>
+                    <p>Al momento, il nostro Servizio **non integra** cookie di terze parti per analisi (come Google Analytics) o per pubblicità (come i pixel di Facebook). Se in futuro dovessimo introdurre questi strumenti, aggiorneremo questa informativa e implementeremo un meccanismo di consenso adeguato.</p>
 
-            <h3 class="mt-5">5. Contatti</h3>
-            <p>Per qualsiasi domanda relativa a questa Cookie Policy, ti preghiamo di contattarci:</p>
-            <ul>
-                <li>Via email: [TUA_EMAIL_SUPPORTO]</li>
-            </ul>
-            <p class="text-muted mt-5">Ultimo aggiornamento: {{ 'now().strftime("%d %B %Y")' }}</p>
+                    <h3 class="mt-5">4. Come Gestire i Cookie</h3>
+                    <p>Anche se i nostri cookie sono essenziali per l'utilizzo completo del sito, hai sempre il controllo su di essi. Puoi configurare il tuo browser per bloccare o eliminare i cookie. Tieni presente, tuttavia, che disabilitando il cookie di sessione non sarai in grado di effettuare il login e utilizzare le funzionalità riservate agli utenti registrati.</p>
+                    <p>Puoi trovare informazioni su come gestire i cookie nei principali browser ai seguenti link:</p>
+                    <ul>
+                        <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer">Google Chrome</a></li>
+                        <li><a href="https://support.mozilla.org/it/kb/Attivare%20e%20disattivare%20i%20cookie" target="_blank" rel="noopener noreferrer">Mozilla Firefox</a></li>
+                        <li><a href="https://support.microsoft.com/it-it/topic/eliminare-e-gestire-i-cookie-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank" rel="noopener noreferrer">Microsoft Edge</a></li>
+                        <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer">Safari</a></li>
+                    </ul>
+
+                    <h3 class="mt-5">5. Contatti</h3>
+                    <p>Per qualsiasi domanda su questa Cookie Policy, puoi contattarci al nostro indirizzo email, specificato nella <a href="{{ url_for('main.privacy_policy') }}">Informativa sulla Privacy</a>.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

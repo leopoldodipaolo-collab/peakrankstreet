@@ -375,7 +375,8 @@ function createClassicRouteCard(route) {
     <div class="col-12 col-md-6 col-lg-4 mb-4">
         <div class="card h-100 route-card shadow-sm border-0 animate__animated animate__fadeIn">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0 text-truncate">${route.name}</h5>
+                <h5 class="card-title mb-0">${route.name}</h5>
+
                 <div class="badge-container">
                     <span class="badge bg-light text-dark me-1" title="Attività: ${route.activity_type}">${route.activity_type}</span>
                     <span class="badge bg-warning text-dark" title="Difficoltà: ${route.difficulty}">${route.difficulty}</span>
