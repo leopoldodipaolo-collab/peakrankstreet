@@ -1080,5 +1080,175 @@ function showKingQueenHighlight(data) {
         { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "back.out(1.7)" }
     );
 }
+document.addEventListener('DOMContentLoaded', () => {
+
+    // -------------------- Aggiungi commento --------------------
+    const commentForm = document.querySelector('#add-comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(commentForm);
+            const postId = formData.get('post_id');
+
+            try {
+                const response = await fetch(`/api/post/${postId}/add_comment`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const commentsContainer = document.querySelector(`#comments-container`);
+                    commentsContainer.insertAdjacentHTML('afterbegin', data.comment_html);
+                    commentForm.reset();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error('Errore aggiungendo commento:', err);
+            }
+        });
+    }
+
+    // -------------------- Mostra/Nascondi form di risposta --------------------
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('.reply-btn')) {
+            const commentId = e.target.dataset.commentId;
+            const replyFormContainer = document.querySelector(`#reply-form-for-${commentId}`);
+
+            if (!replyFormContainer.hasChildNodes()) {
+                replyFormContainer.innerHTML = `
+                    <form class="reply-form" data-comment-id="${commentId}">
+                        <textarea name="content" class="form-control mb-2" rows="2" placeholder="Scrivi una risposta..."></textarea>
+                        <button type="submit" class="btn btn-sm btn-primary">Rispondi</button>
+                        <button type="button" class="btn btn-sm btn-secondary cancel-reply-btn">Annulla</button>
+                    </form>
+                `;
+            }
+
+            replyFormContainer.style.display = 'block';
+        }
+
+        // Annulla risposta
+        if (e.target.matches('.cancel-reply-btn')) {
+            const formContainer = e.target.closest('.reply-form-container');
+            formContainer.style.display = 'none';
+        }
+    });
+
+    // -------------------- Invia risposta --------------------
+    document.addEventListener('submit', async (e) => {
+        if (e.target.matches('.reply-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const commentId = form.dataset.commentId;
+            const content = form.querySelector('textarea[name="content"]').value;
+
+            if (!content.trim()) return alert('Il commento non può essere vuoto.');
+
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('post_id', form.closest('.comment').dataset.postId);
+
+            try {
+                const response = await fetch(`/api/post/${commentId}/add_reply`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const repliesContainer = document.querySelector(`#replies-for-${commentId}`);
+                    repliesContainer.insertAdjacentHTML('beforeend', data.comment_html);
+                    form.reset();
+                    form.closest('.reply-form-container').style.display = 'none';
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error('Errore inviando risposta:', err);
+            }
+        }
+    });
+
+    // -------------------- Modifica commento inline --------------------
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('.edit-comment-btn')) {
+            e.preventDefault();
+            const commentId = e.target.dataset.commentId;
+            const commentContentElem = document.querySelector(`#comment-${commentId} .comment-content`);
+            const originalContent = commentContentElem.textContent;
+
+            // Creiamo il form inline
+            commentContentElem.innerHTML = `
+                <form class="edit-comment-form" data-comment-id="${commentId}">
+                    <textarea name="content" class="form-control mb-2" rows="2">${originalContent}</textarea>
+                    <button type="submit" class="btn btn-sm btn-primary">Salva</button>
+                    <button type="button" class="btn btn-sm btn-secondary cancel-edit-btn">Annulla</button>
+                </form>
+            `;
+        }
+
+        // Annulla modifica
+        if (e.target.matches('.cancel-edit-btn')) {
+            const form = e.target.closest('.edit-comment-form');
+            const commentId = form.dataset.commentId;
+            const commentContentElem = document.querySelector(`#comment-${commentId} .comment-content`);
+            commentContentElem.textContent = form.querySelector('textarea[name="content"]').value;
+        }
+    });
+
+    // -------------------- Invia modifica commento --------------------
+    document.addEventListener('submit', async (e) => {
+        if (e.target.matches('.edit-comment-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const commentId = form.dataset.commentId;
+            const newContent = form.querySelector('textarea[name="content"]').value;
+
+            if (!newContent.trim()) return alert('Il commento non può essere vuoto.');
+
+            try {
+                const response = await fetch(`/post-comment/${commentId}/edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `content=${encodeURIComponent(newContent)}`
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const commentContentElem = document.querySelector(`#comment-${commentId} .comment-content`);
+                    commentContentElem.innerHTML = data.new_content;
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error('Errore modificando commento:', err);
+            }
+        }
+    });
+
+    // -------------------- Elimina commento --------------------
+    document.addEventListener('click', async (e) => {
+        if (e.target.matches('.delete-comment-btn')) {
+            e.preventDefault();
+            const commentId = e.target.dataset.commentId;
+            const deleteUrl = e.target.dataset.deleteUrl;
+
+            if (!confirm('Sei sicuro di voler eliminare questo commento?')) return;
+
+            try {
+                const response = await fetch(deleteUrl, { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const commentElem = document.querySelector(`#comment-${commentId}`);
+                    commentElem.remove();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error('Errore eliminando commento:', err);
+            }
+        }
+    });
+
+});
 
 console.log('🚀 Main.js completamente caricato!');

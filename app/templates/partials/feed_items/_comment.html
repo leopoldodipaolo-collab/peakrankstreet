@@ -57,12 +57,11 @@
         </div>
 
         <div class="replies-container ps-4 mt-2" id="replies-for-{{ comment.id }}">
-    {% for reply in comment.replies | sort(attribute='created_at') %}
-        {% set comment = reply %}
-        {% include 'partials/feed_items/_comment.html' %}
-    {% endfor %}
-</div>
-
+            {% for reply in comment.replies | sort(attribute='created_at') %}
+                {% set comment = reply %}
+                {% include 'partials/feed_items/_comment.html' %}
+            {% endfor %}
+        </div>
 
         <div class="reply-form-container ps-4 mt-2" 
              id="reply-form-for-{{ comment.id }}" 
