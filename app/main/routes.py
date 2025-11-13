@@ -295,9 +295,23 @@ def edit_profile():
             file = request.files['profile_image']
             if file and allowed_file(file.filename):
                 filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
-                filepath = os.path.join(current_app.config['PROFILE_PICS_FOLDER'], filename)
-                file.save(filepath)
-                current_user.profile_image = filename
+                
+                # Definisci la cartella di destinazione
+                pics_folder = current_app.config['PROFILE_PICS_FOLDER']
+                
+                # --- RIGA DI SICUREZZA FONDAMENTALE ---
+                # Assicura che la cartella esista prima di salvare
+                os.makedirs(pics_folder, exist_ok=True)
+                # --- FINE RIGA DI SICUREZZA ---
+
+                filepath = os.path.join(pics_folder, filename)
+                
+                try:
+                    file.save(filepath)
+                    current_user.profile_image = filename
+                except Exception as e:
+                    flash(f"Errore nel salvataggio dell'immagine: {e}", "danger")
+                    return redirect(url_for('main.edit_profile'))
             else:
                 flash('Formato immagine non valido.', 'danger')
                 return redirect(url_for('main.edit_profile'))
