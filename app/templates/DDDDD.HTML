@@ -6,41 +6,44 @@
     <title>{% block title %}PeakRankStreet App{% endblock %}</title>
     <meta name="description" content="{% block description %}Scopri percorsi, sfide e una community di atleti su PeakRankStreet.{% endblock %}">
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Librerie CSS -->
+    <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    
+    <!-- Leaflet.markercluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="https://unpkg.com/tributejs/dist/tribute.css" />
 
-    <!-- CSS Custom e Manifest -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#343a40">
-    
-    {% block styles %}{% endblock %}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/ScrollTrigger.min.js"></script>
+
+    {# --- AGGIUNGI IL CSS DI TRIBUTE.JS --- #}
+    <link rel="stylesheet" href="https://unpkg.com/tributejs/dist/tribute.css" />
+
 </head>
-
 <body class="d-flex flex-column min-vh-100">
-
-    <!-- Div nascosto per passare l'URL base degli upload a JavaScript -->
-    <div id="uploads-base-url" style="display: none;">{{ url_for('main.uploaded_file', filename='') }}</div>
-    <div id="static-base-url" style="display: none;">{{ url_for('static', filename='') }}</div>
-
+    <div class="main-wrapper"> 
         <header>
             {# ... (La tua barra di navigazione) ... #}
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom fixed-top py-3" aria-label="Navigazione principale">
                 <div class="container">
                     <!-- Brand e Toggler rimangono invariati -->
                     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                        <img src="{{ url_for('main.uploaded_file', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2">
+                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2">
                         <span class="fw-bold">PeakRankStreet</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,7 +121,7 @@
                                 </li>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
+                                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
                                         <span class="d-lg-none d-xl-inline">Profilo ({{ current_user.username }})</span>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
@@ -144,61 +147,104 @@
             </nav>
         </header>
 
-    <main class="flex-shrink-0">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div style="padding-top: 80px;">
-                    <div class="container">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
+        <main class="flex-shrink-0">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container mt-5 pt-5">
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                </div>
-            {% endif %}
-        {% endwith %}
-        
-        {% block content %}{% endblock %}
-    </main>
+                {% endif %}
+            {% endwith %}
 
-    <footer class="footer bg-dark-custom py-4 mt-auto text-white-50">
-        <div class="container text-center">
-            <div class="mb-3">
-                <img src="{{ url_for('main.uploaded_file', filename='icons/logoFooter.png') }}" alt="PeakRankStreet Logo" style="max-height:100px;">
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <h6 class="text-white">PeakRankStreet</h6>
-                    <p class="small">La tua piattaforma per lo sport urbano.</p>
+            {# Questo è lo spazio che ogni pagina "figlio" riempirà #}
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="footer bg-dark-custom py-4 mt-auto border-top text-white-50">
+            <div class="container text-center">
+                <div class="mb-4">
+                    <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="StreetSport Logo" style="max-height:120px;">
                 </div>
-                <div class="col-md-4">
-                    <h6 class="text-white">Link Utili</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('main.explore') }}" class="text-white-50 text-decoration-none">Esplora</a></li>
-                        <li><a href="{{ url_for('main.list_groups') }}" class="text-white-50 text-decoration-none">Gruppi</a></li>
-                        <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Sfide</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="text-white">Seguici</h6>
-                    <div class="social-icons mt-2">
-                        <a href="#" class="text-white-50 me-2 fs-4"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="text-white-50 me-2 fs-4"><i class="bi bi-twitter"></i></a>
-                        <a href="#" class="text-white-50 fs-4"><i class="bi bi-instagram"></i></a>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <h6 class="text-white">PeakRankStreet</h6>
+                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Link Utili</h6>
+                        <ul class="list-unstyled small">
+                            <li><a href="{{ url_for('main.explore_users') }}" class="text-white-50 text-decoration-none">Esplora Utenti</a></li>
+                            <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Le mie Sfide</a></li>
+                            <li><a href="{{ url_for('main.all_activities') }}" class="text-white-50 text-decoration-none">Tutte le Attività</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Contatti</h6>
+                        <p class="small mb-0"><i class="bi bi-envelope-fill me-1"></i> info@peakrankstreet.com</p>
+                        <div class="social-icons mt-2">
+                            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+                            <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                        </div>
                     </div>
                 </div>
+             
+                <hr class="text-white-50 my-3">
+                <p class="mb-0 small">&copy; 2025 PeakRankStreet App. Tutti i diritti riservati.</p>
+                <a href="{{ url_for('main.privacy_policy') }}" class="text-muted ms-3">Privacy Policy</a>
+                <a href="{{ url_for('main.cookie_policy') }}" class="text-muted ms-3">Cookie Policy</a>
             </div>
-            <hr class="my-3">
-            <p class="mb-0 small">&copy; {{ now.year }} PeakRankStreet. Tutti i diritti riservati.</p>
+        </footer>
+    </div>
+
+
+    <!-- Pulsante azioni rapide - solo mobile (con campanella e badge notifiche) -->
+    <div class="d-md-none position-fixed bottom-0 end-0 m-3" style="z-index: 1030;">
+        <div class="dropdown">
+            <!-- PULSANTE PRINCIPALE CON CAMPANELLA E BADGE -->
+            <button class="btn btn-primary rounded-circle shadow position-relative" type="button" 
+                    data-bs-toggle="dropdown" style="width: 50px; height: 50px;">
+                <!-- Icona Campanella -->
+                <i class="bi bi-bell-fill"></i> 
+                
+                <!-- BADGE NOTIFICHE NON LETTE sul pulsante principale -->
+                {% if unread_notifications_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge-main-button">
+                        {{ unread_notifications_count }}<span class="visually-hidden">notifiche non lette</span>
+                    </span>
+                {% endif %}
+            </button>
+            
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('main.explore_users') }}">
+                    <i class="bi bi-plus-circle me-2"></i>Community
+                </a></li>
+                <!-- VOCE SEPARATA PER LE NOTIFICHE (rimane per comodità) -->
+                <li><a class="dropdown-item" href="{{ url_for('main.notifications') }}">
+                    <i class="bi bi-bell-fill me-2"></i>Notifiche
+                    {# Il badge qui non è strettamente necessario se è già sul pulsante principale, 
+                    ma puoi lasciarlo per maggiore chiarezza o rimuoverlo #}
+                    {% if unread_notifications_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notifications-badge">
+                            {{ unread_notifications_count }}<span class="visually-hidden">notifiche non lette</span>
+                        </span>
+                    {% endif %}
+                </a></li>
+            </ul>
         </div>
-    </footer>
+    </div>
 
     <!-- Banner Cookie Consent -->
     <div class="fixed-bottom bg-dark text-white p-3 cookie-banner" id="cookieConsentBanner" style="display: none;">
         <div class="container d-flex justify-content-between align-items-center">
-            <span>Questo sito utilizza i cookie per migliorare la tua esperienza. <a href="#" class="text-info">Maggiori informazioni</a>.</span>
+            <span>Questo sito utilizza i cookie per migliorare la tua esperienza. <a href="{{ url_for('main.cookie_policy') }}" class="text-info">Maggiori informazioni</a>.</span>
             <div>
                 <button class="btn btn-outline-info btn-sm me-2" id="cookieDecline">Rifiuta</button>
                 <button class="btn btn-info btn-sm" id="cookieAccept">Accetta</button>
@@ -206,44 +252,64 @@
         </div>
     </div>
 
-    <!-- ===================================================================== -->
-    <!-- SCRIPT JS (CARICATI IN FONDO E NELL'ORDINE CORRETTO) -->
-    <!-- ===================================================================== -->
-    
-    <!-- LIBRERIE ESTERNE DI BASE -->
+    {# --- QUESTO È IL CODICE JS PER IL BANNER DEI COOKIE --- #}
+    {# VA MESSO QUI, PRIMA DI ALTRI SCRIPT COMUNI E PRIMA DI {% block scripts %} SE QUESTO ULTIMO VA ANCHE SOVRASCRITTO DAI FIGLI #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cookieBanner = document.getElementById('cookieConsentBanner');
+            const cookieAccept = document.getElementById('cookieAccept');
+            const cookieDecline = document.getElementById('cookieDecline');
+
+            // Controlla se l'utente ha già dato il consenso
+            // Verifica anche se l'elemento è stato trovato per evitare errori se manca nel DOM
+            if (cookieBanner && !localStorage.getItem('cookieConsent')) {
+                cookieBanner.style.display = 'flex'; // Mostra il banner
+            }
+
+            if (cookieAccept) {
+                cookieAccept.addEventListener('click', function() {
+                    localStorage.setItem('cookieConsent', 'accepted');
+                    if (cookieBanner) cookieBanner.style.display = 'none';
+                    console.log("Cookie accepted, reloading page."); // Log per debug
+                    window.location.reload(); // Ricarica la pagina per caricare gli script che richiedono consenso
+                });
+            }
+
+            if (cookieDecline) {
+                cookieDecline.addEventListener('click', function() {
+                    localStorage.setItem('cookieConsent', 'declined');
+                    if (cookieBanner) cookieBanner.style.display = 'none';
+                    alert('Hai rifiutato i cookie. Alcune funzionalità potrebbero essere limitate.');
+                    console.log("Cookie declined."); // Log per debug
+                    // Non ricarichiamo qui perché il rifiuto non attiva nuovi script
+                });
+            }
+
+            // --- LOGICA AGGIUNTIVA: Nascondere il banner se il consenso è già stato dato all'avvio ---
+            if (localStorage.getItem('cookieConsent') === 'accepted') {
+                if (cookieBanner) {
+                    cookieBanner.style.display = 'none';
+                }
+            } else if (localStorage.getItem('cookieConsent') === 'declined') {
+                 if (cookieBanner) {
+                    cookieBanner.style.display = 'none';
+                }
+            }
+        });
+    </script>
+
+    <!-- Script JS Comuni -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/tributejs/dist/tribute.min.js"></script>
-
-    <!-- LIBRERIE PER ANIMAZIONI (GSAP) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/ScrollTrigger.min.js"></script>
-    
-    <!-- I TUOI SCRIPT CUSTOM (CARICATI PER ULTIMI) -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form_validation.js') }}"></script>
-    
-    <!-- Script per i Cookie -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const banner = document.getElementById('cookieConsentBanner');
-            if (banner && !localStorage.getItem('cookieConsent')) {
-                banner.style.display = 'flex';
-            }
-            document.getElementById('cookieAccept')?.addEventListener('click', () => {
-                localStorage.setItem('cookieConsent', 'accepted');
-                if (banner) banner.style.display = 'none';
-            });
-            document.getElementById('cookieDecline')?.addEventListener('click', () => {
-                localStorage.setItem('cookieConsent', 'declined');
-                if (banner) banner.style.display = 'none';
-            });
-        });
-    </script>
-    
-    <!-- Blocco per script specifici della singola pagina -->
+    {# --- AGGIUNGI LO SCRIPT DI TRIBUTE.JS --- #}
+    <script src="https://unpkg.com/tributejs/dist/tribute.min.js"></script>
+
+    {# Questo è l'unico blocco scripts che dovrebbe essere nel padre. #}
+    {# I template figli lo useranno per aggiungere i propri script specifici #}
     {% block scripts %}{% endblock %}
 
 </body>

@@ -1,6 +1,6 @@
 <div class="comment mb-3 d-flex align-items-start" id="comment-{{ comment.id }}">
     <a href="{{ url_for('main.user_profile', user_id=comment.user.id) }}">
-        <img src="{{ url_for('static', filename='profile_pics/' + comment.user.profile_image) }}" 
+        <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + comment.user.profile_image) }}" 
              class="rounded-circle me-3" 
              alt="Avatar {{ comment.user.username }}" 
              style="width:40px; height:40px; object-fit:cover;">

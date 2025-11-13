@@ -31,6 +31,9 @@ from wtforms import ValidationError
 # All'inizio di routes.py
 from .gamification import close_expired_challenges
 from datetime import datetime, timedelta
+from flask import send_from_directory
+
+
 main = Blueprint('main', __name__)
 
 # --- Funzioni Helper ---
@@ -96,6 +99,15 @@ def award_badge_if_earned(user, badge_name):
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@main.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    """
+    Questa rotta serve i file caricati dagli utenti dal disco persistente.
+    """
+    # Recupera il percorso base dalla configurazione dell'app
+    base_path = current_app.config['UPLOADS_BASE_PATH']
+    return send_from_directory(base_path, filename, as_attachment=False)
 
 
 @main.route('/')
@@ -1568,22 +1580,36 @@ def debug_my_invitations():
 @main.route("/challenges/finished")
 @login_required
 def finished_challenges():
-    """Pagina dedicata alle sfide terminate"""
+    """Pagina dedicata alle sfide terminate, con il vincitore pre-calcolato."""
     page = request.args.get('page', 1, type=int)
     now = datetime.utcnow()
     
-    # Sfide terminate (scadute e non attive)
+    # Query di base per le sfide terminate
     finished_challenges_query = Challenge.query.filter(
-        Challenge.end_date < now,
-        Challenge.is_active == False
-    )
+        Challenge.end_date < now
+    ).order_by(Challenge.end_date.desc())
     
-    pagination = finished_challenges_query.order_by(Challenge.end_date.desc()).paginate(page=page, per_page=10, error_out=False)
+    pagination = finished_challenges_query.paginate(page=page, per_page=10, error_out=False)
     
+    # --- NUOVA LOGICA: TROVA IL VINCITORE PER OGNI SFIDA ---
+    challenges_with_winners = []
+    for challenge in pagination.items:
+        # Trova l'attività con il tempo migliore per questa sfida
+        winner_activity = Activity.query.filter_by(
+            challenge_id=challenge.id
+        ).order_by(Activity.duration.asc()).first()
+        
+        challenges_with_winners.append({
+            'challenge': challenge,
+            'winner': winner_activity.user_activity if winner_activity else None
+        })
+    # --- FINE NUOVA LOGICA ---
+
     return render_template("finished_challenges.html", 
-                         challenges=pagination.items,
+                         challenges_with_winners=challenges_with_winners, # Passiamo la nuova lista
                          pagination=pagination,
                          now=now,
+                         Activity=Activity,
                          is_homepage=False)
 
 
@@ -1908,7 +1934,7 @@ def create_post():
         # Gestione dell'immagine (se caricata)
         if image_file and image_file.filename != '':
             if allowed_file(image_file.filename):
-                upload_dir = os.path.join(current_app.root_path, 'static', 'posts_images')
+                upload_dir = current_app.config['POSTS_IMAGES_FOLDER']
                 os.makedirs(upload_dir, exist_ok=True)
                 
                 filename = secure_filename(image_file.filename)
@@ -3013,7 +3039,7 @@ def suggested_users():
         users_list.append({
             'id': user.id,
             'username': user.username,
-            'profile_image': url_for('static', filename=f'profile_pics/{user.profile_image}'),
+            'profile_image': url_for('main.uploaded_file', filename=f'profile_pics/{user.profile_image}'),
             'city': user.city,
             'activity_count': activity_count,
             'url': url_for('main.user_profile', user_id=user.id)

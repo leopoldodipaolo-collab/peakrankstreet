@@ -5,7 +5,10 @@ let mainMap, markers, osmLayer, topoLayer;
 let selectedRouteLayer;
 let userProfileUrlBase, routeDetailUrlBase, activityDetailUrlBase, profilePicsBaseUrl, mapDataApiUrl, userInitialCity;
 let loadedRoutes = [];
-
+// Leggiamo i percorsi base dall'HTML una sola volta al caricamento dello script.
+// Usiamo un fallback nel caso in cui il div non sia presente in una pagina.
+const UPLOADS_BASE_URL = document.getElementById('uploads-base-url')?.textContent || '/uploads/';
+const STATIC_BASE_URL = document.getElementById('static-base-url')?.textContent || '/static/';
 // =======================================================
 // INIZIALIZZAZIONE PRINCIPALE
 // =======================================================
@@ -204,19 +207,30 @@ async function loadMapAndData(lat, lon, zoom = 13, city = null) {
 // AGGIUNGI MARKER PERCORSO
 // =======================================================
 function addRouteMarker(route) {
-    if (!route.coordinates?.geometry?.coordinates?.[0]) return;
+    // Controlla in modo sicuro che esista almeno un punto nelle coordinate
+    if (!route.coordinates?.geometry?.coordinates?.[0]) {
+        console.warn('Percorso saltato perché non ha coordinate valide:', route.name);
+        return;
+    }
+    
     const start = route.coordinates.geometry.coordinates[0];
 
-    const icon = {
-        'Corsa': '/static/icons/runner.png',
-        'Bici': '/static/icons/bicycle.png',
-        'Hike': '/static/icons/hiking.png'
-    }[route.activity_type] || '/static/icons/default.png';
+    const iconUrl = {
+        'Corsa': `${STATIC_BASE_URL}icons/runner.png`,
+        'Bici': `${STATIC_BASE_URL}icons/bicycle.png`,
+        'Hike': `${STATIC_BASE_URL}icons/hiking.png`
+    }[route.activity_type] || `${STATIC_BASE_URL}icons/default.png`;
 
-    const marker = L.marker([start[1], start[0]], { icon: L.icon({ iconUrl: icon, iconSize: [32,32], iconAnchor: [16,32] }) });
+    const marker = L.marker([start[1], start[0]], { 
+        icon: L.icon({ 
+            iconUrl: iconUrl,
+            iconSize: [32, 32], 
+            iconAnchor: [16, 32] 
+        }) 
+    });
+    
     marker.bindPopup(`<b>${route.name}</b><br>Distanza: ${route.distance_km?.toFixed(2) || 'N/D'} km`);
 
-    // Evidenzia al mouseover **solo se non è già selezionato**
     marker.on('mouseover', () => {
         if (!marker.isClicked) {
             selectedRouteLayer.clearLayers();
@@ -224,19 +238,15 @@ function addRouteMarker(route) {
         }
     });
 
-    // Rimuove evidenziazione al mouseout solo se non è cliccato
     marker.on('mouseout', () => {
         if (!marker.isClicked) {
             selectedRouteLayer.clearLayers();
         }
     });
 
-    // Al click, mantiene evidenziato
     marker.on('click', () => {
-        // Pulisce tutti gli altri marker “cliccati”
         markers.getLayers().forEach(m => m.isClicked = false);
-
-        marker.isClicked = true; // questo marker resta evidenziato
+        marker.isClicked = true;
         selectedRouteLayer.clearLayers();
         selectedRouteLayer.addData(route.coordinates);
         displayRouteDetails(route);
@@ -244,7 +254,6 @@ function addRouteMarker(route) {
 
     markers.addLayer(marker);
 }
-
 
 // =======================================================
 // FILTRO PER TIPO DI ATTIVITÀ
@@ -365,7 +374,7 @@ function createClassicRouteCard(route) {
 
     // Immagine di copertina
     const featuredImageHtml = route.featured_image
-        ? `<img src="/static/featured_routes/${route.featured_image}" 
+        ? `<img src="${UPLOADS_BASE_URL}featured_routes/${route.featured_image}" 
                 class="card-img-top route-card-img" alt="${route.name}">`
         : `<div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white route-card-img-placeholder">
                <i class="bi bi-geo-alt-fill" style="font-size:3rem;"></i>
@@ -475,7 +484,7 @@ function createTopTimesHtml(topTimes) {
                     <div class="d-flex justify-content-between align-items-center py-1 border-bottom top-times-item">
                         <div class="d-flex align-items-center">
                             <span class="badge bg-secondary me-2" style="font-size:0.65rem; min-width:20px;">${index + 1}</span>
-                            <img src="/static/profile_pics/${time.profile_image || 'default.png'}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width:24px; height:24px;">
+                            <img src="${UPLOADS_BASE_URL}profile_pics/${time.profile_image || 'default.png'}" class="rounded-circle me-2 profile-image-small" alt="Avatar" style="width:24px; height:24px;">
                             <small class="text-truncate" style="max-width:80px;">${time.username}</small>
                         </div>
                         <small class="text-muted">${formatDurationCompact(time.duration)}</small>
@@ -753,7 +762,7 @@ function createEpicLeaderboardItem(entry, index, type) {
                                 class="user-avatar epic-avatar"
                                 alt="${entry.username}"
                                 loading="lazy"
-                                onerror="this.src='/img/LogoX_SS.png'">
+                                onerror="this.src='${STATIC_BASE_URL}img/LogoX_SS.png'">
                             <div class="avatar-glow-effect"></div>
                             <div class="floating-particles">
                                 <div class="particle p1"></div>
@@ -957,7 +966,7 @@ document.addEventListener("click", async (e) => {
         <form method="POST" action="/api/post/${postId}/comment/${commentId}/reply" class="reply-form mt-2">
             <input type="hidden" name="csrf_token" value="${document.querySelector('input[name="csrf_token"]').value}">
             <div class="d-flex">
-                <img src="/static/profile_pics/${window.currentUserProfileImage}" class="rounded-circle me-2" style="width:30px; height:30px; object-fit:cover;">
+                <img src="${UPLOADS_BASE_URL}profile_pics/${window.currentUserProfileImage}" class="rounded-circle me-2" style="width:30px; height:30px; object-fit:cover;">
                 <textarea name="content" rows="1" class="form-control me-2" placeholder="Rispondi..." required></textarea>
                 <button type="submit" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-send"></i>
@@ -1250,5 +1259,216 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ===============================
+    // UTILITIES
+    // ===============================
+    function safeQuery(selector, root = document) {
+        const el = root.querySelector(selector);
+        return el ? el : null;
+    }
+
+    function safeGetElement(id) {
+        return document.getElementById(id);
+    }
+
+    async function fetchJSON(url, options) {
+    const response = await fetch(url, options);
+    const contentType = response.headers.get("Content-Type") || "";
+
+    if (!response.ok) {
+        const text = await response.text();
+        console.error("Server error response:", text);
+        throw new Error(`Errore HTTP ${response.status}`);
+    }
+
+    if (contentType.includes("application/json")) {
+        return await response.json();
+    } else {
+        const text = await response.text();
+        console.error("Risposta non-JSON:", text);
+        throw new Error("Server did not return JSON");
+    }
+}
+
+
+    // ===============================
+    // AGGIUNTA COMMENTO
+    // ===============================
+    function handleCommentFormSubmit(form) {
+        if (!form) return;
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const postId = form.dataset.postId;
+            const formData = new FormData(form);
+            const csrfToken = safeQuery('input[name="csrf_token"]', form)?.value;
+            if (!csrfToken) return console.error("CSRF token non trovato!");
+
+            try {
+                const data = await fetchJSON(form.action, {
+                    method: "POST",
+                    body: formData,
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+
+                if (data.status === "success") {
+                    const commentsContainer = safeGetElement(`comments-for-${postId}`);
+                    if (commentsContainer) commentsContainer.insertAdjacentHTML("afterbegin", data.comment_html);
+
+                    // Aggiorna contatore
+                    const postEl = form.closest(".list-group-item");
+                    const badge = safeQuery(".btn-link span", postEl);
+                    if (badge) badge.textContent = data.new_comment_count;
+
+                    // Svuota textarea
+                    const textarea = safeQuery("textarea", form);
+                    if (textarea) textarea.value = "";
+
+                    console.log(data.message || "Commento aggiunto!");
+
+                    // Riattiva edit/delete su nuovo commento
+                    initEditDeleteListeners(commentsContainer);
+
+                } else {
+                    alert(data.message || "Errore durante l'aggiunta del commento.");
+                }
+
+            } catch (err) {
+                console.error("Errore aggiungendo commento:", err);
+            }
+        });
+    }
+
+    document.querySelectorAll(".comment-form").forEach(handleCommentFormSubmit);
+
+    // ===============================
+    // MODIFICA COMMENTO
+    // ===============================
+    function startEditComment(commentId) {
+        const commentEl = safeGetElement(`comment-${commentId}`);
+        if (!commentEl) return;
+
+        const contentContainer = safeQuery(".comment-content-container", commentEl);
+        const originalTextEl = safeQuery(".comment-content", contentContainer);
+        if (!originalTextEl) return;
+
+        const originalText = originalTextEl.textContent;
+        if (contentContainer.querySelector("form")) return; // già in editing
+
+        // Crea form
+        contentContainer.innerHTML = `
+            <form class="edit-comment-form" data-comment-id="${commentId}">
+                <textarea class="form-control mb-2" rows="2" required>${originalText}</textarea>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-sm btn-primary me-2">Salva</button>
+                    <button type="button" class="btn btn-sm btn-secondary cancel-edit-btn">Annulla</button>
+                </div>
+            </form>
+        `;
+
+        const form = safeQuery("form", contentContainer);
+        const cancelBtn = safeQuery(".cancel-edit-btn", form);
+        cancelBtn?.addEventListener("click", () => {
+            contentContainer.innerHTML = `<p class="comment-content mb-0">${originalText}</p>`;
+        });
+
+        form?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const newContent = safeQuery("textarea", form)?.value.trim();
+            if (!newContent) return;
+
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+            if (!csrfToken) return console.error("CSRF token non trovato!");
+
+            const editUrl = `/post-comment/${commentId}/edit`;
+            try {
+                const data = await fetchJSON(editUrl, {
+                    method: "POST",
+                    body: new URLSearchParams({ content: newContent }),
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                });
+
+                if (data.status === "success") {
+                    contentContainer.innerHTML = `<p class="comment-content mb-0">${data.new_content}</p>`;
+                } else {
+                    alert(data.message || "Errore modificando commento.");
+                    contentContainer.innerHTML = `<p class="comment-content mb-0">${originalText}</p>`;
+                }
+
+            } catch (err) {
+                console.error("Errore modificando commento:", err);
+                contentContainer.innerHTML = `<p class="comment-content mb-0">${originalText}</p>`;
+            }
+        });
+    }
+
+    // ===============================
+    // ELIMINA COMMENTO
+    // ===============================
+    async function deleteComment(btn) {
+        if (!btn) return;
+        const commentId = btn.dataset.commentId;
+        const deleteUrl = btn.dataset.deleteUrl;
+        const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+
+        if (!commentId || !deleteUrl || !csrfToken) return;
+
+        if (!confirm("Sei sicuro di voler eliminare questo commento?")) return;
+
+        try {
+            const data = await fetchJSON(deleteUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            if (data.status === "success") {
+                const commentEl = safeGetElement(`comment-${commentId}`);
+                commentEl?.remove();
+
+                // Aggiorna contatore commenti
+                const postEl = btn.closest(".list-group-item");
+                const badge = safeQuery(".btn-link span", postEl);
+                if (badge) badge.textContent = data.new_comment_count;
+
+                console.log("Commento eliminato");
+            } else {
+                alert(data.message || "Errore eliminando commento.");
+            }
+        } catch (err) {
+            console.error("Errore eliminando commento:", err);
+        }
+    }
+
+    // ===============================
+    // INIZIALIZZA LISTENER EDIT/DELETE
+    // ===============================
+    function initEditDeleteListeners(root = document) {
+        root.querySelectorAll(".edit-comment-btn").forEach(btn => {
+            btn.onclick = (e) => { e.preventDefault(); startEditComment(btn.dataset.commentId); };
+        });
+
+        root.querySelectorAll(".delete-comment-btn").forEach(btn => {
+            btn.onclick = (e) => { e.preventDefault(); deleteComment(btn); };
+        });
+    }
+
+    initEditDeleteListeners();
+    
+
+});
+
+
 
 console.log('🚀 Main.js completamente caricato!');

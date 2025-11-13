@@ -3,7 +3,7 @@
     <div class="card-body">
         <div class="d-flex align-items-center">
             <a href="{{ url_for('main.user_profile', user_id=current_user.id) }}">
-                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" alt="{{ current_user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}" alt="{{ current_user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
             </a>
             <a href="{{ url_for('main.create_post') }}" class="form-control text-muted text-decoration-none" style="cursor: pointer;">
                 A cosa stai pensando, {{ current_user.username }}?

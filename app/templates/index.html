@@ -142,7 +142,7 @@
 
         <div class="card bg-dark text-white my-5 shadow-lg propose-classic-banner position-relative overflow-hidden">
             <!-- Immagine di sfondo solo su desktop -->
-            <img src="{{ url_for('static', filename='img/banner-background.jpg') }}" 
+            <img src="{{ url_for('main.uploaded_file', filename='img/banner-background.jpg') }}" 
                 class="d-none d-sm-block w-100 position-absolute top-0 start-0 h-100" 
                 alt="Panorama montano" 
                 style="object-fit: cover; opacity: 0.3; z-index: 1;">
@@ -212,7 +212,7 @@
                              
                                     <div class="royal-info">
                                         <div class="royal-avatar-container">
-                                            <img id="kq-avatar" src="{{ url_for('static', filename='img/LogoX_SS.png') }}"  class="royal-avatar" alt="Royal Avatar"> 
+                                            <img id="kq-avatar" src="{{ url_for('main.uploaded_file', filename='img/LogoX_SS.png') }}"  class="royal-avatar" alt="Royal Avatar"> 
                                             <div class="royal-avatar-glow"></div>
                                             <div class="royal-avatar-sparkles">
                                                 <div class="sparkle s1"></div>
@@ -360,7 +360,7 @@
                 <div class="card-body p-3">
                     <!-- Parte Superiore: Avatar + Pulsante "Crea un post" -->
                     <div class="d-flex align-items-center mb-3">
-                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
+                        <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
                         
                         <!-- Pulsante aggiornato con il tuo nuovo testo -->
                         <button type="button" class="btn w-100 text-start create-post-pill-btn" 
@@ -452,7 +452,7 @@
                         <input type="hidden" id="post_type_hidden" name="post_type" value="text">
                         
                         <div class="d-flex align-items-start mb-3">
-                            <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}" class="rounded-circle me-2 profile-image-navbar" alt="Avatar di {{ current_user.username }}">
                             <div class="flex-grow-1">
                                 <h6 class="mb-0">{{ current_user.username }}</h6>
                                 <small class="text-muted fs-5"><i class="bi bi-person-badge"></i> {{ current_user.surname }}</small>

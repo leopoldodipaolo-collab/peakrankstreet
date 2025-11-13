@@ -54,10 +54,10 @@
             <div class="d-flex align-items-center justify-content-around mb-3">
                 <!-- VINCITORE -->
                 <div class="text-center">
-                    <img src="{{ url_for('static', filename='profile_pics/' + bet.winner.profile_image) }}" 
+                    <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + bet.winner.profile_image) }}" 
                          class="rounded-circle border {{ 'border-success' if bet.winner_id == current_user.id else 'border-secondary' }}" 
                          width="50" height="50"
-                         onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
+                         onerror="this.src='{{ url_for('main.uploaded_file', filename='profile_pics/default.png') }}'">
                     <div class="mt-1">
                         <small class="fw-bold {{ 'text-success' if bet.winner_id == current_user.id }}">{{ bet.winner.username }}</small>
                         <br>
@@ -69,10 +69,10 @@
                 
                 <!-- PERDENTE -->
                 <div class="text-center">
-                    <img src="{{ url_for('static', filename='profile_pics/' + bet.loser.profile_image) }}" 
+                    <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + bet.loser.profile_image) }}" 
                          class="rounded-circle border {{ 'border-danger' if bet.loser_id == current_user.id else 'border-secondary' }}" 
                          width="50" height="50"
-                         onerror="this.src='{{ url_for('static', filename='profile_pics/default.png') }}'">
+                         onerror="this.src='{{ url_for('main.uploaded_file', filename='profile_pics/default.png') }}'">
                     <div class="mt-1">
                         <small class="fw-bold {{ 'text-danger' if bet.loser_id == current_user.id }}">{{ bet.loser.username }}</small>
                         <br>

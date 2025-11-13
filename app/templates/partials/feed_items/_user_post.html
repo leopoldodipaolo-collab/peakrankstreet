@@ -4,7 +4,7 @@
         
         <!-- Colonna Avatar -->
         <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="flex-shrink-0 me-3">
-            <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" 
+            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + post.user.profile_image) }}" 
                  alt="{{ post.user.username }}" 
                  class="rounded-circle" 
                  style="width: 40px; height: 40px; object-fit: cover;">
@@ -52,7 +52,7 @@
 
                 {% if post.image_url %}
                 <div class="mt-2">
-                    <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" 
+                    <img src="{{ url_for('main.uploaded_file', filename='posts_images/' + post.image_url) }}" 
                          class="img-fluid rounded border" 
                          alt="Immagine del post">
                 </div>
@@ -103,7 +103,7 @@
               data-post-id="{{ post.id }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="d-flex">
-                <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}"
+                <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}"
                      class="rounded-circle me-2"
                      style="width:30px; height:30px; object-fit:cover;">
                 <textarea name="content" rows="1"

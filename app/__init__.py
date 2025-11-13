@@ -1,7 +1,7 @@
 # app/__init__.py
 
 import os
-from flask import Flask, redirect, url_for, request
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
 from flask_cors import CORS
@@ -32,58 +32,51 @@ def create_app():
     Factory function per creare e configurare l'istanza dell'applicazione Flask.
     """
     app_dir = os.path.abspath(os.path.dirname(__file__))
-
-    # --- Creazione app Flask ---
-    app = Flask(
-        __name__,
-        static_folder=os.path.join(app_dir, 'static'),
-        static_url_path='/static'
-    )
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
 
     # --- Configurazioni base ---
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'un-valore-di-default-molto-sicuro-da-cambiare-in-produzione'
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key-change-me')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'default-jwt-key-change-me')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
 
     # --- Configurazione Database ---
     database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        print("✅ Utilizzo database PostgreSQL da DATABASE_URL")
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url or f"sqlite:///{os.path.join(app_dir, 'site.db')}"
+    print(f"✅ Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+
+    # =====================================================================
+    # --- NUOVA GESTIONE DINAMICA DELLE CARTELLE DI UPLOAD ---
+    # =====================================================================
+    if 'RENDER' in os.environ:
+        # Su Render, usa il disco persistente montato in /var/data/uploads
+        upload_base_path = '/var/data/uploads'
+        print(f"✅ Ambiente Render rilevato. Path upload: {upload_base_path}")
     else:
-        db_path = os.path.join(app_dir, 'site.db')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-        print("⚠️  Utilizzo SQLite per sviluppo locale (DATABASE_URL non trovato)")
+        # In locale, usa la cartella static/uploads per semplicità
+        upload_base_path = os.path.join(app.root_path, 'static', 'uploads')
+        print(f"⚠️  Ambiente locale rilevato. Path upload: {upload_base_path}")
 
-    # --- Configurazione cartelle Upload ---
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'posts_images')
-    app.config['PROFILE_PICS_FOLDER'] = os.path.join(app.root_path, 'static', 'profile_pics')
-    app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'featured_routes')
-
+    # Definiamo i percorsi completi nella configurazione dell'app
+    app.config['UPLOADS_BASE_PATH'] = upload_base_path
+    app.config['PROFILE_PICS_FOLDER'] = os.path.join(upload_base_path, 'profile_pics')
+    app.config['POSTS_IMAGES_FOLDER'] = os.path.join(upload_base_path, 'posts_images')
+    
     # Crea le directory se non esistono
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['PROFILE_PICS_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['ADMIN_FEATURED_ROUTES_UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['POSTS_IMAGES_FOLDER'], exist_ok=True)
+    # =====================================================================
 
-    # --- Estensioni Jinja ---
+    # --- Estensioni e Inizializzazioni ---
     app.jinja_env.add_extension('jinja2.ext.do')
-
-    # --- Inizializzazione estensioni ---
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db, directory=os.path.join(app_dir, 'migrations'))
     jwt.init_app(app)
     CORS(app)
     csrf.init_app(app)
-    from flask_wtf.csrf import generate_csrf
-
-    @app.context_processor
-    def inject_csrf_token():
-        from flask_wtf.csrf import generate_csrf
-        return dict(csrf_token=generate_csrf)
 
     # --- Configura Login Manager ---
     login_manager.login_view = 'auth.login'
@@ -95,50 +88,48 @@ def create_app():
         from .models import User
         return User.query.get(int(user_id))
 
-    # --- Context Processor Globale ---
+    # --- Context Processors ---
     @app.context_processor
     def inject_global_variables():
-        unread_notifications_count = 0
+        unread_count = 0
         if current_user.is_authenticated:
             from .models import Notification
-            unread_notifications_count = Notification.query.filter_by(
+            unread_count = Notification.query.filter_by(
                 recipient_id=current_user.id, read=False
             ).count()
+            
         return dict(
-            now=datetime.utcnow(),
-            user_city=current_user.city if current_user.is_authenticated else None,
-            unread_notifications_count=unread_notifications_count
+            now=datetime.utcnow(), today_minus_1day=datetime.utcnow() - timedelta(days=1),
+            unread_notifications_count=unread_count
         )
-
     # --- Registrazione Blueprint ---
-    from .main.routes import main as main_blueprint
-    app.register_blueprint(main_blueprint)
-
-    from .auth.routes import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint, url_prefix='/auth')
-
-    from .api.routes import api as api_blueprint
-    app.register_blueprint(api_blueprint, url_prefix='/api')
-
-    from .mobile.routes import mobile as mobile_blueprint
-    app.register_blueprint(mobile_blueprint, url_prefix='/api/mobile')
-
-    # --- Configura Admin ---
-    admin.init_app(app)
     with app.app_context():
+        from .main.routes import main as main_blueprint
+        app.register_blueprint(main_blueprint)
+
+        from .auth.routes import auth as auth_blueprint
+        app.register_blueprint(auth_blueprint, url_prefix='/auth')
+
+        from .api.routes import api as api_blueprint
+        app.register_blueprint(api_blueprint, url_prefix='/api')
+        
+        # ... (registra qui altri blueprint se ne hai)
+
+    # --- Configura Admin, Database e Scheduler ---
+    with app.app_context():
+        # Admin
+        admin.init_app(app)
         setup_admin_views(admin, db)
-    print("✅ Admin panel configurato e inizializzato.")
+        print("✅ Admin panel configurato.")
 
-    # --- Crea Tabelle Database ---
-    with app.app_context():
+        # Database
         try:
             db.create_all()
-            print("✅ Tabelle database verificate/create con successo.")
+            print("✅ Tabelle database verificate/create.")
         except Exception as e:
-            print(f"⚠️ Errore durante la creazione delle tabelle: {e}")
+            print(f"⚠️ Errore creazione tabelle: {e}")
 
-    # --- Gestione Sfide Scadute (All'avvio) ---
-    with app.app_context():
+        # Esecuzione task all'avvio
         try:
             from .main.gamification import close_expired_challenges
             closed_count = close_expired_challenges()
@@ -147,42 +138,19 @@ def create_app():
         except Exception as e:
             print(f"⚠️ Errore chiusura sfide all'avvio: {e}")
 
-    # --- Scheduler per attività periodiche ---
+    # --- Scheduler ---
     try:
-        if not scheduler.running:
+        if not scheduler.running and not app.debug: # Non avviare lo scheduler in debug mode per evitare esecuzioni doppie
             from .main.gamification import close_expired_challenges
             
-            @scheduler.scheduled_job('cron', hour=0, minute=0)
-            def close_daily_expired_challenges_job():
+            @scheduler.scheduled_job('interval', hours=1)
+            def scheduled_close_challenges():
                 with app.app_context():
-                    try:
-                        closed_count = close_expired_challenges()
-                        if closed_count > 0:
-                            print(f"⏰ Scheduler: chiuse {closed_count} sfide scadute.")
-                        else:
-                            print("⏰ Scheduler: nessuna sfida da chiudere.")
-                    except Exception as e:
-                        print(f"❌ Errore scheduler: {e}")
-
+                    close_expired_challenges()
+            
             scheduler.start()
-            print("✅ Scheduler avviato - chiusura automatica sfide attiva.")
-        else:
-            print("✅ Scheduler già attivo.")
+            print("✅ Scheduler avviato.")
     except Exception as e:
-        print(f"⚠️ Errore nell'avvio dello scheduler: {e}")
-
-    # --- Globals per Jinja ---
-    app.jinja_env.globals.update(
-        datetime=datetime,
-        timedelta=timedelta,
-        today_minus_1day=datetime.utcnow() - timedelta(days=1)
-    )
+        print(f"⚠️ Errore avvio scheduler: {e}")
 
     return app
-
-
-def stop_scheduler():
-    """Ferma lo scheduler."""
-    if scheduler.running:
-        scheduler.shutdown()
-        print("⏹️  Scheduler fermato.")

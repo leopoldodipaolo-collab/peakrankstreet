@@ -9,6 +9,7 @@ from wtforms.fields import SelectField
 import os
 from datetime import datetime
 from flask_admin import BaseView, expose
+from flask_admin import Admin
 
 # --- Vista Indice Personalizzata e Protetta ---
 class SecureAdminIndexView(AdminIndexView):
@@ -304,58 +305,62 @@ class PostLikeAdminView(SecureModelView):
 
 # === TABELLE DI ASSOCIAZIONE ===
 
+# Tabelle di associazione come ModelView
 class FollowersAdminView(SecureModelView):
     column_list = ['follower_id', 'followed_id']
     can_create = True
     can_edit = False
     can_delete = True
-    
+
     def get_query(self):
         from app.models import followers
         return self.session.query(followers)
-    
+
     def get_count_query(self):
         from app.models import followers
         return self.session.query(followers)
+
 
 class PostTagsAdminView(SecureModelView):
     column_list = ['post_id', 'tag_id']
     can_create = True
     can_edit = False
     can_delete = True
-    
+
     def get_query(self):
         from app.models import post_tags
         return self.session.query(post_tags)
-    
+
     def get_count_query(self):
         from app.models import post_tags
         return self.session.query(post_tags)
+
 
 class GroupMembersAdminView(SecureModelView):
     column_list = ['user_id', 'group_id']
     can_create = True
     can_edit = False
     can_delete = True
-    
+
     def get_query(self):
         from app.models import group_members
         return self.session.query(group_members)
-    
+
     def get_count_query(self):
         from app.models import group_members
         return self.session.query(group_members)
+
 
 class EventParticipantsAdminView(SecureModelView):
     column_list = ['user_id', 'event_id']
     can_create = True
     can_edit = False
     can_delete = True
-    
+
     def get_query(self):
         from app.models import event_participants
         return self.session.query(event_participants)
-    
+
     def get_count_query(self):
         from app.models import event_participants
         return self.session.query(event_participants)
@@ -363,7 +368,6 @@ class EventParticipantsAdminView(SecureModelView):
 # --- Creazione dell'Istanza Admin ---
 admin = Admin(
     name='StreetSport Admin',
-    template_mode='bootstrap4',
     index_view=SecureAdminIndexView(),
     endpoint='admin'
 )
@@ -514,10 +518,12 @@ def setup_admin_views(admin_instance, db):
                 return "<pre>" + "\n".join(str(r) for r in rows) + "</pre>"
 
         # aggiunta al pannello admin
+# === CATEGORIA: TABELLE DI ASSOCIAZIONE ===
         admin_instance.add_view(FollowersAdminView(name='Followers', category='Tabelle Associazioni'))
         admin_instance.add_view(PostTagsAdminView(name='Post Tags', category='Tabelle Associazioni'))
         admin_instance.add_view(GroupMembersAdminView(name='Membri Gruppi', category='Tabelle Associazioni'))
         admin_instance.add_view(EventParticipantsAdminView(name='Partecipanti Eventi', category='Tabelle Associazioni'))
+
 
         print("✅ Admin panel COMPLETO configurato con successo!")
 

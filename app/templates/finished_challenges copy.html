@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}Sfide Terminate - Archivio Storico{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-4">
+    <!-- Header Hero -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-gradient-primary rounded-circle p-3 me-3">
+                    <i class="bi bi-trophy-fill text-white fs-2"></i>
+                </div>
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-1">🏆 Archivio Sfide</h1>
+                    <p class="text-muted mb-0">Rivivi le competizioni concluse e scopri i vincitori</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-lightning-fill me-2"></i>Sfide Attive
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtri e Statistiche -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 rounded-3">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="search-challenges" class="form-control" placeholder="Cerca sfida...">
+                            </div>
+                        </div>
+                        <div class="col-md-5 mb-2 mb-md-0">
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm active filter-btn" data-filter="all">
+                                    Tutte
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm filter-btn" data-filter="open">
+                                    Aperte
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm filter-btn" data-filter="closed">
+                                    Private
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <small class="text-muted">
+                                <span id="challenges-count">{{ challenges|length }}</span> sfide terminate
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if challenges %}
+        <!-- Grid Sfide - Desktop -->
+        <div class="row d-none d-md-flex" id="challenges-grid">
+            {% for challenge in challenges %}
+            <div class="col-xl-4 col-lg-6 mb-4 challenge-card" data-type="{{ challenge.challenge_type }}">
+                <div class="card h-100 shadow-lg border-0 rounded-4 challenge-card-inner">
+                    <!-- Header con gradiente -->
+                    <div class="card-header position-relative overflow-hidden border-0 rounded-top-4 py-4"
+                         style="background: linear-gradient(135deg, 
+                             {% if challenge.challenge_type == 'open' %}#28a745{% else %}#fd7e14{% endif %}, 
+                             {% if challenge.challenge_type == 'open' %}#20c997{% else %}#ff922b{% endif %});">
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <span class="badge bg-dark bg-opacity-50 px-3 py-2">
+                                <i class="bi bi-flag-checkered me-1"></i>Terminata
+                            </span>
+                        </div>
+                        <h5 class="card-title text-white fw-bold mb-2 text-truncate">{{ challenge.name }}</h5>
+                        <div class="d-flex align-items-center text-white-50">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <small>{{ challenge.start_date.strftime('%d/%m/%Y') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}</small>
+                        </div>
+                    </div>
+
+                    <div class="card-body position-relative">
+                        <!-- Badge tipo sfida -->
+                        <div class="position-absolute top-0 start-50 translate-middle">
+                            <span class="badge bg-{{ 'success' if challenge.challenge_type == 'open' else 'warning' }} text-dark px-3 py-2 shadow-sm">
+                                <i class="bi bi-{{ 'globe' if challenge.challenge_type == 'open' else 'lock' }} me-1"></i>
+                                {{ 'Pubblica' if challenge.challenge_type == 'open' else 'Privata' }}
+                            </span>
+                        </div>
+
+                        <!-- Info percorso -->
+                        <div class="text-center mb-4 mt-3">
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3 mx-auto" style="max-width: 200px;">
+                                <i class="bi bi-map text-primary fs-1 mb-2"></i>
+                                <h6 class="fw-bold text-dark mb-1">{{ challenge.route_info.name }}</h6>
+                                <small class="text-muted">Percorso</small>
+                            </div>
+                        </div>
+
+                        <!-- Creatore -->
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <img src="{{ url_for('static', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
+                                 class="rounded-circle me-2" width="32" height="32" alt="{{ challenge.challenger.username }}">
+                            <div>
+                                <small class="text-muted">Creata da</small>
+                                <div class="fw-semibold">{{ challenge.challenger.username }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Statistiche -->
+                        {% set challenge_activities = challenge.activities %}
+                        {% set participants = challenge.participants|length if challenge.participants else challenge_activities|map(attribute='user_id')|unique|list|length %}
+                        
+                        <div class="row text-center g-3 mb-3">
+                            <div class="col-4">
+                                <div class="bg-success bg-opacity-10 rounded-3 p-2">
+                                    <i class="bi bi-people-fill text-success fs-4 mb-1"></i>
+                                    <div class="fw-bold text-success fs-5">{{ participants }}</div>
+                                    <small class="text-muted">Partecipanti</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-info bg-opacity-10 rounded-3 p-2">
+                                    <i class="bi bi-list-check text-info fs-4 mb-1"></i>
+                                    <div class="fw-bold text-info fs-5">{{ challenge_activities.count() }}</div>
+                                    <small class="text-muted">Attività</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-2">
+                                    <i class="bi bi-clock-fill text-warning fs-4 mb-1"></i>
+                                    <div class="fw-bold text-warning fs-5">{{ (challenge.end_date - challenge.start_date).days }}g</div>
+                                    <small class="text-muted">Durata</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- VINCITORE -->
+                        <div class="winner-section mb-3">
+                            <div class="bg-gradient-warning rounded-3 p-3 text-center position-relative overflow-hidden">
+                                <!-- Effetto di sfondo -->
+                                <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10">
+                                    <i class="bi bi-trophy-fill" style="font-size: 4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                                </div>
+                                
+                                <div class="position-relative">
+                                    <i class="bi bi-trophy-fill text-warning fs-1 mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-2">🏆 Vincitore Assoluto</h6>
+                                    
+                                    {% if challenge_activities %}
+                                        {% set winner = challenge_activities|sort(attribute='duration')|first %}
+                                        <div class="d-flex align-items-center justify-content-center mb-2">
+                                            <img src="{{ url_for('static', filename='profile_pics/' + winner.user_activity.profile_image) }}" 
+                                                 class="rounded-circle me-2 border border-warning border-2" 
+                                                 width="40" height="40" 
+                                                 alt="{{ winner.user_activity.username }}">
+                                            <div class="text-start">
+                                                <div class="fw-bold text-dark fs-6">{{ winner.user_activity.username }}</div>
+                                                <small class="text-muted">
+                                                    Tempo: {{ (winner.duration // 60)|int }}:{{ "%02d"|format(winner.duration % 60) }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Nessuna attività registrata
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer Azioni -->
+                    <div class="card-footer bg-transparent border-0 rounded-bottom-4 pt-0">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}"
+                                   class="btn btn-outline-primary w-100 btn-hover">
+                                    <i class="bi bi-info-circle me-1"></i>Dettagli
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}"
+                                   class="btn btn-outline-success w-100 btn-hover">
+                                    <i class="bi bi-trophy me-1"></i>Classifica
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Lista Sfide - Mobile -->
+        <div class="d-md-none" id="mobile-challenges-list">
+            {% for challenge in challenges %}
+            <div class="card mb-3 border-0 rounded-4 shadow-sm challenge-card" data-type="{{ challenge.challenge_type }}">
+                <div class="card-body">
+                    <!-- Header Mobile -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-dark mb-1">{{ challenge.name }}</h6>
+                            <div class="d-flex align-items-center text-muted small mb-2">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                <span>{{ challenge.start_date.strftime('%d/%m') }} - {{ challenge.end_date.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                            <!-- Badge tipo sfida mobile -->
+                            <span class="badge bg-{{ 'success' if challenge.challenge_type == 'open' else 'warning' }} text-dark">
+                                <i class="bi bi-{{ 'globe' if challenge.challenge_type == 'open' else 'lock' }} me-1"></i>
+                                {{ 'Pubblica' if challenge.challenge_type == 'open' else 'Privata' }}
+                            </span>
+                        </div>
+                        <span class="badge bg-dark">
+                            <i class="bi bi-flag-checkered me-1"></i>Terminata
+                        </span>
+                    </div>
+
+                    <!-- Info Compact -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-4 text-center">
+                            <div class="bg-success bg-opacity-10 rounded-2 p-2">
+                                <i class="bi bi-people-fill text-success d-block mb-1"></i>
+                                <div class="fw-bold text-success small">{{ challenge.activities|map(attribute='user_id')|unique|list|length }}</div>
+                                <small class="text-muted">Part.</small>
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="bg-info bg-opacity-10 rounded-2 p-2">
+                                <i class="bi bi-list-check text-info d-block mb-1"></i>
+                                <div class="fw-bold text-info small">{{ challenge.activities.count() }}</div>
+                                <small class="text-muted">Attività</small>
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="bg-primary bg-opacity-10 rounded-2 p-2">
+                                <i class="bi bi-map text-primary d-block mb-1"></i>
+                                <small class="text-muted d-block text-truncate">{{ challenge.route_info.name }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VINCITORE - Versione Mobile -->
+                    <div class="winner-section-mobile mb-3">
+                        <div class="bg-warning bg-opacity-20 rounded-3 p-2 border border-warning border-opacity-25">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <small class="fw-bold text-dark d-block">Vincitore</small>
+                                    {% if challenge.activities %}
+                                        {% set winner = challenge.activities|sort(attribute='duration')|first %}
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ url_for('static', filename='profile_pics/' + winner.user_activity.profile_image) }}" 
+                                                 class="rounded-circle me-1" 
+                                                 width="24" height="24" 
+                                                 alt="{{ winner.user_activity.username }}">
+                                            <span class="fw-semibold text-dark small">{{ winner.user_activity.username }}</span>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ (winner.duration // 60)|int }}:{{ "%02d"|format(winner.duration % 60) }}
+                                        </small>
+                                    {% else %}
+                                        <small class="text-muted">Nessun vincitore</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Creatore Mobile -->
+                    <div class="d-flex align-items-center justify-content-center mb-3 p-2 bg-light rounded-3">
+                        <img src="{{ url_for('static', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
+                             class="rounded-circle me-2" width="28" height="28" alt="{{ challenge.challenger.username }}">
+                        <div class="text-center">
+                            <small class="text-muted d-block">Creata da</small>
+                            <div class="fw-semibold small">{{ challenge.challenger.username }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Azioni Mobile -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="{{ url_for('main.challenge_detail', challenge_id=challenge.id) }}"
+                               class="btn btn-outline-primary btn-sm w-100">
+                                <i class="bi bi-info-circle me-1"></i>Dettagli
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ url_for('main.leaderboard', challenge_id=challenge.id) }}"
+                               class="btn btn-outline-success btn-sm w-100">
+                                <i class="bi bi-trophy me-1"></i>Classifica
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginazione Migliorata -->
+        {% if pagination.pages > 1 %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <nav aria-label="Navigazione sfide terminate">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link pagination-btn" href="{{ url_for('main.finished_challenges', page=pagination.prev_num ) }}">
+                                <i class="bi bi-chevron-left"></i> Precedente
+                            </a>
+                        </li>
+                        
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                                    <a class="page-link pagination-btn" href="{{ url_for('main.finished_challenges', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">…</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link pagination-btn" href="{{ url_for('main.finished_challenges', page=pagination.next_num) }}">
+                                Successivo <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Stato Vuoto Migliorato -->
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center py-5">
+                <div class="bg-gradient-primary rounded-circle p-5 mx-auto mb-4" style="width: 120px; height: 120px;">
+                    <i class="bi bi-archive text-white fs-1"></i>
+                </div>
+                <h3 class="text-dark mb-3">Archivio Vuoto</h3>
+                <p class="text-muted mb-4">Le sfide terminate appariranno qui automaticamente. Partecipa alle sfide attive per creare ricordi!</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('main.challenges_list') }}" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-lightning-fill me-2"></i>Esplora Sfide Attive
+                    </a>
+                    <a href="{{ url_for('main.create_challenge') }}" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-plus-circle me-2"></i>Crea una Sfida
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Stili Avanzati -->
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%) !important;
+}
+
+/* SFONDO UNIFICATO PER TUTTE LE CARD */
+.challenge-card-inner,
+.challenge-card {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+.challenge-card-inner:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15) !important;
+    border-color: rgba(0,0,0,0.1) !important;
+}
+
+.btn-hover {
+    transition: all 0.2s ease;
+}
+
+.btn-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pagination-btn {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+.pagination-btn:hover {
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+}
+
+/* Sezione Vincitore */
+.winner-section {
+    position: relative;
+}
+
+.winner-section .bg-gradient-warning {
+    border: 2px solid rgba(255, 193, 7, 0.3);
+}
+
+/* Animazioni di ingresso */
+.challenge-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Miglioramenti responsive */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    
+    .card {
+        border-radius: 12px !important;
+    }
+    
+    .winner-section-mobile .bg-warning {
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    /* Bordo colorato per mobile basato sul tipo di sfida */
+    .challenge-card[data-type="open"] {
+        border-left: 4px solid #28a745 !important;
+    }
+    
+    .challenge-card[data-type="closed"] {
+        border-left: 4px solid #fd7e14 !important;
+    }
+}
+
+/* Gradient borders per header */
+.card-header {
+    position: relative;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+}
+
+/* Effetti trofeo */
+.winner-section .position-relative i.bi-trophy-fill {
+    animation: subtleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes subtleGlow {
+    from {
+        filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.5));
+    }
+    to {
+        filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.8));
+    }
+}
+
+/* Miglioramenti visivi per consistenza */
+.bg-opacity-10 {
+    background-opacity: 0.1 !important;
+}
+
+.bg-opacity-20 {
+    background-opacity: 0.2 !important;
+}
+
+.border-opacity-25 {
+    border-opacity: 0.25 !important;
+}
+</style>
+
+<!-- JavaScript per Interattività -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filtri
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const challengeCards = document.querySelectorAll('.challenge-card');
+    
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Aggiorna stato attivo
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            
+            // Filtra le card
+            challengeCards.forEach(card => {
+                if (filter === 'all' || card.getAttribute('data-type') === filter) {
+                    card.style.display = 'block';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'scale(1)';
+                    }, 50);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                }
+            });
+            
+            // Aggiorna contatore
+            updateChallengesCount(filter);
+        });
+    });
+    
+    // Ricerca live
+    const searchInput = document.getElementById('search-challenges');
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        challengeCards.forEach(card => {
+            const challengeName = card.querySelector('.card-title, h6').textContent.toLowerCase();
+            if (challengeName.includes(searchTerm)) {
+                card.style.display = 'block';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                }, 50);
+            } else {
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 300);
+            }
+        });
+    });
+    
+    function updateChallengesCount(filter) {
+        const visibleCards = Array.from(challengeCards).filter(card => {
+            if (filter === 'all') return card.style.display !== 'none';
+            return card.style.display !== 'none' && card.getAttribute('data-type') === filter;
+        }).length;
+        
+        document.getElementById('challenges-count').textContent = visibleCards;
+    }
+    
+    // Animazione al caricamento
+    setTimeout(() => {
+        document.querySelectorAll('.challenge-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+        });
+    }, 100);
+});
+</script>
+{% endblock %}
