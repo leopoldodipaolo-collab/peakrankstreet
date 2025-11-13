@@ -374,7 +374,7 @@ function createClassicRouteCard(route) {
 
     // Immagine di copertina
     const featuredImageHtml = route.featured_image
-        ? `<img src="${UPLOADS_BASE_URL}featured_routes/${route.featured_image}" 
+        ? `<img src="${STATIC_BASE_URL}featured_routes/${route.featured_image}" 
                 class="card-img-top route-card-img" alt="${route.name}">`
         : `<div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white route-card-img-placeholder">
                <i class="bi bi-geo-alt-fill" style="font-size:3rem;"></i>
