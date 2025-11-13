@@ -64,7 +64,12 @@ def create_app():
     app.config['PROFILE_PICS_FOLDER'] = os.path.join(upload_base_path, 'profile_pics')
     app.config['POSTS_IMAGES_FOLDER'] = os.path.join(upload_base_path, 'posts_images')
     
-    # Crea le directory se non esistono
+    # Crea le cartelle SOLO se il percorso base non esiste ancora.
+    # Su Render, il percorso esisterà sempre, quindi questo blocco non darà errore.
+    if not os.path.exists(upload_base_path):
+        os.makedirs(upload_base_path)
+
+    # Ora, crea le sottocartelle in modo sicuro.
     os.makedirs(app.config['PROFILE_PICS_FOLDER'], exist_ok=True)
     os.makedirs(app.config['POSTS_IMAGES_FOLDER'], exist_ok=True)
     # =====================================================================
