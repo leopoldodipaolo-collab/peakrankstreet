@@ -40,7 +40,7 @@
                 <div class="container">
                     <!-- Brand e Toggler rimangono invariati -->
                     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-                        <img src="{{ url_for('main.uploaded_file', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2">
+                        <img src="{{ url_for('static', filename='icons/LogoX_SS.png') }}" alt="StreetSport Logo" class="navbar-logo me-2">
                         <span class="fw-bold">PeakRankStreet</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -166,7 +166,7 @@
     <footer class="footer bg-dark-custom py-4 mt-auto text-white-50">
         <div class="container text-center">
             <div class="mb-3">
-                <img src="{{ url_for('main.uploaded_file', filename='icons/logoFooter.png') }}" alt="PeakRankStreet Logo" style="max-height:100px;">
+                <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="PeakRankStreet Logo" style="max-height:100px;">
             </div>
             <div class="row">
                 <div class="col-md-4">
