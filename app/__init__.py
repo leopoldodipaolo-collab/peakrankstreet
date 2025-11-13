@@ -51,23 +51,26 @@ def create_app():
     # --- NUOVA GESTIONE DINAMICA DELLE CARTELLE DI UPLOAD ---
     # =====================================================================
     if 'RENDER' in os.environ:
-        # Su Render, il disco è montato in /var/data/uploads. Questa cartella ESISTE GIÀ.
+        # Su Render, il disco è montato in /var/data/uploads.
         upload_base_path = '/var/data/uploads'
         print(f"✅ Ambiente Render rilevato. Path upload: {upload_base_path}")
     else:
-        # In locale, creiamo la cartella se non esiste.
+        # In locale, usiamo la cartella static/uploads
         upload_base_path = os.path.join(app.root_path, 'static', 'uploads')
         print(f"⚠️  Ambiente locale rilevato. Path upload: {upload_base_path}")
-        os.makedirs(upload_base_path, exist_ok=True)
 
     # Definiamo i percorsi completi nella configurazione dell'app
     app.config['UPLOADS_BASE_PATH'] = upload_base_path
     app.config['PROFILE_PICS_FOLDER'] = os.path.join(upload_base_path, 'profile_pics')
     app.config['POSTS_IMAGES_FOLDER'] = os.path.join(upload_base_path, 'posts_images')
     
-    # Ora crea le sottocartelle. Questa operazione è permessa perché 'upload_base_path' è scrivibile.
-    os.makedirs(app.config['PROFILE_PICS_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['POSTS_IMAGES_FOLDER'], exist_ok=True)
+    # --- MODIFICA CHIAVE QUI ---
+    # Eseguiamo makedirs SOLO se NON siamo su Render.
+    # Su Render, le cartelle verranno create al primo upload di un file,
+    # o potremmo farlo con un comando one-shot nella shell di Render se necessario.
+    if 'RENDER' not in os.environ:
+        os.makedirs(app.config['PROFILE_PICS_FOLDER'], exist_ok=True)
+        os.makedirs(app.config['POSTS_IMAGES_FOLDER'], exist_ok=True)
     # =====================================================================
 
     # --- Estensioni e Inizializzazioni ---
