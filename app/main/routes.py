@@ -221,10 +221,16 @@ def search_city():
             headers={
                 "User-Agent": "PeakRankStreet/1.0 (info@peakrankstreet.com)",
                 "Accept-Language": "it"
-            }
+            },
+            timeout=10
         )
         res.raise_for_status()
         return jsonify(res.json())
+
+    except requests.HTTPError as e:
+        print("❌ HTTP Error:", e, res.text)
+        return jsonify({"error": "Errore da Nominatim"}), 503
+
     except requests.RequestException as e:
         print("❌ Errore chiamata Nominatim:", e)
         return jsonify({"error": "Nominatim non disponibile"}), 503
