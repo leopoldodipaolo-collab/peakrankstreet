@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>
                     <div class="d-flex align-items-center">
-                        <img src="/static/profile_pics/${athlete.profile_image}" 
+                        <img src="/main.uploaded_file/profile_pics/${athlete.profile_image}" 
                              class="rounded-circle me-3" width="45" height="45" 
                              alt="${athlete.username}">
                         <div>
@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('athleteModalLabel').textContent = `Profilo di ${athlete.username}`;
         document.getElementById('athleteModalBody').innerHTML = `
             <div class="text-center mb-4">
-                <img src="/static/profile_pics/${athlete.profile_image}" 
+                <img src="/main.uploaded_file/profile_pics/${athlete.profile_image}" 
                      class="rounded-circle mb-3" width="100" height="100" 
                      alt="${athlete.username}">
                 <h4>${athlete.username}</h4>
