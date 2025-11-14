@@ -17,7 +17,7 @@
 
                         <!-- Immagine Profilo -->
                         <div class="mb-4 text-center">
-                            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}"
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + user.profile_image) }}"
                                  id="imagePreview" class="rounded-circle mb-3" alt="Immagine di profilo"
                                  style="width: 150px; height: 150px; object-fit: cover;">
                             <div>
