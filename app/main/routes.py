@@ -218,7 +218,10 @@ def search_city():
         res = requests.get(
             "https://nominatim.openstreetmap.org/search",
             params={"q": q, "format": "json", "limit": 5},
-            headers={"User-Agent": "StreetSportApp/1.0 (leopoldo@example.com)"}
+            headers={
+                "User-Agent": "PeakRankStreet/1.0 (info@peakrankstreet.com)",
+                "Accept-Language": "it"
+            }
         )
         res.raise_for_status()
         return jsonify(res.json())

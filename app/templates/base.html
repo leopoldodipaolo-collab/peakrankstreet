@@ -163,37 +163,41 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer bg-dark-custom py-4 mt-auto text-white-50">
-        <div class="container text-center">
-            <div class="mb-3">
-                <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="PeakRankStreet Logo" style="max-height:100px;">
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <h6 class="text-white">PeakRankStreet</h6>
-                    <p class="small">La tua piattaforma per lo sport urbano.</p>
+        <footer class="footer bg-dark-custom py-4 mt-auto border-top text-white-50">
+            <div class="container text-center">
+                <div class="mb-4">
+                    <img src="{{ url_for('static', filename='icons/logoFooter.png') }}" alt="StreetSport Logo" style="max-height:120px;">
                 </div>
-                <div class="col-md-4">
-                    <h6 class="text-white">Link Utili</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="{{ url_for('main.explore') }}" class="text-white-50 text-decoration-none">Esplora</a></li>
-                        <li><a href="{{ url_for('main.list_groups') }}" class="text-white-50 text-decoration-none">Gruppi</a></li>
-                        <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Sfide</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="text-white">Seguici</h6>
-                    <div class="social-icons mt-2">
-                        <a href="#" class="text-white-50 me-2 fs-4"><i class="bi bi-facebook"></i></a>
-                        <a href="#" class="text-white-50 me-2 fs-4"><i class="bi bi-twitter"></i></a>
-                        <a href="#" class="text-white-50 fs-4"><i class="bi bi-instagram"></i></a>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <h6 class="text-white">PeakRankStreet</h6>
+                        <p class="small mb-0">La tua piattaforma per lo sport urbano.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Link Utili</h6>
+                        <ul class="list-unstyled small">
+                            <li><a href="{{ url_for('main.explore_users') }}" class="text-white-50 text-decoration-none">Esplora Utenti</a></li>
+                            <li><a href="{{ url_for('main.challenges_list') }}" class="text-white-50 text-decoration-none">Le mie Sfide</a></li>
+                            <li><a href="{{ url_for('main.all_activities') }}" class="text-white-50 text-decoration-none">Tutte le Attività</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-white">Contatti</h6>
+                        <p class="small mb-0"><i class="bi bi-envelope-fill me-1"></i> info@peakrankstreet.com</p>
+                        <div class="social-icons mt-2">
+                            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                            <a href="#" class="text-white me-2"><i class="bi bi-twitter"></i></a>
+                            <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                        </div>
                     </div>
                 </div>
+             
+                <hr class="text-white-50 my-3">
+                <p class="mb-0 small">&copy; 2025 PeakRankStreet App. Tutti i diritti riservati.</p>
+                <a href="{{ url_for('main.privacy_policy') }}" class="text-muted ms-3">Privacy Policy</a>
+                <a href="{{ url_for('main.cookie_policy') }}" class="text-muted ms-3">Cookie Policy</a>
             </div>
-            <hr class="my-3">
-            <p class="mb-0 small">&copy; {{ now.year }} PeakRankStreet. Tutti i diritti riservati.</p>
-        </div>
-    </footer>
+        </footer>
 
     <!-- Banner Cookie Consent -->
     <div class="fixed-bottom bg-dark text-white p-3 cookie-banner" id="cookieConsentBanner" style="display: none;">
