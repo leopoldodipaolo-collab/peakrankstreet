@@ -1,14 +1,37 @@
 // =======================================================
 // VARIABILI GLOBALI
 // =======================================================
+// =======================================================
+// VARIABILI GLOBALI
+// =======================================================
 let mainMap, markers, osmLayer, topoLayer;
 let selectedRouteLayer;
 let userProfileUrlBase, routeDetailUrlBase, activityDetailUrlBase, profilePicsBaseUrl, mapDataApiUrl, userInitialCity;
 let loadedRoutes = [];
-// Leggiamo i percorsi base dall'HTML una sola volta al caricamento dello script.
-// Usiamo un fallback nel caso in cui il div non sia presente in una pagina.
+
+// =======================================================
+// INIZIALIZZAZIONE URL BASE
+// =======================================================
+// Leggiamo i percorsi base dall'HTML una sola volta al caricamento dello script
+// Usiamo un fallback nel caso in cui i div non siano presenti
 const UPLOADS_BASE_URL = document.getElementById('uploads-base-url')?.textContent || '/uploads/';
 const STATIC_BASE_URL = document.getElementById('static-base-url')?.textContent || '/static/';
+
+// URL specifici per la tua app
+userProfileUrlBase    = document.getElementById('user-profile-url-base')?.textContent || '/user/12345';
+routeDetailUrlBase    = document.getElementById('route-detail-url-base')?.textContent || '/route/12345';
+activityDetailUrlBase = document.getElementById('activity-detail-url-base')?.textContent || '/activity/12345';
+mapDataApiUrl         = document.getElementById('map-data-api-url')?.textContent || '/api/map_data';
+userInitialCity       = document.getElementById('user-initial-city')?.textContent || '';
+profilePicsBaseUrl    = document.getElementById('profile-pics-base-url')?.textContent || `${UPLOADS_BASE_URL}profile_pics/`;
+
+// =======================================================
+// DEBUG
+// =======================================================
+console.log('UPLOADS_BASE_URL:', UPLOADS_BASE_URL);
+console.log('STATIC_BASE_URL:', STATIC_BASE_URL);
+console.log('profilePicsBaseUrl:', profilePicsBaseUrl);
+
 // =======================================================
 // INIZIALIZZAZIONE PRINCIPALE
 // =======================================================

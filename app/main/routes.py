@@ -107,6 +107,7 @@ def uploaded_file(filename):
     """
     # Recupera il percorso base dalla configurazione dell'app
     base_path = current_app.config['UPLOADS_BASE_PATH']
+    print("DEBUG: Sto cercando:", os.path.join(base_path, filename))
     return send_from_directory(base_path, filename, as_attachment=False)
 
 
