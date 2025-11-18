@@ -105,7 +105,7 @@
 
                         <!-- Creatore -->
                         <div class="d-flex align-items-center justify-content-center mb-3">
-                            <img src="{{ url_for('static', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
                                  class="rounded-circle me-2" width="32" height="32" alt="{{ challenge.challenger.username }}">
                             <div>
                                 <small class="text-muted">Creata da</small>
@@ -280,7 +280,7 @@
 
                     <!-- Creatore Mobile -->
                     <div class="d-flex align-items-center justify-content-center mb-3 p-2 bg-light rounded-3">
-                        <img src="{{ url_for('static', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
+                        <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + challenge.challenger.profile_image) }}" 
                              class="rounded-circle me-2" width="28" height="28" alt="{{ challenge.challenger.username }}">
                         <div class="text-center">
                             <small class="text-muted d-block">Creata da</small>
