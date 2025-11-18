@@ -633,18 +633,25 @@ function populateRecentChallenges(challenges) {
 function populateRecentActivities(activities) {
     const recentActivitiesListDiv = document.getElementById('recent-activities-list');
     if (!recentActivitiesListDiv) return;
-    
+
     recentActivitiesListDiv.innerHTML = '';
+
     if (activities && activities.length > 0) {
         activities.forEach(activity => {
+
+            // FIX: fallback immagine profilo
+            const profileImage = activity.user_profile_image
+                ? `${profilePicsBaseUrl}${activity.user_profile_image}`
+                : `${profilePicsBaseUrl}default.png`;
+
             const likeButtonClass = activity.user_has_liked ? 'btn-danger' : 'btn-outline-danger';
             const isAuthenticated = document.querySelector('#navbarDropdownMenuLink') !== null;
             const disabledAttribute = isAuthenticated ? '' : 'disabled';
-            
+
             const activityHtml = `
                 <div class="list-group-item list-group-item-action activity-feed-item">
                     <p class="mb-1">
-                        <img src="${profilePicsBaseUrl}${activity.user_profile_image}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
+                        <img src="${profileImage}" class="rounded-circle me-2 profile-image-small" alt="Avatar">
                         <a href="${userProfileUrlBase.replace('12345', activity.user_id)}" class="user-link">${activity.username}</a>
                         ha completato
                         <strong><a href="${routeDetailUrlBase.replace('12345', activity.route_id)}" class="text-decoration-none text-success">${activity.route_name}</a></strong>.
@@ -653,10 +660,10 @@ function populateRecentActivities(activities) {
                         Distanza: <strong>${activity.distance.toFixed(2)} km</strong> |
                         Tempo: <strong>${formatDuration(activity.duration)}</strong>
                     </p>
-                    
+
                     <div class="d-flex justify-content-between align-items-center mt-2">
                         <a href="${activityDetailUrlBase.replace('12345', activity.id)}" class="btn btn-sm btn-outline-primary">Dettagli</a>
-                        
+
                         <button class="btn btn-sm like-activity-button ${likeButtonClass}" data-activity-id="${activity.id}" ${disabledAttribute}>
                             <i class="bi bi-heart-fill"></i>
                             <span class="like-count ms-1">${activity.like_count}</span>
@@ -666,12 +673,18 @@ function populateRecentActivities(activities) {
                     <small class="text-muted d-block text-end mt-2">${activity.created_at}</small>
                 </div>
             `;
+
             recentActivitiesListDiv.innerHTML += activityHtml;
         });
     } else {
-        recentActivitiesListDiv.innerHTML = `<p class="text-center text-muted p-3">Nessuna attività recente in quest'area. <a href="/activities/record">Registra la tua!</a></p>`;
+        recentActivitiesListDiv.innerHTML = `
+            <p class="text-center text-muted p-3">
+                Nessuna attività recente in quest'area. 
+                <a href="/activities/record">Registra la tua!</a>
+            </p>`;
     }
 }
+
 /**
  * 🚀 POPOLA LE CLASSIFICHE LOCALI CON EFFETTI NEXT-LEVEL
  * @param {Object} leaderboards - Dati delle classifiche

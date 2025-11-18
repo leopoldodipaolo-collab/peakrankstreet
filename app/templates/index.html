@@ -284,7 +284,7 @@
                 <div id="activity-detail-url-base" style="display:none;">{{ url_for('main.activity_detail', activity_id=12345) }}</div>
                 <div id="map-data-api-url" style="display:none;">{{ url_for('api.get_map_data') }}</div>
                 <div id="user-initial-city" style="display:none;">{{ user_city if user_city else '' }}</div> 
-                <div id="profile-pics-base-url" style="display:none;">{{ url_for('static', filename='profile_pics/') }}</div>
+                <span id="profile-pics-base-url" style="display:none;">/uploads/profile_pics/</span>
             </div>
         </div>
 
