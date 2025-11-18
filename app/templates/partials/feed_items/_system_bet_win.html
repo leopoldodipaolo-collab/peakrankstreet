@@ -8,7 +8,7 @@
                 <!-- Vincitore -->
                 <div class="col-5 text-center">
                     <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}">
-                        <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle border border-3 border-success" style="width: 60px; height: 60px; object-fit: cover;">
+                        <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle border border-3 border-success" style="width: 60px; height: 60px; object-fit: cover;">
                     </a>
                     <div class="fw-bold mt-1">{{ post.user.username }}</div>
                     <div class="small text-success">VINCITORE</div>
@@ -20,7 +20,7 @@
                     {# --- BLOCCO CORRETTO E SICURO --- #}
                     {% if post.meta_data and post.meta_data.opponent_id %}
                         <a href="{{ url_for('main.user_profile', user_id=post.meta_data.opponent_id) }}">
-                             <img src="{{ url_for('static', filename='profile_pics/' + post.meta_data.opponent_avatar) }}" class="rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
+                             <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + post.meta_data.opponent_avatar) }}" class="rounded-circle border" style="width: 60px; height: 60px; object-fit: cover;">
                         </a>
                         <div class="fw-bold mt-1">{{ post.meta_data.opponent_username }}</div>
                         <div class="small text-danger">SCONFITTO</div>
