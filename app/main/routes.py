@@ -1328,10 +1328,10 @@ def challenge_detail(challenge_id):
     print(f"🎯 DEBUG: Sfida trovata - ID: {challenge.id}, Nome: {challenge.name}, Tipo: {challenge.challenge_type}, Creatore: {challenge.created_by}")
 
     # Verifica se la sfida è scaduta
-    #if challenge.end_date < datetime.utcnow() and challenge.is_active:
-    #    challenge.is_active = False
-    #    db.session.commit()
-    #    flash('Questa sfida è appena scaduta!', 'info')
+    if challenge.end_date < datetime.utcnow() and challenge.is_active:
+        challenge.is_active = False
+        db.session.commit()
+        flash('Questa sfida è appena scaduta!', 'info')
         
     # DEBUG ESTESO: Query degli inviti
     print(f"🔍 DEBUG: Eseguo query inviti per challenge_id = {challenge_id}")
