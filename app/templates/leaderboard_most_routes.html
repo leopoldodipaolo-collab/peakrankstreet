@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Imposta avatar
             const avatar = clone.querySelector('.creator-avatar-podium');
-            avatar.src = `/static/profile_pics/${creator.profile_image}`;
+            avatar.src = `/uploads/profile_pics/${creator.profile_image}`;
             avatar.className = `rounded-circle border ${borderColors[index]} creator-avatar-podium`;
             avatar.style.borderWidth = '3px';
             
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
                 <td>
                     <div class="d-flex align-items-center">
-                        <img src="/static/profile_pics/${creator.profile_image}" 
+                        <img src="/uploads/profile_pics/${creator.profile_image}" 
                              class="rounded-circle me-3" width="45" height="45" 
                              alt="${creator.username}">
                         <div>
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
             positionBadge.className = `badge creator-position-mobile ${getPositionClass(globalIndex + 1)}`;
             
             // Imposta avatar
-            clone.querySelector('.creator-avatar-mobile').src = `/static/profile_pics/${creator.profile_image}`;
+            clone.querySelector('.creator-avatar-mobile').src = `/uploads/profile_pics/${creator.profile_image}`;
             
             // Imposta nome e percorsi
             clone.querySelector('.creator-name-mobile').textContent = creator.username;
@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('creatorModalLabel').textContent = `Profilo di ${creator.username}`;
         document.getElementById('creatorModalBody').innerHTML = `
             <div class="text-center mb-4">
-                <img src="/static/profile_pics/${creator.profile_image}" 
+                <img src="/uploads/profile_pics/${creator.profile_image}" 
                      class="rounded-circle mb-3" width="100" height="100" 
                      alt="${creator.username}">
                 <h4>${creator.username}</h4>
