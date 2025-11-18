@@ -16,6 +16,7 @@ let loadedRoutes = [];
 // Usiamo un fallback nel caso in cui i div non siano presenti
 const UPLOADS_BASE_URL = document.getElementById('uploads-base-url')?.textContent || '/uploads/';
 const STATIC_BASE_URL = document.getElementById('static-base-url')?.textContent || '/static/';
+const DEFAULT_PROFILE_PIC = `${STATIC_BASE_URL}img/default.png`;
 
 // URL specifici per la tua app
 userProfileUrlBase    = document.getElementById('user-profile-url-base')?.textContent || '/user/12345';
