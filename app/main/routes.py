@@ -354,7 +354,7 @@ def edit_profile():
 
         # Se l'utente ha aggiunto una foto profilo e una città, consideriamo il profilo completo
         # Potresti voler aggiungere anche il cognome qui se lo ritieni parte del completamento del profilo
-        if current_user.profile_image != 'default.png' and current_user.city:
+        if current_user.profile_image != '06635f66-bf19-4a33-9fc9-a14381be06bf.png.png' and current_user.city:
             pass # <-- AGGIUNGI QUESTA RIGA indentata correttamente
             complete_onboarding_step(current_user, 'profile_complete') # rimosso il commento se la funzione esiste
 
