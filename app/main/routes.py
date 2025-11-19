@@ -356,12 +356,12 @@ def edit_profile():
         # Potresti voler aggiungere anche il cognome qui se lo ritieni parte del completamento del profilo
         if current_user.profile_image != 'default.png' and current_user.city:
             pass # <-- AGGIUNGI QUESTA RIGA indentata correttamente
-            # complete_onboarding_step(current_user, 'profile_complete') # rimosso il commento se la funzione esiste
+            complete_onboarding_step(current_user, 'profile_complete') # rimosso il commento se la funzione esiste
 
             # Esempio di come potresti definire complete_onboarding_step se non ce l'hai:
-            # if current_user.onboarding_steps is None:
-            #     current_user.onboarding_steps = {}
-            # current_user.onboarding_steps['profile_complete'] = True
+            if current_user.onboarding_steps is None:
+                current_user.onboarding_steps = {}
+            current_user.onboarding_steps['profile_complete'] = True
 
 
         try:
@@ -1082,6 +1082,12 @@ def challenges_list():
         Challenge.is_active == True
     ).order_by(Challenge.start_date.asc()).all()
 
+    active_challenges_close = Challenge.query.options(joinedload(Challenge.route_info)).filter(
+        Challenge.challenge_type == 'closed',
+        Challenge.end_date >= now,
+        Challenge.is_active == True
+    ).order_by(Challenge.start_date.asc()).all()
+
     # 2. Recupera gli inviti in sospeso
     invited_challenges = Challenge.query.options(joinedload(Challenge.route_info)).join(ChallengeInvitation).filter(
         Challenge.challenge_type == 'closed',
@@ -1105,6 +1111,7 @@ def challenges_list():
                            my_challenges=my_challenges,
                            finished_challenges_pag=finished_challenges_pag, # Passiamo l'oggetto paginazione
                            now=now,
+                           active_challenges_close=active_challenges_close,
                            is_homepage=False)
 
 @main.route("/leaderboards/total_distance")
@@ -1930,6 +1937,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
 @main.route('/posts/new', methods=['GET', 'POST'])
 @login_required
 def create_post():
@@ -2015,8 +2023,17 @@ def create_post():
                     db.session.add(notification)
             
             add_prestige(current_user, 'new_post')
-            if len(current_user.posts) == 1:
+            
+            # --- MODIFICA: Verifica più robusta per il primo post ---
+            # Controlla quanti post l'utente aveva PRIMA di questo nuovo post.
+            # Utilizziamo una query diretta per assicurarci di avere il conteggio corretto.
+            existing_posts_count = Post.query.filter_by(user_id=current_user.id).count()
+            
+            # Se l'utente non aveva post prima di questo, allora questo è il suo primo.
+            if existing_posts_count == 0:
                 complete_onboarding_step(current_user, 'first_post')
+            # --- FINE MODIFICA ---
+            
             db.session.commit()
             
             flash('Post creato con successo!', 'success')
@@ -2037,17 +2054,8 @@ def create_post():
     # Recupera i gruppi a cui l'utente è iscritto per popolare il menu a tendina
     user_groups = current_user.joined_groups.order_by(Group.name.asc()).all()
     
-    # Codice di debug per verificare i gruppi trovati
-    print("\n--- [DEBUG] Caricamento pagina CREATE_POST (GET) ---")
-    print(f"Utente: {current_user.username}")
-    print(f"Numero di gruppi trovati: {len(user_groups)}")
-    for group in user_groups:
-        print(f"  - Gruppo: {group.name} (ID: {group.id})")
-    print("-------------------------------------------\n")
-    
     # Mostra il form vuoto, passando la lista dei gruppi
     return render_template('create_post.html', is_homepage=False, user_groups=user_groups)
-
 
 # --- Assicurati che la funzione allowed_file sia definita (probabilmente in routes.py o una utility) ---
 def allowed_file(filename):

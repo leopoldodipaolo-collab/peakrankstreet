@@ -48,6 +48,16 @@
                 <div class="text-center p-5 border rounded-3 bg-light"><h4>Nessuna sfida pubblica attiva al momento.</h4></div>
             {% endif %}
         </div>
+
+         <div class="tab-pane fade show active" id="active-challenges-close" role="tabpanel">
+            {% if active_challenges_close %}
+                <div class="list-group">{% for challenge in active_challenges_close %}{{ render_challenge_item(challenge, now, current_user) }}{% endfor %}</div>
+            {% else %}
+                <div class="text-center p-5 border rounded-3 bg-light"><h4>Nessuna sfida chiusa attiva al momento.</h4></div>
+            {% endif %}
+        </div>
+
+
         <div class="tab-pane fade" id="my-challenges" role="tabpanel">
             {% if my_challenges %}
                 <div class="list-group">{% for challenge in my_challenges %}{{ render_challenge_item(challenge, now, current_user) }}{% endfor %}</div>
