@@ -418,7 +418,7 @@ def my_friends():
             # Costruisci l'URL completo dell'immagine
             # Assumendo che le immagini profilo siano in 'static/profile_pics/'
             # Se sono nella root di static, usa solo url_for('static', filename=user.profile_image)
-            profile_image_url = url_for('main.uploaded_file', filename='profile_pics/' + user.profile_image) if user.profile_image else url_for('static', filename='profile_pics/default.png')
+            profile_image_url = url_for('main.uploaded_file', filename='profile_pics/' + user.profile_image) if user.profile_image else url_for('main.uploaded_file', filename='profile_pics/default.png')
             
             friends_list.append({
                 'id': user.id,
