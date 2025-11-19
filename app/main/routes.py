@@ -300,12 +300,11 @@ def edit_profile():
         new_city = request.form.get("city")
         new_surname = request.form.get("surname")
 
-        # --- GESTIONE UPLOAD IMMAGINE PROFILO ---
+        # --- SE L'UTENTE CARICA UNA FOTO ---
         if 'profile_image' in request.files and request.files['profile_image'].filename != '':
             file = request.files['profile_image']
 
             if file and allowed_file(file.filename):
-                # Rinomina file con UUID
                 filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
                 pics_folder = current_app.config['PROFILE_PICS_FOLDER']
                 os.makedirs(pics_folder, exist_ok=True)
@@ -314,7 +313,7 @@ def edit_profile():
 
                 try:
                     file.save(filepath)
-                    current_user.profile_image = filename
+                    current_user.profile_image = filename  # salva l'immagine uploadata
                 except Exception as e:
                     flash(f"Errore nel salvataggio dell'immagine: {e}", "danger")
                     return redirect(url_for('main.edit_profile'))
@@ -322,57 +321,54 @@ def edit_profile():
                 flash('Formato immagine non valido.', 'danger')
                 return redirect(url_for('main.edit_profile'))
 
-        # --- SE NON HA IMMAGINE PROFILO, ASSEGNA DEFAULT ---
+        # --- SE NON HA IMMAGINE, IMPOSTA default.png (statica) ---
         if not current_user.profile_image:
             current_user.profile_image = "default.png"
 
-        # --- AGGIORNAMENTO USERNAME ---
+        # --- AGGIORNAMENTI DATI ---
         if new_username and new_username != current_user.username:
             if User.query.filter(User.username == new_username, User.id != current_user.id).first():
                 flash('Username già in uso.', 'danger')
                 return redirect(url_for('main.edit_profile'))
             current_user.username = new_username
-        
-        # --- AGGIORNAMENTO EMAIL ---
+
         if new_email and new_email != current_user.email:
             if User.query.filter(User.email == new_email, User.id != current_user.id).first():
                 flash('Email già registrata.', 'danger')
                 return redirect(url_for('main.edit_profile'))
             current_user.email = new_email
-        
-        # --- AGGIORNAMENTO PASSWORD ---
+
         if new_password:
             if len(new_password) < 6:
                 flash('La nuova password deve avere almeno 6 caratteri.', 'danger')
                 return redirect(url_for('main.edit_profile'))
             current_user.set_password(new_password)
-        
-        # --- AGGIORNAMENTO CITTÀ ---
+
         if new_city is not None:
             current_user.city = new_city
 
-        # --- AGGIORNAMENTO COGNOME ---
         if new_surname is not None:
             current_user.surname = new_surname
 
-        # --- ONBOARDING: PROFILO COMPLETO ---
+        # --- ONBOARDING ---
         if current_user.profile_image != 'default.png' and current_user.city:
             complete_onboarding_step(current_user, 'profile_complete')
             if current_user.onboarding_steps is None:
                 current_user.onboarding_steps = {}
             current_user.onboarding_steps['profile_complete'] = True
 
-        # --- SALVATAGGIO SU DB ---
+        # --- SALVATAGGIO ---
         try:
             db.session.commit()
             flash('Profilo aggiornato con successo!', 'success')
             return redirect(url_for('main.user_profile', user_id=current_user.id))
         except Exception as e:
             db.session.rollback()
-            flash(f"Si è verificato un errore durante l'aggiornamento: {e}", 'danger')
+            flash(f"Errore durante l'aggiornamento: {e}", 'danger')
             return redirect(url_for('main.edit_profile'))
 
     return render_template("edit_profile.html", user=current_user, is_homepage=False)
+
 
 
 @main.route('/follow/<username>')
