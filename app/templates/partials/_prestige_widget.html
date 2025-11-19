@@ -1,40 +1,228 @@
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="card-title mb-0">Il Tuo Rango</h5>
-            <span class="badge bg-primary fs-6">{{ current_user.title }}</span>
+<div class="rank-card card border-0 shadow-lg rounded-3 overflow-hidden mb-4">
+    <div class="card-header bg-gradient-rank text-white py-3 px-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-stars me-2 fs-5"></i>
+            <h5 class="card-title mb-0 fw-bold">Il Tuo Rango</h5>
         </div>
-        
-        {# Logica per trovare il prossimo titolo (la stessa di profile.html) #}
-        {% set data = namespace(
-            next_title_name='Massimo Grado', 
-            next_title_threshold=current_user.prestige, 
-            found=false
-        ) %}
-
-        {% for threshold, title_name in TITLES %}
-            {% if threshold > current_user.prestige and not data.found %}
-                {% set data.next_title_name = title_name %}
-                {% set data.next_title_threshold = threshold %}
-                {% set data.found = true %}
-            {% endif %}
-        {% endfor %}
-        
-        <p class="text-muted mb-1 small">
-            Prossimo Titolo: <strong>{{ data.next_title_name }}</strong>
-        </p>
-        
-        <div class="progress" style="height: 20px;" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ current_user.prestige }} / {{ data.next_title_threshold if data.next_title_threshold != current_user.prestige else current_user.prestige }} Prestigio">
-            {% if data.next_title_threshold > 0 and data.next_title_threshold != current_user.prestige %}
-                {% set progress_percent = (current_user.prestige / data.next_title_threshold) * 100 %}
-            {% else %}
-                {% set progress_percent = 100 %}
-            {% endif %}
-            <div class="progress-bar" role="progressbar" style="width: {{ progress_percent }}%;" aria-valuenow="{{ current_user.prestige }}" aria-valuemin="0" aria-valuemax="{{ data.next_title_threshold }}">
+    </div>
+    
+    <div class="card-body p-4">
+        <!-- Current Rank Display with Crown -->
+        <div class="current-rank text-center mb-4">
+            <!-- Crown Icon -->
+            <div class="crown-container mb-3">
+                <div class="crown-wrapper position-relative d-inline-block">
+                    <i class="bi bi-crown-fill crown-icon text-warning" style="font-size: 3rem;"></i>
+                    <div class="crown-glow position-absolute top-0 start-0 w-100 h-100"></div>
+                </div>
+            </div>
+            
+            <!-- Rank Badge -->
+            <div class="rank-badge-container position-relative">
+                <div class="rank-badge d-inline-flex align-items-center justify-content-center text-white rounded-3 px-4 py-3 shadow rank-gradient position-relative">
+                    <!-- Decorative elements -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100 overflow-hidden rounded-3">
+                        <div class="position-absolute top-0 start-0 w-100 h-50 bg-white bg-opacity-10"></div>
+                        <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-black bg-opacity-10"></div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="position-relative z-1">
+                        <div class="rank-title-display">
+                            <span class="fw-bold fs-4 rank-text">{{ current_user.title }}</span>
+                        </div>
+                        <div class="rank-subtitle small opacity-75 mt-1">
+                            <i class="bi bi-gem me-1"></i>Rango Attuale
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shine effect -->
+                <div class="rank-shine position-absolute top-0 start-0 w-100 h-100 rounded-3"></div>
             </div>
         </div>
-        <div class="text-center mt-2">
-            <a href="{{ url_for('main.user_profile', user_id=current_user.id) }}" class="btn btn-sm btn-outline-secondary">Vedi Profilo Dettagliato</a>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            {# Logica per trovare il prossimo titolo #}
+            {% set data = namespace(
+                next_title_name='Massimo Grado', 
+                next_title_threshold=current_user.prestige, 
+                found=false
+            ) %}
+
+            {% for threshold, title_name in TITLES %}
+                {% if threshold > current_user.prestige and not data.found %}
+                    {% set data.next_title_name = title_name %}
+                    {% set data.next_title_threshold = threshold %}
+                    {% set data.found = true %}
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Next Rank Info -->
+            <div class="next-rank-info d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded-3">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-arrow-up-circle-fill text-success me-2 fs-5"></i>
+                    <div>
+                        <span class="text-muted small d-block">Prossimo Rango</span>
+                        <div class="fw-bold text-dark fs-6">{{ data.next_title_name }}</div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted small d-block">Prestigio Richiesto</span>
+                    <div class="fw-bold text-primary fs-6">{{ data.next_title_threshold }}</div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="progress-container position-relative">
+                {% if data.next_title_threshold > 0 and data.next_title_threshold != current_user.prestige %}
+                    {% set progress_percent = (current_user.prestige / data.next_title_threshold) * 100 %}
+                {% else %}
+                    {% set progress_percent = 100 %}
+                {% endif %}
+                
+                <div class="progress bg-light shadow-sm" style="height: 14px; border-radius: 10px; overflow: hidden;">
+                    <div class="progress-bar bg-gradient-progress" 
+                         role="progressbar" 
+                         style="width: {{ progress_percent }}%; border-radius: 10px;"
+                         aria-valuenow="{{ current_user.prestige }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ data.next_title_threshold }}">
+                    </div>
+                </div>
+                
+                <!-- Progress Tooltip -->
+                <div class="progress-tooltip position-absolute top-0 start-0 h-100 w-100" 
+                     data-bs-toggle="tooltip" 
+                     data-bs-placement="top" 
+                     title="{{ current_user.prestige }} / {{ data.next_title_threshold if data.next_title_threshold != current_user.prestige else current_user.prestige }} Prestigio">
+                </div>
+                
+                <!-- Current Progress Indicator -->
+                <div class="progress-indicator position-absolute d-flex align-items-center" style="left: {{ progress_percent }}%; transform: translateX(-50%); top: -10px;">
+                    <div class="indicator-dot bg-white border border-3 border-warning rounded-circle shadow" style="width: 20px; height: 20px;"></div>
+                    <span class="progress-text badge bg-warning text-dark ms-2 small fw-bold px-2">{{ current_user.prestige }}</span>
+                </div>
+            </div>
+            
+            <!-- Progress Stats -->
+            <div class="progress-stats d-flex justify-content-between mt-3 px-1">
+                <span class="text-muted small">0</span>
+                <span class="text-muted small">{{ data.next_title_threshold }}</span>
+            </div>
+        </div>
+        
+        <!-- Action Button -->
+        <div class="text-center mt-4 pt-3 border-top">
+            <a href="{{ url_for('main.user_profile', user_id=current_user.id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2">
+                <i class="bi bi-person-badge me-2"></i>
+                Vedi Profilo Completo
+            </a>
         </div>
     </div>
 </div>
+
+<style>
+.rank-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.rank-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15) !important;
+}
+
+.bg-gradient-rank {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-progress {
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    animation: progressShine 2s ease-in-out infinite;
+}
+
+.rank-gradient {
+    background: linear-gradient(135deg, #8B4513 0%, #D2691E 30%, #FFD700 100%);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    min-width: 200px;
+}
+
+.crown-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    animation: crownFloat 3s ease-in-out infinite;
+}
+
+.crown-glow {
+    background: radial-gradient(circle at center, rgba(255,215,0,0.4) 0%, transparent 70%);
+    animation: crownGlow 2s ease-in-out infinite;
+}
+
+.rank-badge-container {
+    display: inline-block;
+}
+
+.rank-text {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+}
+
+.rank-shine {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+    animation: shine 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes crownFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes crownGlow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes progressShine {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+.progress-container {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.progress-indicator {
+    transition: left 0.8s ease;
+}
+
+.indicator-dot {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.progress-text {
+    opacity: 0;
+    transition: all 0.3s ease;
+    transform: translateY(-5px);
+}
+
+.progress-container:hover .progress-text {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.progress-tooltip:hover {
+    cursor: help;
+}
+
+.rank-subtitle {
+    font-size: 0.8rem;
+}
+</style>
