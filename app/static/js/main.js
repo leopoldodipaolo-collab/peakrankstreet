@@ -24,7 +24,7 @@ routeDetailUrlBase    = document.getElementById('route-detail-url-base')?.textCo
 activityDetailUrlBase = document.getElementById('activity-detail-url-base')?.textContent || '/activity/12345';
 mapDataApiUrl         = document.getElementById('map-data-api-url')?.textContent || '/api/map_data';
 userInitialCity       = document.getElementById('user-initial-city')?.textContent || '';
-profilePicsBaseUrl    = document.getElementById('profile-pics-base-url')?.textContent || `${UPLOADS_BASE_URL}profile_pics/`;
+profilePicsBaseUrl    = document.getElementById('profile-pics-base-url')?.textContent || `${STATIC_BASE_URL}profile_pics/`;
 
 // =======================================================
 // DEBUG
