@@ -235,7 +235,7 @@ class Badge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.String(500), nullable=False)
-    image_url = db.Column(db.String(120), nullable=False, default='badge_default.png')
+    image_url = db.Column(db.String(120), nullable=False, default='default.png')
     criteria = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
