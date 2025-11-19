@@ -1,6 +1,6 @@
 # app/api/routes.py
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, url_for
 from flask_login import current_user, login_required
 from app.models import Route, Challenge, Activity, User, RouteRecord, ActivityLike, Notification
 from app import db
@@ -10,6 +10,8 @@ from math import cos as math_cos, radians as math_radians
 import json
 from shapely.geometry import LineString, box, Point # Importa anche Point per il controllo
 from datetime import datetime
+
+
 
 api = Blueprint('api', __name__)
 
@@ -404,25 +406,30 @@ def get_classic_routes(city):
 
 
 # Aggiungi questa route dopo le altre route API
-
 @api.route('/my-friends')
 @login_required
 def my_friends():
     """API per ottenere la lista degli amici seguiti dall'utente corrente"""
     try:
-        # Ottieni gli utenti che l'utente corrente segue
         followed_users = current_user.followed.all()
         
         friends_list = []
         for user in followed_users:
+            # Costruisci l'URL completo dell'immagine
+            # Assumendo che le immagini profilo siano in 'static/profile_pics/'
+            # Se sono nella root di static, usa solo url_for('static', filename=user.profile_image)
+            profile_image_url = url_for('static', filename='profile_pics/' + user.profile_image) if user.profile_image else url_for('static', filename='profile_pics/default.png')
+            
             friends_list.append({
                 'id': user.id,
                 'username': user.username,
-                'profile_image': user.profile_image
+                'profile_image': profile_image_url # Restituisci l'URL completo
             })
         
         return jsonify(friends_list)
         
     except Exception as e:
         print(f"Errore nel caricamento amici: {e}")
-        return jsonify({'error': 'Errore nel caricamento degli amici'}), 500
+        # In produzione, non stampare l'errore completo in console se contiene dati sensibili
+        # return jsonify({'error': 'Errore interno del server'}), 500
+        return jsonify({'error': str(e)}), 500 # Per debug, restituisci l'errore
