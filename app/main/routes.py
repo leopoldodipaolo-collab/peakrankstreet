@@ -68,7 +68,19 @@ def award_badge_if_earned(user, badge_name):
             badge = Badge(name="Prima Attività", description="Hai registrato la tua prima attività!", image_url="badge_first_activity.png")
         elif badge_name == "Re/Regina del Percorso":
             badge = Badge(name="Re/Regina del Percorso", description="Hai stabilito un nuovo record di velocità su un percorso!", image_url="badge_king_queen.png")
-        
+        # ... (altri badge) ...
+        elif badge_name == "Hai percorso più di 10km":
+            badge = Badge(name="Hai percorso più di 10km", description="Hai completato un'attività di oltre 10km!", image_url="badge_over_10km.png")
+        # --- NUOVI BADGE DA AGGIUNGERE QUI ---
+        elif badge_name == "Topografo Esperto":
+            badge = Badge(name="Topografo Esperto", description="Hai creato 5 percorsi distinti!", image_url="badge_expert_topographer.png")
+        elif badge_name == "Il Primo Post Pubblico":
+            badge = Badge(name="Il Primo Post Pubblico", description="Hai condiviso il tuo primo pensiero pubblico!", image_url="badge_first_public_post.png")
+        elif badge_name == "Generatore di Follower":
+            badge = Badge(name="Generatore di Follower", description="Hai raggiunto 100 follower!", image_url="badge_follower_generator.png")
+        elif badge_name == "Membro Fondatore":
+            badge = Badge(name="Membro Fondatore", description="Sei tra i primi 50 utenti registrati!", image_url="badge_founding_member.png")
+        # --- FINE NUOVI BADGE ---
         if badge:
             db.session.add(badge)
             db.session.commit()
@@ -252,8 +264,11 @@ def feed():
     return render_template('feed.html', activities=activities_on_page, pagination=pagination, ActivityLike=ActivityLike, is_homepage=False)
 
 @main.route('/user/<int:user_id>')
-def user_profile(user_id):
+def user_profile(user_id): # O user_profile(username) se usi l'username nella URL
     user = User.query.get_or_404(user_id)
+    # Se usi l'username nella URL, dovrai fare:
+    # user = User.query.filter_by(username=username).first_or_404()
+
     total_distance = db.session.query(func.sum(Activity.distance)).filter_by(user_id=user.id).scalar() or 0.0
     total_activities = user.activities.count()
     total_routes_created = user.routes.count()
@@ -261,17 +276,22 @@ def user_profile(user_id):
     followers_count = user.followers.count()
     followed_count = user.followed.count()
     user_activities = user.activities.order_by(Activity.created_at.desc()).limit(10).all()
-    
+
     # Nuove query per le scommesse
     bets_won = Bet.query.filter_by(winner_id=user_id).options(
         db.joinedload(Bet.loser)
-    ).order_by(Bet.status.asc(), Bet.created_at.desc()).all()  # Prima pending, poi paid
-    
+    ).order_by(Bet.status.asc(), Bet.created_at.desc()).all()
+
     bets_lost = Bet.query.filter_by(loser_id=user_id).options(
         db.joinedload(Bet.winner)
     ).order_by(Bet.status.asc(), Bet.created_at.desc()).all()
     user_posts = Post.query.filter_by(user_id=user.id, group_id=None).order_by(Post.created_at.desc()).limit(10).all()
     user_groups = user.joined_groups.all()
+
+    # --- NUOVO CODICE PER RECUPERARE I BADGE ---
+    user_badge_relations = UserBadge.query.filter_by(user_id=user.id).all()
+    badges = [relation.badge for relation in user_badge_relations if relation.badge] # Estrae gli oggetti Badge associati
+    # --- FINE NUOVO CODICE ---
 
     return render_template("profile.html",
                            user=user,
@@ -285,11 +305,12 @@ def user_profile(user_id):
                            bets_won=bets_won,
                            bets_lost=bets_lost,
                            is_homepage=False,
-                           TITLES=TITLES,
+                           TITLES=TITLES, # Assicurati che TITLES sia disponibile
                            user_posts=user_posts,
                            user_groups=user_groups,
-                           Route=Route)
-
+                           Route=Route, # Passa il modello Route se necessario nel template
+                           badges=badges # <<< PASSA LA LISTA DEI BADGE AL TEMPLATE
+                           )
 @main.route('/user/edit', methods=["GET", "POST"])
 @login_required
 def edit_profile():
@@ -371,52 +392,108 @@ def edit_profile():
 
 
 
-@main.route('/follow/<username>')
+
+# Assumi che il tuo modello User abbia:
+# - un metodo .follow(user_to_follow) che crea la relazione Follow
+# - un metodo .unfollow(user_to_follow) che rimuove la relazione Follow
+# - un metodo .is_following(user_to_follow) che restituisce True/False
+# - una relazione '.followers' che restituisce una query per contare i follower (es. Follow.query.filter_by(followed_id=self.id).count())
+# - una relazione '.followed' che restituisce una query per contare chi segue (es. Follow.query.filter_by(follower_id=self.id).count())
+
+@main.route('/follow/<username>') # Assicurati che questo decoratore corrisponda al tuo blueprint 'main'
 @login_required
 def follow(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    if user == current_user:
+    user_to_follow = User.query.filter_by(username=username).first_or_404()
+    
+    # Previene che un utente segua se stesso
+    if user_to_follow == current_user:
         flash('Non puoi seguire te stesso!', 'warning')
-        return redirect(url_for('main.user_profile', user_id=user.id))
-    current_user.follow(user)
+        # Redirect al proprio profilo
+        return redirect(url_for('main.user_profile', user_id=current_user.id)) 
 
-    # --- NUOVA LOGICA NOTIFICHE ---
-    # Crea una notifica solo se non è già stata creata (evita duplicati)
+    # Controlla se l'utente sta già seguendo per evitare duplicati e chiamate inutili
+    if current_user.is_following(user_to_follow):
+        flash(f'Stai già seguendo {username}.', 'info')
+        return redirect(url_for('main.user_profile', user_id=user_to_follow.id))
+        
+    # Crea la nuova relazione di follow
+    # Assumendo che current_user.follow(user_to_follow) gestisca la creazione di Follow
+    current_user.follow(user_to_follow)
+
+    # --- Logica per la Notifica "Nuovo Follower" ---
+    # Crea una notifica solo se non è già stata creata per questo specifico evento
     existing_notification = Notification.query.filter_by(
-        recipient_id=user.id, 
-        actor_id=current_user.id, 
+        recipient_id=user_to_follow.id, # La notifica è per l'utente che viene seguito
+        actor_id=current_user.id,      # L'attore è chi ha cliccato "segui"
         action='new_follower'
     ).first()
     
     if not existing_notification:
         notification = Notification(
-            recipient_id=user.id,           # La notifica è per l'utente che viene seguito
-            actor_id=current_user.id,       # L'attore è l'utente che ha appena cliccato "segui"
+            recipient_id=user_to_follow.id,
+            actor_id=current_user.id,
             action='new_follower'
         )
         db.session.add(notification)
-    # --- FINE NUOVA LOGICA ---
+    # --- Fine Logica Notifica ---
     
+    # --- Logica per il Badge "Generatore di Follower" ---
+    # Questo badge si assegna all'utente *seguito* quando raggiunge 100 follower.
+    # Dobbiamo usare l'oggetto 'user_to_follow' che è stato appena seguito.
+    try:
+        # Recupera l'utente per ottenere il conteggio aggiornato dei suoi follower
+        # È bene fare una query fresca per assicurarsi di avere il dato più recente, specialmente dopo il commit.
+        followed_user_obj = User.query.get(user_to_follow.id) 
+        
+        # Controlla il conteggio DEI FOLLOWER dell'utente SEGUITO
+        current_follower_count = followed_user_obj.followers.count() # Assumi che .followers.count() funzioni
+        
+        # Controlla se è stato raggiunto o superato il limite DI 100 FOLLOWER
+        if current_follower_count >= 100:
+             # Chiama la funzione award_badge_if_earned sull'utente SEGUITO
+             award_badge_if_earned(followed_user_obj, "Generatore di Follower")
+             print(f"--- DEBUG: Controllato badge 'Generatore di Follower' per {followed_user_obj.username}. Conteggio follower: {current_follower_count}. Badge assegnato se non presente. ---")
+
+    except Exception as e:
+        print(f"Errore durante il controllo del badge 'Generatore di Follower': {e}")
+    # --- Fine Logica Badge ---
+
+    # Commit delle modifiche (follow, notifiche)
     db.session.commit()
-    # Controlliamo se ha raggiunto la soglia
-    if current_user.followed.count() >= 3:
+    
+    # Questo onboarding step sembra legato al conteggio di chi l'utente corrente segue (followed)
+    if current_user.followed.count() >= 3: 
         complete_onboarding_step(current_user, 'followed_users')
         
     flash(f'Ora segui {username}!', 'success')
+    return redirect(url_for('main.user_profile', user_id=user_to_follow.id))
 
-    return redirect(url_for('main.user_profile', user_id=user.id))
-    
 @main.route('/unfollow/<username>')
 @login_required
 def unfollow(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    if user == current_user:
+    user_to_unfollow = User.query.filter_by(username=username).first_or_404()
+    
+    # Previene che un utente smetta di seguire se stesso
+    if user_to_unfollow == current_user:
         flash('Non puoi smettere di seguire te stesso!', 'warning')
-        return redirect(url_for('main.user_profile', user_id=user.id))
-    current_user.unfollow(user)
-    db.session.commit()
+        return redirect(url_for('main.user_profile', user_id=current_user.id))
+
+    # Controlla se l'utente NON sta seguendo per evitare errori
+    if not current_user.is_following(user_to_unfollow):
+        flash(f'Non stai seguendo {username}.', 'info')
+        return redirect(url_for('main.user_profile', user_id=user_to_unfollow.id))
+
+    # Rimuove la relazione di follow
+    # Assumendo che current_user.unfollow(user_to_unfollow) gestisca la rimozione di Follow
+    current_user.unfollow(user_to_unfollow)
+    
+    # --- Potresti aggiungere qui logica per badge legati a "community management" ---
+    # Ad esempio, un badge per chi smette di seguire troppe persone, o per chi mantiene una certa "netiquette" sociale.
+    # Per ora, non assegniamo badge qui.
+    
+    db.session.commit() # Commit per salvare la rimozione del follow
     flash(f'Non segui più {username}.', 'info')
-    return redirect(url_for('main.user_profile', user_id=user.id))
+    return redirect(url_for('main.user_profile', user_id=user_to_unfollow.id))
 
 @main.route('/explore/users')
 @login_required
@@ -476,6 +553,14 @@ def create_route():
         db.session.add(new_route)
         add_prestige(current_user, 'new_route')
         db.session.commit()
+
+         # --- CONTROLLO PER IL BADGE "Topografo Esperto" ---
+        # Conta quanti percorsi questo utente ha creato in totale ORA
+        user_routes_count = Route.query.filter_by(user_id=current_user.id).count()
+        
+        if user_routes_count == 5: # Assegna il badge quando raggiunge ESATTAMENTE 5 percorsi
+            award_badge_if_earned(current_user, "Topografo Esperto")
+        # --- FINE CONTROLLO ---
         
         flash('Percorso creato con successo!', 'success')
         return redirect(url_for("main.index"))
@@ -922,6 +1007,13 @@ def record_activity():
             
             if Activity.query.filter_by(user_id=current_user.id).count() == 1:
                 award_badge_if_earned(current_user, "Prima Attività")
+             # --- NUOVA GESTIONE PER IL BADGE "Hai percorso più di 10km" ---
+            # Controlla se l'attività appena registrata supera i 10km
+            if new_activity.distance > 10.0:
+                # Chiama la funzione per assegnare il badge "Hai percorso più di 10km"
+                # La funzione award_badge_if_earned si occuperà di verificare se l'utente ha già il badge
+                award_badge_if_earned(current_user, "Hai percorso più di 10km")
+            # --- FINE NUOVA GESTIONE ---
 
             flash('Attività registrata con successo!', 'success')
             return redirect(url_for('main.index'))
@@ -2019,16 +2111,37 @@ def create_post():
             
             add_prestige(current_user, 'new_post')
             
-            # --- MODIFICA: Verifica più robusta per il primo post ---
-            # Controlla quanti post l'utente aveva PRIMA di questo nuovo post.
-            # Utilizziamo una query diretta per assicurarci di avere il conteggio corretto.
-            existing_posts_count = Post.query.filter_by(user_id=current_user.id).count()
-            
-            # Se l'utente non aveva post prima di questo, allora questo è il suo primo.
-            if existing_posts_count == 0:
-                complete_onboarding_step(current_user, 'first_post')
-            # --- FINE MODIFICA ---
-            
+
+            # --- LOGICA BADGE "Il Primo Post Pubblico" ---
+            # Controlla se questo post è pubblico (group_id è None)
+            if group_id is None:
+                # Controlla quanti post pubblici questo utente aveva PRIMA di questo.
+                # Dobbiamo fare una query specifica per i post pubblici (group_id=None).
+                public_posts_count_before = Post.query.filter_by(user_id=current_user.id, group_id=None).count()
+                
+                # Se il conteggio PRIMA di aggiungere questo post era 0, allora questo è il suo primo post pubblico.
+                # (Nota: Se usiamo db.session.flush() prima, il conteggio potrebbe già includere il post.
+                #  È più sicuro fare questo controllo prima di db.session.flush() o fare una query per i post che *non* sono questo nuovo post)
+
+                # Metodo più sicuro: Controlla il conteggio totale delle attività PUBBLICHE (escludendo il post appena aggiunto)
+                # O semplicemente, chiamiamo la funzione di badge qui. La funzione award_badge_if_earned
+                # gestirà se l'utente ha già il badge o no.
+                # L'importante è che la condizione per chiamarla sia corretta.
+                
+                # Chiamiamo la funzione se è un post pubblico, e la funzione gestirà se è il primo.
+                # ASSUMENDO che award_badge_if_earned controlli se l'utente ha GIA' il badge.
+                award_badge_if_earned(current_user, "Il Primo Post Pubblico")
+            # --- FINE LOGICA BADGE ---
+                # --- MODIFICA: Verifica più robusta per il primo post ---
+                # Controlla quanti post l'utente aveva PRIMA di questo nuovo post.
+                # Utilizziamo una query diretta per assicurarci di avere il conteggio corretto.
+                existing_posts_count = Post.query.filter_by(user_id=current_user.id).count()
+                
+                # Se l'utente non aveva post prima di questo, allora questo è il suo primo.
+                if existing_posts_count == 0:
+                    complete_onboarding_step(current_user, 'first_post')
+                # --- FINE MODIFICA ---
+                
             db.session.commit()
             
             flash('Post creato con successo!', 'success')

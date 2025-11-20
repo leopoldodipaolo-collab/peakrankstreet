@@ -180,5 +180,27 @@
             </div>
         </div>
     </div>
+
+    <!-- SEZIONE AGGIUNTA PER I BADGE -->
+    <div class="col-12 mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-info"><h5 class="mb-0">🏆 I Tuoi Badge ({{ badges|length }})</h5></div>
+            <div class="card-body">
+                {% if badges %}
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for badge in badges %}
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='images/badges/' + badge.image_url) }}" alt="{{ badge.name }}" title="{{ badge.description }}" style="width: 60px; height: 60px; object-fit: contain;">
+                                <p class="small text-muted mt-1">{{ badge.name }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Non hai ancora ottenuto nessun badge.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- FINE SEZIONE BADGE -->
 </div>
 {% endblock %}
