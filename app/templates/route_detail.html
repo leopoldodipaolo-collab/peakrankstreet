@@ -25,13 +25,18 @@
              class="img-fluid rounded-4 shadow w-100" 
              alt="Mappa del percorso {{ route.name }}" 
              style="max-height: 400px; object-fit: cover;">
-        <div class="position-absolute bottom-0 start-0 w-100 bg-gradient-to-t from-black/70 to-transparent p-4 rounded-bottom-4">
-            <h1 class="text-white fw-bold mb-1">{{ route.name }}</h1>
-            <p class="text-white-50 mb-2">{{ route.activity_type or 'Attività' }} • Creato da {{ route.creator.username }} il {{ route.created_at.strftime('%d/%m/%Y') }}</p>
-            <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-light btn-sm">
-                <i class="bi bi-play-circle me-1"></i> Registra Attività
-            </a>
-        </div>
+   <div class="position-absolute bottom-0 start-0 w-100 p-4 rounded-bottom-4" 
+     style="background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));">
+    <h1 class="text-white fw-bold mb-1">{{ route.name }}</h1>
+    <p class="text-white-50 mb-2">
+        {{ route.activity_type or 'Attività' }} • Creato da {{ route.creator.username }} il {{ route.created_at.strftime('%d/%m/%Y') }}
+    </p>
+    <a href="{{ url_for('main.record_activity', route_id=route.id) }}" class="btn btn-light btn-sm">
+        <i class="bi bi-play-circle me-1"></i> Registra Attività
+    </a>
+</div>
+
+
     </div>
 
     <!-- Breadcrumb -->
