@@ -3,8 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}PeakRankStreet App{% endblock %}</title>
-    <meta name="description" content="{% block description %}Scopri percorsi, sfide e una community di atleti su PeakRankStreet.{% endblock %}">
+
+    <!-- ===================================================================== -->
+    <!--               BLOCCO SEO E IDENTITÀ DEL SITO (MOLTO IMPORTANTE)       -->
+    <!-- ===================================================================== -->
+    
+    <!-- Titolo e Descrizione Dinamici (Già Fatto Benissimo!) -->
+    <title>{% block title %}PeakRankStreet - Esplora, Sfida, Conquista{% endblock %}</title>
+    <meta name="description" content="{% block description %}Traccia le tue attività, scopri i percorsi della tua città e competi con una community di atleti su PeakRankStreet.{% endblock %}">
+
+    ### NUOVO CODICE: 1. Aggiungiamo la Favicon ###
+    <!-- Assicurati di avere un file 'favicon.ico' nella cartella 'static/' -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <!-- Icone per vari dispositivi (Apple, Android, etc.) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}">
+
+    ### NUOVO CODICE: 2. Meta Tag per Social Media (Open Graph & Twitter Cards) ###
+    <!-- Questi tag controllano come appare il link quando condividi il sito su Facebook, WhatsApp, Twitter, etc. -->
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/social_share_banner.jpg', _external=True) }}{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PeakRankStreet">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ self.og_title() }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ self.og_description() }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ self.og_image() }}{% endblock %}">
+
+    <!-- ===================================================================== -->
+    <!--               FINE BLOCCO SEO                                         -->
+    <!-- ===================================================================== -->
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
