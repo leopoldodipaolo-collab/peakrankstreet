@@ -12,7 +12,6 @@
     <title>{% block title %}PeakRankStreet - Esplora, Sfida, Conquista{% endblock %}</title>
     <meta name="description" content="{% block description %}Traccia le tue attività, scopri i percorsi della tua città e competi con una community di atleti su PeakRankStreet.{% endblock %}">
 
-    ### NUOVO CODICE: 1. Aggiungiamo la Favicon ###
     <!-- Assicurati di avere un file 'favicon.ico' nella cartella 'static/' -->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <!-- Icone per vari dispositivi (Apple, Android, etc.) -->
@@ -20,7 +19,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}">
 
-    ### NUOVO CODICE: 2. Meta Tag per Social Media (Open Graph & Twitter Cards) ###
     <!-- Questi tag controllano come appare il link quando condividi il sito su Facebook, WhatsApp, Twitter, etc. -->
     <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
