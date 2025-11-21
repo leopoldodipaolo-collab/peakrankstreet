@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 import requests
 from flask_login import login_required, current_user
 from app.models import User, Route, Activity, ActivityLike, Challenge, Comment, Like, RouteRecord, Badge, UserBadge, Notification, ChallengeInvitation, Bet, Post, PostComment, PostLike, Tag ,post_tags, Group,Event
-from app import db
+from app import db, sitemap
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, selectinload
 from datetime import datetime
@@ -36,6 +36,27 @@ from flask import send_from_directory
 
 main = Blueprint('main', __name__)
 
+@sitemap.register_generator
+def sitemap_dynamic_urls():
+    """Generatore per gli URL dinamici della sitemap."""
+    
+    # Aggiungi un URL per ogni percorso nel database
+    routes = Route.query.all()
+    for route in routes:
+        # 'main.route_detail' è l'endpoint della tua route.
+        # L'ultima modifica è la data dell'ultima attività su quel percorso,
+        # o la data di creazione del percorso se non ci sono attività.
+        last_mod = route.created_at
+        yield 'main.route_detail', {'route_id': route.id}, last_mod, 'daily', 0.8
+
+    # Aggiungi un URL per ogni profilo utente
+    users = User.query.all()
+    for user in users:
+        # 'main.user_profile' è l'endpoint del profilo utente.
+        # Come data di modifica usiamo la data di creazione dell'utente.
+        last_mod = user.created_at
+        yield 'main.user_profile', {'user_id': user.id}, last_mod, 'weekly', 0.6
+        
 # --- Funzioni Helper ---
 
 def calculate_distance_meters(lat1, lon1, lat2, lon2):

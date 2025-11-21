@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+### NUOVO CODICE: 1. Importa Sitemap
+from flask_sitemap import Sitemap
 
 # --- Carica variabili d'ambiente ---
 load_dotenv()
@@ -22,6 +24,8 @@ jwt = JWTManager()
 scheduler = BackgroundScheduler()
 csrf = CSRFProtect()
 migrate = Migrate()
+### NUOVO CODICE: 2. Inizializza l'estensione Sitemap
+sitemap = Sitemap()
 
 # --- Admin ---
 from .admin import admin, setup_admin_views
@@ -39,6 +43,10 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'default-jwt-key-change-me')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+    ### NUOVO CODICE: 3. Aggiungi la configurazione per il nome del tuo server
+    # Questo è FONDAMENTALE perché la sitemap abbia gli URL completi (es. https://...)
+    app.config['SITEMAP_URL_SCHEME'] = 'https' # Usa https
+    app.config['SERVER_NAME'] = 'www.peakrankstreet.com' # Inserisci il tuo dominio
 
     # --- Configurazione Database ---
     database_url = os.environ.get('DATABASE_URL')
@@ -51,23 +59,16 @@ def create_app():
     # --- NUOVA GESTIONE DINAMICA DELLE CARTELLE DI UPLOAD ---
     # =====================================================================
     if 'RENDER' in os.environ:
-        # Su Render, il disco è montato in /var/data/uploads.
         upload_base_path = '/var/data/uploads'
         print(f"✅ Ambiente Render rilevato. Path upload: {upload_base_path}")
     else:
-        # In locale, usiamo la cartella static/uploads
         upload_base_path = os.path.join(app.root_path, 'static', 'uploads')
         print(f"⚠️  Ambiente locale rilevato. Path upload: {upload_base_path}")
 
-    # Definiamo i percorsi completi nella configurazione dell'app
     app.config['UPLOADS_BASE_PATH'] = upload_base_path
     app.config['PROFILE_PICS_FOLDER'] = os.path.join(upload_base_path, 'profile_pics')
     app.config['POSTS_IMAGES_FOLDER'] = os.path.join(upload_base_path, 'posts_images')
     
-    # --- MODIFICA CHIAVE QUI ---
-    # Eseguiamo makedirs SOLO se NON siamo su Render.
-    # Su Render, le cartelle verranno create al primo upload di un file,
-    # o potremmo farlo con un comando one-shot nella shell di Render se necessario.
     if 'RENDER' not in os.environ:
         os.makedirs(app.config['PROFILE_PICS_FOLDER'], exist_ok=True)
         os.makedirs(app.config['POSTS_IMAGES_FOLDER'], exist_ok=True)
@@ -81,6 +82,8 @@ def create_app():
     jwt.init_app(app)
     CORS(app)
     csrf.init_app(app)
+    ### NUOVO CODICE: 4. Inizializza la sitemap con l'app
+    sitemap.init_app(app)
 
     # --- Configura Login Manager ---
     login_manager.login_view = 'auth.login'
@@ -106,6 +109,7 @@ def create_app():
             now=datetime.utcnow(), today_minus_1day=datetime.utcnow() - timedelta(days=1),
             unread_notifications_count=unread_count
         )
+        
     # --- Registrazione Blueprint ---
     with app.app_context():
         from .main.routes import main as main_blueprint
@@ -117,23 +121,18 @@ def create_app():
         from .api.routes import api as api_blueprint
         app.register_blueprint(api_blueprint, url_prefix='/api')
         
-        # ... (registra qui altri blueprint se ne hai)
-
     # --- Configura Admin, Database e Scheduler ---
     with app.app_context():
-        # Admin
         admin.init_app(app)
         setup_admin_views(admin, db)
         print("✅ Admin panel configurato.")
 
-        # Database
         try:
             db.create_all()
             print("✅ Tabelle database verificate/create.")
         except Exception as e:
             print(f"⚠️ Errore creazione tabelle: {e}")
 
-        # Esecuzione task all'avvio
         try:
             from .main.gamification import close_expired_challenges
             closed_count = close_expired_challenges()
@@ -144,7 +143,7 @@ def create_app():
 
     # --- Scheduler ---
     try:
-        if not scheduler.running and not app.debug: # Non avviare lo scheduler in debug mode per evitare esecuzioni doppie
+        if not scheduler.running and not app.debug:
             from .main.gamification import close_expired_challenges
             
             @scheduler.scheduled_job('interval', hours=1)
