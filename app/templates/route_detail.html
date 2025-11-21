@@ -88,7 +88,7 @@
                     <form method="POST" class="mb-4">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="d-flex gap-3">
-                            <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + current_user.profile_image) }}" 
                                  class="rounded-circle" width="50" height="50" alt="{{ current_user.username }}">
                             <div class="flex-grow-1">
                                 <textarea name="comment_content" class="form-control" rows="3" placeholder="Scrivi un commento..." required></textarea>
