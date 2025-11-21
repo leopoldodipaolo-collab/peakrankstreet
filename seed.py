@@ -14,7 +14,7 @@ with app.app_context():
         # --- BLOCCO MODIFICATO ---
         
         # Definiamo i post che vogliamo creare
-        post_benvenuto_content = "🚀 Benvenuti su PeakRankStreet! La piattaforma è ufficialmente online. Iniziate a esplorare...!"
+        post_benvenuto_content = "Il Nostro logo...!"
 
         # Controlla se il post di benvenuto esiste GIÀ CONTROLLANDO IL CONTENUTO
         if not Post.query.filter_by(content=post_benvenuto_content).first():
