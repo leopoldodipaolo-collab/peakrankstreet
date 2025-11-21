@@ -21,7 +21,7 @@
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}">
-                            <img src="{{ url_for('static', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle me-3" alt="Avatar di {{ post.user.username }}" style="width:45px; height:45px; object-fit:cover;">
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + post.user.profile_image) }}" class="rounded-circle me-3" alt="Avatar di {{ post.user.username }}" style="width:45px; height:45px; object-fit:cover;">
                         </a>
                         <div>
                             <a href="{{ url_for('main.user_profile', user_id=post.user.id) }}" class="text-dark text-decoration-none fw-bold">{{ post.user.username }}</a>
@@ -32,7 +32,7 @@
                 <div class="card-body">
                     <div class="post-content mb-4 pb-3 border-bottom">
                         {% if post.image_url %}
-                            <img src="{{ url_for('static', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mb-3" alt="Immagine del post">
+                            <img src="{{ url_for('main.uploaded_file', filename='posts_images/' + post.image_url) }}" class="img-fluid rounded mb-3" alt="Immagine del post">
                         {% endif %}
                         <p class="lead">{{ post.content | safe }}</p>
                         {% if post.post_type == 'link' and post.meta_data and post.meta_data.url %}
