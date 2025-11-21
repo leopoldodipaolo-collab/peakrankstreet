@@ -43,18 +43,23 @@ def sitemap_dynamic_urls():
     # Aggiungi un URL per ogni percorso nel database
     routes = Route.query.all()
     for route in routes:
-        # 'main.route_detail' è l'endpoint della tua route.
-        # L'ultima modifica è la data dell'ultima attività su quel percorso,
-        # o la data di creazione del percorso se non ci sono attività.
-        last_mod = route.created_at
+        # VECCHIA RIGA DA CAMBIARE:
+        # last_mod = route.created_at 
+        
+        ### NUOVA RIGA CORRETTA:
+        last_mod = route.created_at.strftime('%Y-%m-%dT%H:%M:%S+00:00')
+
         yield 'main.route_detail', {'route_id': route.id}, last_mod, 'daily', 0.8
 
     # Aggiungi un URL per ogni profilo utente
     users = User.query.all()
     for user in users:
-        # 'main.user_profile' è l'endpoint del profilo utente.
-        # Come data di modifica usiamo la data di creazione dell'utente.
-        last_mod = user.created_at
+        # VECCHIA RIGA DA CAMBIARE:
+        # last_mod = user.created_at
+
+        ### NUOVA RIGA CORRETTA:
+        last_mod = user.created_at.strftime('%Y-%m-%dT%H:%M:%S+00:00')
+
         yield 'main.user_profile', {'user_id': user.id}, last_mod, 'weekly', 0.6
         
 # --- Funzioni Helper ---
