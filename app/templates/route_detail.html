@@ -1,13 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}{{ route.name }} | Dettaglio Percorso{% endblock %}
+{# ===================================================================== #}
+{#               ### BLOCCO SEO SPECIFICO PER LA PAGINA ###                #}
+{# ===================================================================== #}
+
+{% block title %}{{ route.name }} - Percorso di {{ route.activity_type }} a {{ route.classic_city or 'PeakRankStreet' }}{% endblock %}
+
+{% block description %}Scopri i dettagli del percorso di {{ route.activity_type }} '{{ route.name }}' a {{ route.classic_city or 'PeakRankStreet' }}: distanza {{ "%.1f"|format(route.distance_km) }} km, dislivello {{ route.elevation_gain or 'N/D' }}m e classifica. Unisciti alla community!{% endblock %}
+
+{# Se il percorso ha un'immagine, la usiamo per l'anteprima social, altrimenti usa quella di default del sito #}
+{% block og_image %}{{ url_for('static', filename='featured_routes/' + route.featured_image, _external=True) if route.featured_image else super() }}{% endblock %}
+
+
+{# ===================================================================== #}
+{#               ### FINE BLOCCO SEO ###                                 #}
+{# ===================================================================== #}
 
 {% block content %}
 <div class="container my-5 pt-5">
 
     <!-- HERO SECTION -->
     <div class="position-relative mb-5">
-        <img src="{{ url_for('static', filename='featured_routes/' + (route.featured_image or 'default_route.jpg')) }}" 
+        <img src="{{ url_for('main.uploaded_file', filename='featured_routes/' + (route.featured_image or 'default_route.jpg')) }}" 
              class="img-fluid rounded-4 shadow w-100" 
              alt="{{ route.name }}" 
              style="max-height: 400px; object-fit: cover;">
@@ -93,7 +107,7 @@
                     {% if comments_with_like_info %}
                         {% for item in comments_with_like_info %}
                         <div class="d-flex mb-4 pb-3 border-bottom">
-                            <img src="{{ url_for('static', filename='profile_pics/' + item.comment.author.profile_image) }}" 
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + item.comment.author.profile_image) }}" 
                                  class="rounded-circle me-3" width="50" height="50" alt="{{ item.comment.author.username }}">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between">
@@ -164,7 +178,7 @@
                         {% set user = activity_tuple[1] %}
                         <div class="list-group-item d-flex align-items-center">
                             <span class="fw-bold text-primary me-3">#{{ loop.index }}</span>
-                            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_image) }}" 
+                            <img src="{{ url_for('main.uploaded_file', filename='profile_pics/' + user.profile_image) }}" 
                                  class="rounded-circle me-2" width="36" height="36" alt="{{ user.username }}">
                             <a href="{{ url_for('main.user_profile', user_id=user.id) }}" class="text-decoration-none text-dark flex-grow-1">
                                 {{ user.username }}
@@ -188,6 +202,36 @@
 
 {% block scripts %}
 {{ super() }}
+
+{# ===================================================================== #}
+{#      ### NUOVO CODICE: SCRIPT PER I DATI STRUTTURATI (JSON-LD) ###      #}
+{# ===================================================================== #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SportsActivityLocation",
+  "name": "{{ route.name | escape }}",
+  "description": "{{ route.description | striptags | escape | truncate(250) }}",
+  "url": "{{ request.url }}",
+  {% if route.featured_image %}
+  "image": "{{ url_for('static', filename='featured_routes/' + route.featured_image, _external=True) }}",
+  {% endif %}
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "{{ route.classic_city or '' }}",
+    "addressCountry": "IT"
+  },
+  "geo": {
+    "@type": "GeoShape",
+    "line": "{% if route_geojson_data and route_geojson_data.geometry and route_geojson_data.geometry.coordinates %}{% for point in route_geojson_data.geometry.coordinates %}{{ point[1] }} {{ point[0] }}{% if not loop.last %} {% endif %}{% endfor %}{% endif %}"
+  }
+}
+</script>
+{# ===================================================================== #}
+{#               ### FINE SCRIPT DATI STRUTTURATI ###                    #}
+{# ===================================================================== #}
+
+
 <script>
     // Definisci la variabile globale per i dati della mappa
     const routeGeoJSON = {{ route_geojson_data|tojson }};
