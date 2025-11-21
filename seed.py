@@ -14,14 +14,14 @@ with app.app_context():
         # --- BLOCCO MODIFICATO ---
         
         # Definiamo i post che vogliamo creare
-        post_benvenuto_content = "Il Nostro logo...!"
+        post_benvenuto_content = "Eccolo...il logo!"
 
         # Controlla se il post di benvenuto esiste GIÀ CONTROLLANDO IL CONTENUTO
         if not Post.query.filter_by(content=post_benvenuto_content).first():
             annuncio = Post(
                 user_id=admin_user.id,
                 content=post_benvenuto_content,
-                image_url='/static/images/LogoPeakRankStreetSS.png',
+                image_url='LogoPeakRankStreetSS.png',
                 post_category='admin_announcement' # Manteniamo la categoria per coerenza
             )
             db.session.add(annuncio)
